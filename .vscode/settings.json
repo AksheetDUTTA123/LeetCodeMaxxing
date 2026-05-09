@@ -1,0 +1,33 @@
+{
+    "workbench.colorTheme": "Winter is Coming (Dark Blue - No Italics)",
+    "workbench.preferredDarkColorTheme": "LeetCode Dark",
+    "editor.tokenColorCustomizations": {
+        "textMateRules": [
+            {
+                "scope": [
+                    "comment",
+                    "keyword",
+                    "storage.modifier",
+                    "storage.type",
+                    "storage.type.class.js",
+                    "storage.type.js",
+                    "storage.type.ts",
+                    "storage.type.class.ts"
+                ],
+                "settings": {
+                    "fontStyle": ""
+                }
+            },
+            {
+                "scope": [
+                    "keyword.operator"
+                ],
+                "settings": {
+                    "fontStyle": ""
+                }
+            }
+        ]
+    },
+    "diffEditor.codeLens": false,
+    "editor.fontVariations": false
+}
