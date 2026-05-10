@@ -29,5 +29,6 @@
         ]
     },
     "diffEditor.codeLens": false,
-    "editor.fontVariations": false
+    "editor.fontVariations": false,
+    "discord.enabled": true
 }
