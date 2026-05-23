@@ -13,7 +13,7 @@ public:
     vector<vector<int>> threeSum(vector<int>& nums) {
         vector<vector<int>> sums;
         sort(nums.begin(), nums.end()); //need to sort, common rule for two ptr, n log n
-        for(int i = 0; i < nums.size(); i++){
+        for(int i = 0; i < nums.size()- 2; i++){
             if(i > 0 && nums[i] == nums[i-1]){ //if i pointer is the same, then keep going to avoid duplicates
                 continue;
             }
