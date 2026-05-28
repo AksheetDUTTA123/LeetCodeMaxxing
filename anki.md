@@ -999,6 +999,9 @@ public:
 ```
 ## Longest Consecutive Subsequence LC 128
 
+
+<!-- notecardId: 1779987349739 -->
+
 Given an unsorted array of integers nums, return the length of the longest consecutive elements sequence.
 
 You must write an algorithm that runs in O(n) time.
@@ -1180,3 +1183,102 @@ public:
     vector<vector<int>> prefixSum;
 };
 ```
+
+## Design Hash Set LC 705
+
+<!-- notecardId: 1779988800028 -->
+
+Design a HashSet without using any built-in hash table libraries.
+
+Implement MyHashSet class:
+
+void add(key) Inserts the value key into the HashSet.
+bool contains(key) Returns whether the value key exists in the HashSet or not.
+void remove(key) Removes the value key in the HashSet. If key does not exist in the HashSet, do nothing.
+ 
+
+Example 1:
+
+Input
+["MyHashSet", "add", "add", "contains", "contains", "add", "contains", "remove", "contains"]
+[[], [1], [2], [1], [3], [2], [2], [2], [2]]
+Output
+[null, null, null, true, false, null, true, null, false]
+
+Explanation
+MyHashSet myHashSet = new MyHashSet();
+myHashSet.add(1);      // set = [1]
+myHashSet.add(2);      // set = [1, 2]
+myHashSet.contains(1); // return True
+myHashSet.contains(3); // return False, (not found)
+myHashSet.add(2);      // set = [1, 2]
+myHashSet.contains(2); // return True
+myHashSet.remove(2);   // set = [1]
+myHashSet.contains(2); // return False, (already removed)
+ 
+
+Constraints:
+
+0 <= key <= 106
+At most 104 calls will be made to add, remove, and contains.
+
+**Link**: [text](https://leetcode.com/problems/design-hashset/)
+
+%
+
+**Pattern:** Hash Table | Separate Chaining | Open Addressing | Array
+
+**Approach:** Use an array of bools to check if a key is in the Hash Table. The index of the array can be determined by the key itself since the constraints allow for a direct mapping (0 to 10^6). For add, set the index to true. For remove, set it to false. For contains, check if the index is true.
+
+**Key Insight:** Since the keys are limited to a specific range (0 to 10^6), we can use a simple array to implement the HashSet without worrying about collisions. This allows for O(1) time complexity for add, remove, and contains operations.
+
+**Gotchas:** Be careful with the size of the array, as it needs to accommodate all possible keys. Also, ensure that the add, remove, and contains methods correctly manipulate the boolean values in the array. Be sure to mention open addressing or separate chaining if the constraints were different and collisions were possible. Some details about those: - **Separate Chaining**: Use a list or another data structure at each index to handle collisions. When adding a key, check if it already exists in the list and add it if not. When removing, remove it from the list. When checking for contains, check if it exists in the list. - **Open Addressing**: Use a probing method (linear, quadratic, or double hashing) to find the next available slot in case of a collision. When adding, if the index is occupied, probe for the next slot until you find an empty one. When removing, mark the slot as deleted but do not remove it entirely to avoid breaking the probing sequence. When checking for contains, probe until you find the key or an empty slot.
+
+**Complexity:** Time: O(1) for add, remove, and contains | Space: O(n) where n is the range of possible keys (10^6)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Design HashMap — LC #706 | Store key-value pairs instead of just keys → same bucketing + chaining | Yes — direct upgrade |
+| Contains Duplicate — LC #217 | Use a hash set to detect duplicates → consumer of this data structure | Yes — foundation |
+| Longest Consecutive Sequence — LC #128 | Hash set lookups to build sequences → consumer of this data structure | Yes — application |
+| Two Sum — LC #1 | Hash map for complement lookup → same underlying hash logic | Partial — map variant |
+| Design HashMap — LC #706 | Same design but with value storage added | Yes — direct extension |
+| LRU Cache — LC #146 | Hash map + doubly linked list for eviction policy → next level design | Partial — upgrade |
+| Find Duplicate File in System — LC #609 | Group by hash key → same bucketing idea at a higher level | Partial — same concept |
+
+**How this pattern scales:**
+- **Array of buckets + chaining** (linked list or vector per bucket) is the standard implementation — `bucket = key % size`, collision resolution via chaining
+- **Open addressing** is the alternative — probe for the next empty slot instead of chaining, harder to implement but better cache performance
+- **Load factor** is the key design consideration — when `elements / buckets` exceeds ~0.7, resize and rehash to maintain O(1) average operations
+- **Design HashMap (LC #706)** is the immediate next step — exact same structure, just store `{key, value}` pairs in each bucket instead of just keys
+
+```cpp
+class MyHashSet {
+public:
+    MyHashSet() {
+        //boolArr[1000001] = {false};
+    }
+    
+    void add(int key) {
+        boolArr[key] = true;
+    }
+    
+    void remove(int key) {
+        boolArr[key] = false;
+    }
+    
+    bool contains(int key) {
+        return boolArr[key];
+    }
+
+private:
+bool boolArr[1000001] = {false};
+};
+```
+
+## Product of Array Except Self LC 238
+
+<!-- notecardId: 1779989167090 -->
+
