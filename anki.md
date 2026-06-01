@@ -1282,3 +1282,765 @@ bool boolArr[1000001] = {false};
 
 <!-- notecardId: 1779989167090 -->
 
+Given an integer array nums, return an array answer such that answer[i] is equal to the product of all the elements of nums except nums[i].
+
+The product of any prefix or suffix of nums is guaranteed to fit in a 32-bit integer.
+
+You must write an algorithm that runs in O(n) time and without using the division operation.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,3,4]
+Output: [24,12,8,6]
+Example 2:
+
+Input: nums = [-1,1,0,-3,3]
+Output: [0,0,9,0,0]
+ 
+
+Constraints:
+
+2 <= nums.length <= 105
+-30 <= nums[i] <= 30
+The input is generated such that answer[i] is guaranteed to fit in a 32-bit integer.
+ 
+
+Follow up: Can you solve the problem in O(1) extra space complexity? (The output array does not count as extra space for space complexity analysis.)
+
+**Link**: [text](https://leetcode.com/problems/product-of-array-except-self/)
+
+%
+
+**Pattern:** Prefix Product | Suffix Product | Dynamic Programming
+
+**Approach:** Create two arrays, one for prefix products and one for suffix products. The prefix product at index i is the product of all elements before i, and the suffix product at index i is the product of all elements after i. Then, the answer for each index i can be calculated as the product of prefix[i] and suffix[i]. To achieve O(1) extra space, you can use the output array to store the prefix products and then calculate the suffix products on the fly while iterating from the end of the array.
+
+**Key Insight:** The key is to realize that the product of all elements except the current one can be broken down into the product of all elements before it (prefix) and the product of all elements after it (suffix). By precomputing these products, you can efficiently calculate the result for each index without using division.
+
+**Gotchas:** Be careful with edge cases, such as when the input array contains zeros, as this will affect the product calculations. Also, ensure that you correctly handle the indexing when calculating prefix and suffix products to avoid off-by-one errors.
+
+**Complexity:** Time: O(n) | Space: O(1) (excluding the output array)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Trapping Rain Water — LC #42 | Prefix max and suffix max instead of prefix/suffix product → same two-pass build | Yes — same structure |
+| Maximum Product Subarray — LC #152 | Track running product but reset on zeros → prefix product idea | Partial — close variant |
+| Subarray Product Less Than K — LC #713 | Sliding window over products instead of prefix build | Partial — product focus |
+| Range Sum Query — LC #303 | Prefix sum instead of prefix product → simpler version of same pattern | Yes — foundation |
+| Minimum Suffix Array — LC #2167 | Build suffix structure for range queries → same suffix thinking | Partial — generalization |
+| Sum of Total Strength of Wizards — LC #2281 | Prefix sum of prefix sums → double prefix build | Partial — harder extension |
+| Find Pivot Index — LC #724 | Left sum equals right sum → prefix sum from both sides | Yes — same two-pass idea |
+
+**How this pattern scales:**
+- **Prefix + suffix two-pass** is the core pattern — first pass builds left context, second pass folds in right context, result needs both. Any problem where each element depends on everything to its left AND right uses this
+- **O(1) space optimization** — instead of storing the full suffix array, carry a running suffix variable from right to left in the second pass and multiply directly into the result array
+- **Zero handling** is the critical gotcha — if the array contains one zero, only that index has a nonzero product. Two or more zeros → all products are zero. Handle before building prefix/suffix
+- **Logarithms** are an alternative — `log(a*b) = log(a) + log(b)` converts products into sums, making prefix sum applicable, but introduces floating point precision issues
+
+```cpp
+class Solution {
+public:
+    vector<int> productExceptSelf(vector<int>& nums) {
+        //look at left and right, array store left products and another array stores right products
+        //genius idea, calculate left array, and then right array only needs to store a number, then multiply with left array
+        vector<int> ans;
+        ans.push_back(1); //first number going from left side will always be 1;
+        int leftTrack = 1;
+        for(int i = 1; i < nums.size(); i++){
+            leftTrack *= nums[i-1]; //as you keep going, keep multiplying by the one you just moved past
+            ans.push_back(leftTrack); //push it back to array, goes untul end of the array
+        }
+        int rightTrack = 1; //start going from the right
+        //right element of ans is correct, start from before
+    for(int i = nums.size()-2; i >-1;  i--){ //why -2? b/c -1 is to get to the index of last element, and -2 because -1 will always be the same as 
+    //the left array's final value
+            rightTrack *= nums[i+1]; //iterate from right to left, as you move left, multiply the value on the right you moved on from
+            ans[i] = rightTrack * ans[i]; //observation that ans = left * right, ans before multipliying is left
+        }
+        return ans;
+    }
+};
+```
+
+## Design Hash Map LC 706
+
+<!-- notecardId: 1780084082324 -->
+
+Design a HashMap without using any built-in hash table libraries.
+
+Implement the MyHashMap class:
+
+MyHashMap() initializes the object with an empty map.
+void put(int key, int value) inserts a (key, value) pair into the HashMap. If the key already exists in the map, update the corresponding value.
+int get(int key) returns the value to which the specified key is mapped, or -1 if this map contains no mapping for the key.
+void remove(key) removes the key and its corresponding value if the map contains the mapping for the key.
+ 
+
+Example 1:
+
+Input
+["MyHashMap", "put", "put", "get", "get", "put", "get", "remove", "get"]
+[[], [1, 1], [2, 2], [1], [3], [2, 1], [2], [2], [2]]
+Output
+[null, null, null, 1, -1, null, 1, null, -1]
+
+Explanation
+MyHashMap myHashMap = new MyHashMap();
+myHashMap.put(1, 1); // The map is now [[1,1]]
+myHashMap.put(2, 2); // The map is now [[1,1], [2,2]]
+myHashMap.get(1);    // return 1, The map is now [[1,1], [2,2]]
+myHashMap.get(3);    // return -1 (i.e., not found), The map is now [[1,1], [2,2]]
+myHashMap.put(2, 1); // The map is now [[1,1], [2,1]] (i.e., update the existing value)
+myHashMap.get(2);    // return 1, The map is now [[1,1], [2,1]]
+myHashMap.remove(2); // remove the mapping for 2, The map is now [[1,1]]
+myHashMap.get(2);    // return -1 (i.e., not found), The map is now [[1,1]]
+ 
+
+Constraints:
+
+0 <= key, value <= 106
+At most 104 calls will be made to put, get, and remove.
+
+**Link**: [text](https://leetcode.com/problems/design-hashmap/)
+
+%
+
+**Pattern:** Hash Table | Separate Chaining | Open Addressing | Array
+
+**Approach:** Use an array of pairs to implement the hash map. The index of the array can be determined by the key itself since the constraints allow for a direct mapping (0 to 10^6). For put, set the index to the value. For get, return the value at the index or -1 if it does not exist. For remove, set the index to a special value (e.g., -1) to indicate that it has been removed.
+
+**Key Insight:** Since the keys are limited to a specific range (0 to 10^6), we can use a simple array to implement the HashMap without worrying about collisions. This allows for O(1) time complexity for put, get, and remove operations.
+
+**Gotchas:** Be careful with the size of the array, as it needs to accommodate all possible keys. Also, ensure that the put, get, and remove methods correctly manipulate the values in the array. Be sure to mention open addressing or separate chaining if the constraints were different and collisions were possible. Some details about those: - **Separate Chaining**: Use a list or another data structure at each index to handle collisions. When adding a key-value pair, check if the key already exists in the list and update it if so; otherwise, add a new pair. When removing, remove the pair from the list. When checking for contains, check if the key exists in the list. - **Open Addressing**: Use a probing method (linear, quadratic, or double hashing) to find the next available slot in case of a collision. When adding, if the index is occupied by a different key, probe for the next slot until you find an empty one or one with the same key. When removing, mark the slot as deleted but do not remove it entirely to avoid breaking the probing sequence. When checking for contains, probe until you find the key or an empty slot.
+
+**Complexity:** Time: O(1) for put, get, and remove | Space: O(n) where n is the range of possible keys (10^6)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Design HashSet — LC #705 | Store only keys, no values → simpler version of same bucketing | Yes — foundation |
+| Two Sum — LC #1 | Use hash map for complement lookup → consumer of this data structure | Yes — direct application |
+| LRU Cache — LC #146 | Hash map + doubly linked list for O(1) eviction → next level design | Partial — upgrade |
+| LFU Cache — LC #460 | Hash map + frequency tracking → harder cache design | Partial — harder upgrade |
+| Insert Delete GetRandom O(1) — LC #380 | Hash map + array for O(1) random access → combined data structure design | Partial — same design thinking |
+| Time Based Key-Value Store — LC #981 | Hash map with versioned values → binary search on timestamps per key | Yes — direct extension |
+| Design Twitter — LC #355 | Hash map to store user tweets + heap for feed → system design application | Partial — applied design |
+
+**How this pattern scales:**
+- **Array of buckets + chaining** is the same core as LC #705 — only difference is each bucket stores `{key, value}` pairs instead of just keys
+- **Separate chaining vs open addressing** — chaining (vectors/linked lists per bucket) is easier to implement in interviews; open addressing has better cache performance in practice
+- **Resize and rehash** when load factor exceeds ~0.7 — allocate a larger bucket array and reinsert all existing pairs to maintain O(1) average
+- **Design pattern ladder** → HashSet → HashMap → LRU Cache → LFU Cache — each builds directly on the previous, so knowing this problem cold makes the harder design problems approachable
+
+```cpp
+class MyHashMap {
+public:
+    MyHashMap() {
+        
+    }
+    
+    void put(int key, int value) {
+        arr[key] = {true, value};
+    }
+    
+    int get(int key) {
+        if(arr[key].first == false) return -1;
+        return arr[key].second;
+    }
+    
+    void remove(int key) {
+        arr[key] = {false, -1};
+    }
+
+private:
+std::pair<bool, int> arr[1000001] = {{false, -1}};
+};
+```
+
+## Best Time to Buy and Sell Stock II LC 122
+
+<!-- notecardId: 1780084534030 -->
+
+You are given an integer array prices where prices[i] is the price of a given stock on the ith day.
+
+On each day, you may decide to buy and/or sell the stock. You can only hold at most one share of the stock at any time. However, you can sell and buy the stock multiple times on the same day, ensuring you never hold more than one share of the stock.
+
+Find and return the maximum profit you can achieve.
+
+ 
+
+Example 1:
+
+Input: prices = [7,1,5,3,6,4]
+Output: 7
+Explanation: Buy on day 2 (price = 1) and sell on day 3 (price = 5), profit = 5-1 = 4.
+Then buy on day 4 (price = 3) and sell on day 5 (price = 6), profit = 6-3 = 3.
+Total profit is 4 + 3 = 7.
+Example 2:
+
+Input: prices = [1,2,3,4,5]
+Output: 4
+Explanation: Buy on day 1 (price = 1) and sell on day 5 (price = 5), profit = 5-1 = 4.
+Total profit is 4.
+Example 3:
+
+Input: prices = [7,6,4,3,1]
+Output: 0
+Explanation: There is no way to make a positive profit, so we never buy the stock to achieve the maximum profit of 0.
+ 
+
+Constraints:
+
+1 <= prices.length <= 3 * 104
+0 <= prices[i] <= 104
+
+**Link**: [text](https://leetcode.com/problems/best-time-to-buy-and-sell-stock-ii/)
+
+%
+
+**Pattern:** Greedy | Dynamic Programming
+
+**Approach:** Iterate through the price array and sum up all positive differences between consecutive days. This works because any time there is a price increase from one day to the next, you can profit by buying on the first day and selling on the second day. By summing all these positive differences, you effectively capture all profitable transactions.
+
+**Key Insight:** The key insight is that you can treat every increase in price as an opportunity to profit. Instead of trying to find the best single buy/sell pair, you can simply add up all the increases, which will give you the maximum profit.
+
+**Gotchas:** Be careful with edge cases, such as when the price array is strictly decreasing, which would result in zero profit. Also, ensure that you are only summing positive differences to avoid subtracting from your profit.
+
+**Complexity:** Time: O(n) | Space: O(1)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Best Time to Buy and Sell Stock — LC #121 | Only one transaction allowed → track global min and max profit | Yes — foundation |
+| Best Time to Buy and Sell Stock III — LC #123 | At most two transactions → DP with transaction state tracking | Partial — upgrade |
+| Best Time to Buy and Sell Stock IV — LC #188 | At most k transactions → generalized DP with k states | Partial — harder upgrade |
+| Best Time to Buy and Sell Stock with Cooldown — LC #309 | Must wait one day after selling → DP with cooldown state | Partial — constraint added |
+| Best Time to Buy and Sell Stock with Fee — LC #714 | Pay a fee per transaction → same greedy but subtract fee on each sell | Yes — direct variant |
+| Jump Game — LC #55 | Greedy decision at each step → same greedy accumulation idea | Partial — same greedy thinking |
+| Maximum Subarray — LC #53 | Accumulate gains, reset on loss → Kadane's mirrors the greedy here | Partial — same accumulation |
+
+**How this pattern scales:**
+- **Greedy accumulation** is the core trick — add every positive difference `prices[i] - prices[i-1]` since unlimited transactions means capturing every upward move is always optimal
+- **DP with states** is the upgrade when constraints are added — `hold`, `sold`, `cooldown` states for LC #309; `k transactions` for LC #188
+- **Stock problem ladder** → LC #121 → LC #122 → LC #309 → LC #714 → LC #123 → LC #188 — each adds one constraint on top of the previous, always start from the simplest version in an interview
+- **Greedy vs DP** — LC #122 is rare in that greedy works perfectly; as soon as a constraint is added (cooldown, fee, max k) greedy breaks and you must switch to DP
+
+```cpp
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        int profit = 0;
+        for(int i = 0; i < prices.size() -1 ; i++){
+            if (prices[i+1] > prices[i]){
+                profit += prices[i+1] - prices[i];
+            }
+        }
+        return profit;
+    }
+};
+```
+
+## Majority Element LC 169
+
+<!-- notecardId: 1780342739799 -->
+
+Given an array nums of size n, return the majority element.
+
+The majority element is the element that appears more than ⌊n / 2⌋ times. You may assume that the majority element always exists in the array.
+
+ 
+
+Example 1:
+
+Input: nums = [3,2,3]
+Output: 3
+Example 2:
+
+Input: nums = [2,2,1,1,1,2,2]
+Output: 2
+ 
+
+Constraints:
+
+n == nums.length
+1 <= n <= 5 * 104
+-109 <= nums[i] <= 109
+The input is generated such that a majority element will exist in the array.
+ 
+
+Follow-up: Could you solve the problem in linear time and in O(1) space?
+
+**Link**: [text](https://leetcode.com/problems/majority-element/)
+
+%
+
+**Pattern:** Boyer-Moore Voting Algorithm | Hash Map
+
+**Approach:** The Boyer-Moore Voting Algorithm is an efficient way to find the majority element in linear time and constant space. The algorithm maintains a candidate for the majority element and a count. It iterates through the array, updating the candidate and count based on whether the current element matches the candidate. If the count drops to zero, it selects a new candidate. By the end of the iteration, the candidate will be the majority element.
+
+**Key Insight:** The key insight is that if you pair each occurrence of the majority element with a different element, the majority element will still have at least one occurrence left unpaired. This is why the Boyer-Moore algorithm works: it effectively cancels out pairs of different elements, leaving the majority element as the last candidate standing.
+
+**Gotchas:** Be careful with edge cases, such as when the majority element is at the beginning or end of the array. Also, ensure that you correctly update the candidate and count during the iteration.
+
+**Complexity:** Time: O(n) | Space: O(1)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Majority Element II — LC #229 | Find all elements appearing more than n/3 times → Boyer-Moore with two candidates | Yes — direct upgrade |
+| Find the Duplicate Number — LC #287 | One duplicate in array → Floyd's cycle detection, no counting | No — different pattern |
+| Single Number — LC #136 | Element appearing once not majority → XOR trick | No — different pattern |
+| Top K Frequent Elements — LC #347 | Find k most frequent not just majority → hash map + heap | Partial — frequency counting |
+| Check Array Formation Through Concatenation — LC #1640 | Verify element presence and order → hash map lookup | No — different pattern |
+| Random Pick with Weight — LC #528 | Weight-based selection → prefix sum not frequency counting | No — different pattern |
+| Find Winner on a Tic Tac Toe Game — LC #1275 | Count moves per player → simple frequency counting | Partial — same counting idea |
+
+**How this pattern scales:**
+- **Boyer-Moore Voting Algorithm** is the core trick — maintain a candidate and a count, increment on match decrement on mismatch, reset candidate when count hits zero. O(n) time O(1) space
+- **Hash map counting** is the O(n) time O(n) space fallback — simpler to derive under pressure but uses extra space
+- **Sorting** is the O(n log n) fallback — majority element always occupies `nums[n/2]` after sorting since it appears more than n/2 times
+- **Two candidate upgrade** → LC #229 extends Boyer-Moore to track two candidates simultaneously for the n/3 threshold — same algorithm, one more candidate variable
+
+```cpp
+class Solution {
+public:
+    int majorityElement(vector<int>& nums) {
+        int candidate = nums[0];
+        int counter = 1;
+        for (int i = 1; i < nums.size(); i++){
+            if(nums[i] != candidate){
+                if(counter == 0){
+                candidate = nums[i];
+                counter = 0;
+                }
+                else{
+                    counter--;
+                }
+            }
+            else{
+                counter++;
+            }
+        }
+        return candidate;
+    }
+};
+```
+
+## Majority Element II LC 229
+
+<!-- notecardId: 1780343247492 -->
+
+Given an integer array of size n, find all elements that appear more than ⌊ n/3 ⌋ times.
+
+ 
+
+Example 1:
+
+Input: nums = [3,2,3]
+Output: [3]
+Example 2:
+
+Input: nums = [1]
+Output: [1]
+Example 3:
+
+Input: nums = [1,2]
+Output: [1,2]
+ 
+
+Constraints:
+
+1 <= nums.length <= 5 * 104
+-109 <= nums[i] <= 109
+ 
+
+Follow up: Could you solve the problem in linear time and in O(1) space?
+
+**Link**: [text](https://leetcode.com/problems/majority-element-ii/)
+
+%
+
+**Pattern:** Boyer-Moore Voting Algorithm | Hash Map
+
+**Approach:** The Boyer-Moore Voting Algorithm can be extended to find all elements that appear more than n/3 times. In this case, you need to maintain two candidates and their corresponding counts. As you iterate through the array, you update the candidates and counts based on whether the current element matches either candidate. If the count for a candidate drops to zero, you replace that candidate with the current element and reset the count. After the first pass, you will have at most two candidates. You then need to do a second pass to verify which of these candidates actually appear more than n/3 times.
+
+**Key Insight:** The key insight is that there can be at most two elements that appear more than n/3 times in an array. This is because if there were three such elements, they would have to occupy more than n positions, which is impossible. Therefore, by tracking two candidates and their counts, you can efficiently find the majority elements.
+
+**Gotchas:** Be careful with edge cases, such as when the array has fewer than three elements. Also, ensure that you correctly update the candidates and counts during the iteration, and remember to verify the candidates in a second pass.
+
+**Complexity:** Time: O(n) | Space: O(1)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Majority Element — LC #169 | Only one majority element at n/2 threshold → single candidate Boyer-Moore | Yes — foundation |
+| Find All Numbers Disappeared in Array — LC #448 | Find missing not majority → index marking or hash set | No — different pattern |
+| Top K Frequent Elements — LC #347 | Find k most frequent not threshold based → hash map + heap | Partial — frequency counting |
+| Single Number — LC #136 | Find element appearing once → XOR trick not voting | No — different pattern |
+| Single Number II — LC #137 | Find element appearing once among thrice-repeated → bit manipulation | No — different pattern |
+| Check If Array Is Good — LC #1422 | Verify frequency conditions on array → hash map counting | Partial — same counting idea |
+| Find Duplicate File in System — LC #609 | Group by content hash → frequency grouping | Partial — same grouping idea |
+
+**How this pattern scales:**
+- **Boyer-Moore with two candidates** is the core upgrade from LC #169 — track two candidate/count pairs, eliminate in groups of 3 instead of 2, then verify both candidates in a second pass
+- **Verification pass is mandatory** — unlike LC #169 where a majority element is guaranteed, LC #229 has no guarantee that two such elements exist, so always verify candidate counts exceed n/3 after the voting pass
+- **General k threshold** → for elements appearing more than n/k times, maintain k-1 candidates using the same Boyer-Moore logic — interview follow-up worth knowing
+- **Hash map fallback** is O(n) time O(n) space — count all frequencies then filter those exceeding n/3, simpler to derive but misses the O(1) space insight interviewers look for
+
+```cpp
+class Solution {
+public:
+    vector<int> majorityElement(vector<int>& nums) {
+        vector<int> totalVals(2);// 2 majority numbers tops 
+        int count1 = 0;
+        int count2 = 0;
+        totalVals[0] = -1*10^10; //set as val that cannot be reached
+        totalVals[1] = -1*10^10;
+        for(int i = 0; i < nums.size(); i++){
+            if(nums[i] == totalVals[0]){
+                count1++; // if same as first majority number, incremenent counter
+            }
+            else if(nums[i] == totalVals[1]){
+                count2++; // if same as second majority number, incremenent counter
+            }
+            else{
+                if(count1 == 0){
+                    totalVals[0] = nums[i]; //if not the same and counter at 0, we know this is not the majority number, so replace with new number and reset counter
+                    count1 = 1; 
+                }
+                else if(count2 == 0){
+                    totalVals[1] = nums[i]; //if not the same and counter at 0, we know this is not the majority number, so replace with new number and reset counter
+                    count2 = 1;
+                }
+                else{
+                    count1--; //this is the trick, if we find a number that is not the same as either majority number, we know this number is not the majority number, so we have to decrement both counters
+                    count2--;
+                }
+            }
+        }
+
+        //beginning of second pass
+        int totalCount1= 0; //set counter for totalVals 0
+        int totalCount2 = 0;//set counter for totalVals 1
+        for(int i = 0; i < nums.size(); i++){
+            if (nums[i] == totalVals[0]){
+                totalCount1++; //if totalVals 0 found, increment ctr
+            }
+            else if (nums[i] == totalVals[1]){
+                totalCount2++; //if totalVals 1 found, increment ctr
+            }
+        }
+        if(totalCount2 <= nums.size() /3){
+            totalVals.erase(totalVals.begin() + 1); //if totalVals 1 not majority, remove from vector. Start from end to avoid index issues
+        }
+        if(totalCount1 <= nums.size() /3){
+            totalVals.erase(totalVals.begin()); //if totalVals 0 not majority, remove from vector.
+        }
+        return totalVals;
+    }
+};
+```
+
+## Valid Sudoku LC 36
+
+<!-- notecardId: 1780344057419 -->
+
+
+
+Code
+
+Testcase
+Testcase
+
+Test Result
+36. Valid Sudoku
+Solved
+Medium
+
+Topics
+conpanies icon
+Companies
+Determine if a 9 x 9 Sudoku board is valid. Only the filled cells need to be validated according to the following rules:
+
+Each row must contain the digits 1-9 without repetition.
+Each column must contain the digits 1-9 without repetition.
+Each of the nine 3 x 3 sub-boxes of the grid must contain the digits 1-9 without repetition.
+Note:
+
+A Sudoku board (partially filled) could be valid but is not necessarily solvable.
+Only the filled cells need to be validated according to the mentioned rules.
+ 
+
+Example 1:
+
+
+Input: board = 
+[["5","3",".",".","7",".",".",".","."]
+,["6",".",".","1","9","5",".",".","."]
+,[".","9","8",".",".",".",".","6","."]
+,["8",".",".",".","6",".",".",".","3"]
+,["4",".",".","8",".","3",".",".","1"]
+,["7",".",".",".","2",".",".",".","6"]
+,[".","6",".",".",".",".","2","8","."]
+,[".",".",".","4","1","9",".",".","5"]
+,[".",".",".",".","8",".",".","7","9"]]
+Output: true
+Example 2:
+
+Input: board = 
+[["8","3",".",".","7",".",".",".","."]
+,["6",".",".","1","9","5",".",".","."]
+,[".","9","8",".",".",".",".","6","."]
+,["8",".",".",".","6",".",".",".","3"]
+,["4",".",".","8",".","3",".",".","1"]
+,["7",".",".",".","2",".",".",".","6"]
+,[".","6",".",".",".",".","2","8","."]
+,[".",".",".","4","1","9",".",".","5"]
+,[".",".",".",".","8",".",".","7","9"]]
+Output: false
+Explanation: Same as Example 1, except with the 5 in the top left corner being modified to 8. Since there are two 8's in the top left 3x3 sub-box, it is invalid.
+ 
+
+Constraints:
+
+board.length == 9
+board[i].length == 9
+board[i][j] is a digit 1-9 or '.'.
+
+**Link**: [text](https://leetcode.com/problems/valid-sudoku/)
+
+%
+
+**Pattern:** Hash Set | Matrix
+
+**Approach:** Use three hash sets to track the digits seen in each row, column, and 3x3 sub-box. As you iterate through the board, for each filled cell, check if the digit has already been seen in the corresponding row, column, or sub-box. If it has, return false. If not, add the digit to the respective sets. If you finish iterating through the board without finding any duplicates, return true.
+
+**Key Insight:** The key insight is that you can use hash sets to efficiently track the presence of digits in rows, columns, and sub-boxes. By encoding the row, column, and sub-box information into the hash set keys, you can quickly check for duplicates without needing nested loops.
+
+**Gotchas:** Be careful with the indexing when determining which sub-box a cell belongs to. The sub boxes can be stored in a 3 by 3 array of hash tables, and then to index, row = row / 3 and col = col / 3. Also, ensure that you only check filled cells (i.e., those that are not '.').
+
+**Complexity:** Time: O(1) since the board size is fixed at 9x9 | Space: O(1) for the same reason
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Sudoku Solver — LC #37 | Actually fill in the board instead of just validating → backtracking on top of same validation logic | Yes — direct upgrade |
+| N-Queens — LC #51 | Place queens with no conflicts → same "no duplicates in row/col/box" constraint via backtracking | Partial — same constraint checking |
+| Valid Tic Tac Toe State — LC #794 | Validate board state for smaller grid → same row/col checking logic | Partial — simpler variant |
+| Word Search — LC #79 | Search grid with visited tracking → same 2D grid indexing | No — different pattern |
+| Set Matrix Zeroes — LC #73 | Modify matrix based on cell values → same grid traversal | No — different pattern |
+| Find Winner on Tic Tac Toe — LC #1275 | Count moves per row/col → same hash set per line idea | Partial — same structure |
+| Unique Paths — LC #62 | 2D grid traversal → DP not constraint checking | No — different pattern |
+
+**How this pattern scales:**
+- **Hash set per row, col, box** is the core trick — three arrays of hash sets, one per constraint type, check and insert simultaneously in a single pass
+- **Box index formula** `(row / 3) * 3 + (col / 3)` is the key insight to memorize cold — maps any cell to its 0-8 box index in O(1), or could use a 2D array of hash sets indexed by `(row / 3, col / 3)`
+- **Backtracking upgrade** → LC #37 (Sudoku Solver) layers backtracking on top of this exact validation logic — try a digit, validate, recurse, undo if invalid. Knowing LC #36 cold means the validation step of LC #37 is already solved
+- **Constraint propagation** is the optimized approach for LC #37 — instead of blind backtracking, eliminate candidates using row/col/box sets before guessing, drastically reducing search space
+
+```cpp
+class Solution {
+public:
+    bool isValidSudoku(vector<vector<char>>& board) {
+        unordered_set<char> rowSet[9];
+        unordered_set<char> colSet[9];
+        unordered_set<char> boxes[3][3];
+    for(int i= 0; i < board.size(); i++){
+        for(int j = 0; j < board[0].size(); j++){
+            if(board[i][j] == '.'){
+                continue;
+            }
+            else if(rowSet[i].find(board[i][j]) == rowSet[i].end() && colSet[j].find(board[i][j]) == colSet[j].end() && boxes[i/3][j/3].find(board[i][j]) == boxes[i/3][j/3].end()){
+                rowSet[i].insert(board[i][j]);
+                colSet[j].insert(board[i][j]);
+                boxes[i/3][j/3].insert(board[i][j]);
+
+            }
+            else{
+                return false;
+            }
+        }
+    }
+
+    return true;
+
+    }
+};
+```
+
+## Subarray Sum Equals K LC 560
+
+<!-- notecardId: 1780344879148 -->
+
+Given an array of integers nums and an integer k, return the total number of subarrays whose sum equals to k.
+
+A subarray is a contiguous non-empty sequence of elements within an array.
+
+ 
+
+Example 1:
+
+Input: nums = [1,1,1], k = 2
+Output: 2
+Example 2:
+
+Input: nums = [1,2,3], k = 3
+Output: 2
+ 
+
+Constraints:
+
+1 <= nums.length <= 2 * 104
+-1000 <= nums[i] <= 1000
+-107 <= k <= 107
+
+**Link**: [text](https://leetcode.com/problems/subarray-sum-equals-k/)
+
+%
+
+**Pattern:** Prefix Sum | Hash Map
+
+**Approach:** Use a hash map to store the cumulative sum of the elements up to the current index. As you iterate through the array, calculate the cumulative sum and check if there is a previous cumulative sum that equals the current cumulative sum minus k. If such a sum exists in the hash map, it means there is a subarray that sums to k, and you can add the count of that cumulative sum to your result. Finally, update the hash map with the current cumulative sum. 
+
+**Key Insight:** The key insight is that if the cumulative sum up to index j is S, and there was a previous cumulative sum S-k at index i, then the subarray from index i+1 to j sums to k. By using a hash map to track the frequency of cumulative sums, you can efficiently count the number of valid subarrays in a single pass.
+
+**Gotchas:** Be careful with edge cases, such as when the cumulative sum itself equals k, which means a valid subarray starts from index 0. Also, ensure that you correctly update the hash map with the cumulative sums and their counts.
+
+**Complexity:** Time: O(n) | Space: O(n)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Two Sum — LC #1 | Find two indices summing to target → same "have I seen complement" hash map lookup | Yes — foundation |
+| Continuous Subarray Sum — LC #523 | Subarray sum divisible by k → prefix sum + modulo + hash map | Yes — direct variant |
+| Subarray Sum Divisible by K — LC #974 | Count subarrays with sum divisible by k → prefix sum mod k + hash map | Yes — close variant |
+| Range Sum Query — LC #303 | Precompute prefix sums for repeated queries → same prefix sum build | Yes — same structure |
+| Binary Subarrays With Sum — LC #930 | Count subarrays with exact binary sum → same prefix sum + hash map | Yes — direct variant |
+| Path Sum III — LC #437 | Same subarray sum idea but on a tree → DFS + prefix sum hash map | Yes — generalization |
+| Minimum Size Subarray Sum — LC #209 | Find shortest subarray exceeding sum → sliding window instead of hash map | Partial — positive nums only |
+| Count of Range Sum — LC #327 | Count subarrays within a sum range → merge sort + prefix sum | Partial — harder generalization |
+
+**How this pattern scales:**
+- **Prefix sum + hash map** is the core trick — store frequency of each prefix sum seen so far, for each new prefix sum check if `prefixSum - k` exists in the map. O(n) time O(n) space
+- **Modulo variant** → when the problem asks divisible by k instead of equal to k, store `prefixSum % k` in the map instead — LC #523 and LC #974 are direct applications
+- **Tree generalization** → LC #437 (Path Sum III) applies the exact same prefix sum hash map logic but runs it via DFS, passing the map down the recursion and cleaning it up on the way back
+- **Sliding window limitation** → sliding window only works when all values are positive (shrinking the window guarantees sum decreases). Prefix sum + hash map works for negative numbers too — always prefer it when negatives are possible
+
+```cpp
+class Solution {
+public:
+    int subarraySum(vector<int>& nums, int k) {
+        int totalSubarrays = 0; //track the number of total possible subarrays that sum to k
+        int currentSum = 0; //incrementing sum of the entire array
+        unordered_map<int, int> preFixSumMinusK; //map to track number of times a prefix sum has been seen so far
+        preFixSumMinusK.insert({0, 1}); //sum 0 has been seen once, this is the base case
+        for(int i = 0; i < nums.size(); i++){ //go through the entire array
+            currentSum += nums[i]; //add the current number to the current sum
+            if(preFixSumMinusK.find(currentSum - k) != preFixSumMinusK.end()){ //check if the current sum - k has been seen before, if so, add the number of times it has been seen to the total subarrays
+            //if currentSum - k has been seen before, then there are preFixSumMinusK[currentSum - k] number of subarrays that sum to k, because if currentSum - k has been seen before, then there are preFixSumMinusK[currentSum - k] number of subarrays that sum to currentSum - k, and if we add the current number to those subarrays, then they will sum to k
+                totalSubarrays += preFixSumMinusK[currentSum - k];
+            }
+                preFixSumMinusK[currentSum]++; //always increment the times currentSum has been seen, this is important for making future possible subarrays that sum up to k
+        }
+        return totalSubarrays;
+
+    }
+};
+```
+
+## First Missing Positive LC 41
+
+<!-- notecardId: 1780345064348 -->
+
+Given an unsorted integer array nums. Return the smallest positive integer that is not present in nums.
+
+You must implement an algorithm that runs in O(n) time and uses O(1) auxiliary space.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,0]
+Output: 3
+Explanation: The numbers in the range [1,2] are all in the array.
+Example 2:
+
+Input: nums = [3,4,-1,1]
+Output: 2
+Explanation: 1 is in the array but 2 is missing.
+Example 3:
+
+Input: nums = [7,8,9,11,12]
+Output: 1
+Explanation: The smallest positive integer 1 is missing.
+ 
+
+Constraints:
+
+1 <= nums.length <= 105
+-231 <= nums[i] <= 231 - 1
+
+**Link**: [text](https://leetcode.com/problems/first-missing-positive/)
+
+%
+
+**Pattern:** Array Indexing | In-place Hashing
+
+**Approach:** The idea is to use the input array itself as a hash map to track which positive integers are present. First, we can ignore all numbers that are less than or equal to 0 and greater than n (the length of the array) since they cannot be the first missing positive. Then, for each number in the array, if it is in the range [1, n], we can mark its presence by negating the value at the index corresponding to that number (i.e., nums[num - 1]). Finally, we can iterate through the array again to find the first index that has a positive value, which indicates that the index + 1 is the first missing positive integer.
+
+**Key Insight:** The key insight is that since we are looking for the first missing positive integer, it must be in the range [1, n+1]. By using the array itself to track presence, we can achieve O(n) time complexity and O(1) space complexity without needing extra data structures.
+
+**Gotchas:** Be careful with the indexing when marking presence. Remember to check if the number is within the valid range before trying to mark it. Also, ensure that you handle duplicates correctly, as they should not affect the marking process. You need to check if the value at the index you want to swap is already in the correct position to avoid infinite loops.
+
+**Complexity:** Time: O(n) | Space: O(1)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Missing Number — LC #268 | Find missing in range 0 to n → XOR or math, no index marking needed | Yes — simpler foundation |
+| Find All Numbers Disappeared in Array — LC #448 | Find all missing in range 1 to n → same index marking trick, collect all | Yes — direct variant |
+| Find the Duplicate Number — LC #287 | Find duplicate not missing → Floyd's cycle detection or index marking | Partial — same index idea |
+| First Missing Positive — LC #41 | Find smallest missing positive → index marking with negation | Yes — hardest in family |
+| Set Matrix Zeroes — LC #73 | Mark cells in place without losing info → same in-place marking idea | Partial — same constraint |
+| Longest Consecutive Sequence — LC #128 | Find longest run of consecutive numbers → hash set instead of index marking | Partial — consecutive family |
+| Couples Holding Hands — LC #765 | Rearrange elements to correct positions → same "element belongs at index" idea | Partial — placement idea |
+| Cyclic Sort Pattern | Sort by placing each number at its correct index → direct generalization of index marking | Yes — generalization |
+
+**How this pattern scales:**
+- **Index as a hash map** is the core trick — since the answer must be in range 1 to n+1, use the array itself as a presence marker by negating values at index `num - 1`. O(n) time O(1) space
+- **Three step pattern** → (1) ignore out of range values, (2) mark presence by negating at correct index, (3) scan for first positive index — this exact sequence solves LC #448 too
+- **Cyclic sort generalization** → instead of negating, swap each element to its correct index position `nums[i] - 1`. Cyclic sort is cleaner and generalizes to the whole missing/duplicate number family
+- **O(1) space constraint** is the key signal — any time a problem says "constant extra space" on an array of integers in a known range, index marking or cyclic sort is almost certainly the intended approach
+
+```cpp
+class Solution {
+public:
+    int firstMissingPositive(vector<int>& nums) {
+        for(int i = 0; i < nums.size(); i++){ //go thru the nums array
+            while(nums[i] >= 1 && nums[i] <= nums.size() && nums[nums[i]- 1] != nums[i]){ //check validity for if you can swap
+            //1 or greater (positive) less than/equal to nums size (so it can be indexed properly in a 1-indexed array)
+            //and check if the value at the index you want to swap to if nums[6] = 3, check if nums[2] has 3 in it or not already
+                swap(nums[i], nums[nums[i]- 1]);
+            }
+        }
+        for(int i= 0; i < nums.size(); i++ ){ //validation loop
+            if(nums[i] != i+1){ //check if index has the right value, remember c++ vectors are 0 indexed, so have to check i + 1
+                       return i+1;
+            }
+        }
+        return nums.size() + 1; //if everything is correct, then nums.size() + 1 is just return, if array size 9 has 1-9, then 10 is returned
+    }
+};
+```
+
