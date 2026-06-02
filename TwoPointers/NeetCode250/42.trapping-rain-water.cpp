@@ -24,7 +24,8 @@ public:
             //If we were to move the right pointer instead, we might miss out on trapping water at the left pointer, since the maxL is the smaller of the two.
                 l++;
                 MaxL = max(MaxL, height[l]);
-                result += MaxL - height[l];
+                result += MaxL - height[l]; //The amount of water trapped at the current left pointer is the difference between the maxL and the height of the current bar at the left pointer. We add this to our result, and then move the left pointer to the right to continue checking for more trapped water.
+                //think of result being the depth, kind of like a basin, and the height of the current bar is the floor of the basin. The maxL is the ceiling of the basin, so the difference between them is how much water can be trapped in that basin.
             }
             else{
                r--;

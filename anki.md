@@ -3852,4 +3852,1244 @@ private:
  * int param_1 = obj->next(price);
  */
 ```
+## Reverse String LC 344
+
+<!-- notecardId: 1780418911456 -->
+
+Write a function that reverses a string. The input string is given as an array of characters s.
+
+You must do this by modifying the input array in-place with O(1) extra memory.
+
+ 
+
+Example 1:
+
+Input: s = ["h","e","l","l","o"]
+Output: ["o","l","l","e","h"]
+Example 2:
+
+Input: s = ["H","a","n","n","a","h"]
+Output: ["h","a","n","n","a","H"]
+ 
+
+Constraints:
+
+1 <= s.length <= 105
+s[i] is a printable ascii character.
+
+**Link**: [text](https://leetcode.com/problems/reverse-string/)
+
+%
+
+**Pattern:** Two Pointers
+
+**Approach:** Use two pointers, one starting at the beginning of the array and the other starting at the end of the array. Swap the characters at these two pointers and then move the pointers towards each other until they meet or cross. This will reverse the string in place. 
+
+**Key Insight:** The key insight is that by using two pointers to swap characters from the start and end of the array, you can reverse the string in place without needing any additional memory. This approach is efficient and straightforward for reversing an array of characters.
+
+**Gotchas:** Be careful to correctly move the pointers towards each other after each swap. The loop should continue until the pointers meet or cross, which means you should check for `left < right` as the loop condition. Also, make sure to swap the characters at the correct indices and to handle edge cases such as an array of length 1, which is already reversed.
+
+**Complexity:** Time: O(n) where n is the length of the string (each character is swapped at most once) | Space: O(1) since the reversal is done in place without using extra space
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Reverse Words in a String — LC #151 | Reverse words not characters → split trim reverse rejoin | Partial — same two pointer idea |
+| Reverse Words in a String III — LC #557 | Reverse each word individually not whole string → two pointer per word | Yes — direct variant |
+| Reverse Vowels of a String — LC #345 | Reverse only vowels using two pointers → same inward scan with condition | Yes — direct variant |
+| Valid Palindrome — LC #125 | Check if string reads same both ways → same inward two pointer comparison | Yes — same pattern |
+| Reverse Linked List — LC #206 | Reverse a linked list instead of array → prev/curr pointer swap instead of index swap | Partial — same reversal idea |
+| Rotate Array — LC #189 | Rotate array by k positions → reverse whole then reverse parts | Yes — reversal as building block |
+| Two Sum II — LC #167 | Two pointers on sorted array → same inward scan different condition | Partial — same two pointer family |
+| Palindrome Linked List — LC #234 | Check palindrome on linked list → reverse second half then compare | Partial — reversal as subroutine |
+
+**How this pattern scales:**
+- **Two pointer inward scan** is the core trick — left pointer at start right pointer at end swap and move inward until they meet. O(n) time O(1) space
+- **Reversal as a building block** → Rotate Array (LC #189) uses three reversals to achieve rotation — reverse whole array, reverse first k elements, reverse remaining. Knowing reverse cold makes this derivable in seconds
+- **Condition based reversal** → Reverse Vowels (LC #345) adds a skip condition to the two pointer scan — same inward movement but only swap when both pointers land on vowels. Any selective reversal problem uses this same conditional two pointer pattern
+- **Palindrome connection** → Valid Palindrome (LC #125) is the same inward two pointer scan but comparing instead of swapping. If you can reverse a string you already understand the pointer movement needed to check palindromes
+
+```cpp
+class Solution {
+public:
+    void reverseString(vector<char>& s) {
+            for(int i = 0; i < (s.size() / 2); i++){
+                swap(s[i],s[(s.size() - 1) - i]);
+            }
+        }
+};
+```
+
+## Container with Most Water LC 11
+
+<!-- notecardId: 1780419102948 -->
+
+You are given an integer array height of length n. There are n vertical lines drawn such that the two endpoints of the ith line are (i, 0) and (i, height[i]).
+
+Find two lines that together with the x-axis form a container, such that the container contains the most water.
+
+Return the maximum amount of water a container can store.
+
+Notice that you may not slant the container.
+
+ 
+
+Example 1:
+
+
+Input: height = [1,8,6,2,5,4,8,3,7]
+Output: 49
+Explanation: The above vertical lines are represented by array [1,8,6,2,5,4,8,3,7]. In this case, the max area of water (blue section) the container can contain is 49.
+Example 2:
+
+Input: height = [1,1]
+Output: 1
+ 
+Constraints:
+
+n == height.length
+2 <= n <= 105
+0 <= height[i] <= 104
+
+**Link**: [text](https://leetcode.com/problems/container-with-most-water/)
+
+%
+
+**Pattern:** Two Pointers
+
+**Approach:** Use two pointers, one starting at the beginning of the array and the other starting at the end of the array. Calculate the area formed by the lines at these two pointers and update the maximum area if necessary. Then, move the pointer that points to the shorter line towards the other pointer, since moving the taller line would not increase the area. Continue this process until the two pointers meet.
+
+**Key Insight:** The key insight is that the area of water contained between two lines is determined by the shorter line, so to maximize the area, you should move the pointer that points to the shorter line. This way, you have a chance to find a taller line that could potentially increase the area. The two-pointer approach allows you to efficiently explore all possible pairs of lines without needing to check every combination, resulting in an O(n) time complexity.
+
+**Gotchas:** Be careful to correctly calculate the area using the formula `area = min(height[left], height[right]) * (right - left)`. Also, make sure to update the maximum area after each calculation. The loop should continue until the two pointers meet, which means you should check for `left < right` as the loop condition. Additionally, remember that moving the taller line will not increase the area, so only move the pointer that points to the shorter line.
+
+**Complexity:** Time: O(n) where n is the length of the height array (each element is visited at most once by either pointer) | Space: O(1) since we are using only a constant amount of extra space
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Trapping Rain Water — LC #42 | Water trapped between all bars not just two → same two pointer but accumulate | Yes — direct upgrade |
+| Two Sum II — LC #167 | Two pointers on sorted array summing to target → same inward scan different condition | Yes — same two pointer pattern |
+| 3Sum — LC #15 | Fix one element two pointer the rest → same inward scan inside outer loop | Yes — same pattern |
+| Largest Rectangle in Histogram — LC #84 | Largest rectangle not largest water container → monotonic stack instead | Partial — same area idea |
+| Maximum Area of Island — LC #695 | Max area in 2D grid → BFS/DFS not two pointer | No — different pattern |
+| Sum of Two Integers — LC #371 | Combine two values without arithmetic → bit manipulation | No — different pattern |
+| Minimize Maximum Pair Sum — LC #1877 | Pair smallest with largest to minimize max sum → same two pointer inward scan | Yes — same pattern |
+| Boats to Save People — LC #881 | Pair lightest with heaviest under weight limit → same two pointer greedy | Yes — direct variant |
+
+**How this pattern scales:**
+- **Two pointer greedy** is the core trick — start with widest possible container, always move the pointer at the shorter bar inward. Moving the taller bar can only decrease area so it is never optimal to move it
+- **Greedy correctness proof** → moving the shorter bar is the only way to potentially find a taller bar that compensates for the reduced width. This greedy argument is worth stating explicitly in interviews as it shows you understand why the approach works not just that it works
+- **Width vs height tradeoff** → the area formula `min(h[l], h[r]) * (r - l)` has two competing factors. Two pointer works here because fixing the width reduction means height can only improve by moving the shorter side — this tradeoff reasoning generalizes to Trapping Rain Water and Boats to Save People
+- **Upgrade to Trapping Rain Water** → LC #42 uses the same two pointer inward scan but instead of tracking the maximum area it accumulates trapped water at each step using prefix max from both sides. Same pointer movement, fundamentally different accumulation logic
+
+```cpp
+class Solution {
+public:
+    int maxArea(vector<int>& height) {
+        int maxAreaVal = 0;
+        int leftSide = 0;
+        int rightSide = height.size() - 1;
+        while(leftSide < rightSide){
+            maxAreaVal = max(maxAreaVal, min(height[leftSide], height[rightSide]) * (rightSide - leftSide));
+            if(height[leftSide] < height[rightSide]){
+                leftSide++;
+            }
+            else{
+                rightSide--;
+            }
+        }
+        return maxAreaVal;
+    }
+};
+```
+
+## 3Sum LC 15
+
+<!-- notecardId: 1780419447874 -->
+
+Given an integer array nums, return all the triplets [nums[i], nums[j], nums[k]] such that i != j, i != k, and j != k, and nums[i] + nums[j] + nums[k] == 0.
+
+Notice that the solution set must not contain duplicate triplets.
+
+ 
+
+Example 1:
+
+Input: nums = [-1,0,1,2,-1,-4]
+Output: [[-1,-1,2],[-1,0,1]]
+Explanation: 
+nums[0] + nums[1] + nums[2] = (-1) + 0 + 1 = 0.
+nums[1] + nums[2] + nums[4] = 0 + 1 + (-1) = 0.
+nums[0] + nums[3] + nums[4] = (-1) + 2 + (-1) = 0.
+The distinct triplets are [-1,0,1] and [-1,-1,2].
+Notice that the order of the output and the order of the triplets does not matter.
+Example 2:
+
+Input: nums = [0,1,1]
+Output: []
+Explanation: The only possible triplet does not sum up to 0.
+Example 3:
+
+Input: nums = [0,0,0]
+Output: [[0,0,0]]
+Explanation: The only possible triplet sums up to 0.
+
+Constraints:
+
+3 <= nums.length <= 3000
+-105 <= nums[i] <= 105
+
+**Link**: [text](https://leetcode.com/problems/3sum/)
+
+%
+
+**Pattern:** Two Pointers
+
+**Approach:** First, sort the input array. Then, iterate through the array with an index `i` from 0 to `n-3`. For each index `i`, use two pointers `left` and `right` to find pairs of numbers that sum up to `-nums[i]`. The `left` pointer starts at `i+1` and the `right` pointer starts at the end of the array. If the sum of the three numbers is less than zero, move the `left` pointer to the right. If the sum is greater than zero, move the `right` pointer to the left. If the sum is zero, add the triplet to the result list and move both pointers while skipping duplicates.
+
+**Key Insight:** The key insight is that by sorting the array and using a two-pointer approach, you can efficiently find all unique triplets that sum up to zero. Sorting allows you to easily skip duplicates and ensures that the two-pointer technique works correctly. The two-pointer technique reduces the time complexity from O(n^3) to O(n^2) by avoiding the need for a third nested loop.
+
+**Gotchas:** Be careful to skip duplicate values for the index `i` to avoid adding duplicate triplets to the result. Also, after finding a valid triplet, make sure to move both pointers and skip any duplicate values to ensure that you only add unique triplets to the result. The condition for skipping duplicates is crucial for passing all test cases, especially when the input array contains multiple identical numbers. The reason the first for loop goes from i to i - 3 is because in the final loop we are using two pointers, left and right, and we need to make sure that there are at least two more elements after i to form a triplet. If i goes beyond n - 3, then there won't be enough elements left to form a triplet.
+
+**Complexity:** Time: O(n^2) where n is the length of the input array (sorting takes O(n log n) and the two-pointer search takes O(n^2)) | Space: O(1) if we don't count the space used for the output list, otherwise O(k) where k is the number of unique triplets found
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Two Sum — LC #1 | Two elements summing to target → hash map no sorting needed | Yes — foundation |
+| Two Sum II — LC #167 | Two elements on sorted array → same two pointer no fix step | Yes — direct foundation |
+| 3Sum Closest — LC #16 | Find triplet sum closest to target → same fix + two pointer track minimum diff | Yes — direct variant |
+| 3Sum Smaller — LC #259 | Count triplets summing less than target → same fix + two pointer count window | Yes — direct variant |
+| 4Sum — LC #18 | Four elements summing to target → same fix two + two pointer inner loop | Yes — direct upgrade |
+| 4Sum II — LC #454 | Four arrays one element each summing to zero → hash map of pair sums | Partial — different structure |
+| Combination Sum — LC #39 | All combinations summing to target with reuse → backtracking not two pointer | No — different pattern |
+| Trapping Rain Water — LC #42 | Two pointer tracking boundaries → same inward scan different accumulation | Partial — same two pointer family |
+
+**How this pattern scales:**
+- **Sort + fix + two pointer** is the core trick — sort the array, fix one element with outer loop, run two pointer inward scan on the remaining subarray. O(n²) time O(1) space
+- **Duplicate skipping is mandatory** — after fixing an element skip duplicates in the outer loop. After a valid triplet is found skip duplicates on both pointers. Missing either skip produces duplicate triplets and is the single most common bug on this problem
+- **kSum generalization** → 3Sum fixes one element and reduces to 2Sum. 4Sum fixes two elements and reduces to 2Sum. For any kSum fix k-2 elements recursively and run two pointer at the innermost level — O(n^(k-1)) time
+- **Hash map vs two pointer** → Two Sum uses hash map because the array is unsorted. 3Sum sorts first making two pointer possible and more space efficient. The decision between hash map O(n) space and two pointer O(1) space always hinges on whether the array is or can be sorted
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        vector<vector<int>> sums;
+        sort(nums.begin(), nums.end()); //need to sort, common rule for two ptr, n log n
+        for(int i = 0; i < nums.size()- 2; i++){
+            if(i > 0 && nums[i] == nums[i-1]){ //if i pointer is the same, then keep going to avoid duplicates
+                continue;
+            }
+            int left = i + 1; //start the window right after i
+            int right = nums.size() - 1; //go till the end
+            while(left < right){ //keep going until right and left meet at same place, all combos been looked at
+                if(nums[i] + nums[left] + nums[right] == 0){ //if match, add triplet
+                    sums.push_back({nums[i], nums[left], nums[right]});
+                    left++; //must rememebr to keep going left
+                    right--; //and going right, to check more possible combos
+                    while(left < right && nums[left]== nums[left - 1]){
+                        left++; //if the next left is same as old left, keep going right
+                    }
+                    while(left < right && nums[right]== nums[right+1]){ 
+                        right--; //if new right is the same as the old right, keep moving left
+                    }
+                }
+                else if(nums[i] + nums[left] + nums[right] < 0){
+                    left++; //if less than 0, need to increase the sum, move left pointer to the right 
+                }
+                else{
+                    right--; //if greater than 0, need to decrease the sum, move right pointer to the left
+                }
+            }
+        }
+        return sums;
+    }
+};
+```
+## 4-Sum LC 18
+
+<!-- notecardId: 1780419983349 -->
+
+Given an array nums of n integers, return an array of all the unique quadruplets [nums[a], nums[b], nums[c], nums[d]] such that:
+
+0 <= a, b, c, d < n
+a, b, c, and d are distinct.
+nums[a] + nums[b] + nums[c] + nums[d] == target
+You may return the answer in any order.
+
+ 
+
+Example 1:
+
+Input: nums = [1,0,-1,0,-2,2], target = 0
+Output: [[-2,-1,1,2],[-2,0,0,2],[-1,0,0,1]]
+Example 2:
+
+Input: nums = [2,2,2,2,2], target = 8
+Output: [[2,2,2,2]]
+ 
+
+Constraints:
+
+1 <= nums.length <= 200
+-109 <= nums[i] <= 109
+-109 <= target <= 109
+
+**Link**: [text](https://leetcode.com/problems/4sum/)
+
+%
+
+**Pattern:** Two Pointers
+
+**Approach:** First, sort the input array. Then, iterate through the array with two nested loops to fix the first two elements of the quadruplet. For each pair of fixed elements, use two pointers to find pairs of numbers that sum up to `target - (nums[i] + nums[j])`. The `left` pointer starts at `j+1` and the `right` pointer starts at the end of the array. If the sum of the four numbers is less than the target, move the `left` pointer to the right. If the sum is greater than the target, move the `right` pointer to the left. If the sum is equal to the target, add the quadruplet to the result list and move both pointers while skipping duplicates.
+
+**Key Insight:** The key insight is that by sorting the array and using a two-pointer approach, you can efficiently find all unique quadruplets that sum up to the target. Sorting allows you to easily skip duplicates and ensures that the two-pointer technique works correctly. The two-pointer technique reduces the time complexity from O(n^4) to O(n^3) by avoiding the need for two additional nested loops.
+
+**Gotchas:** Be careful to skip duplicate values for the indices `i` and `j` to avoid adding duplicate quadruplets to the result. Also, after finding a valid quadruplet, make sure to move both pointers and skip any duplicate values to ensure that you only add unique quadruplets to the result. The condition for skipping duplicates is crucial for passing all test cases, especially when the input array contains multiple identical numbers.
+
+**Complexity:** Time: O(n^3) where n is the length of the input array (sorting takes O(n log n) and the three nested loops take O(n^3)) | Space: O(1) if we don't count the space used for the output list, otherwise O(k) where k is the number of unique quadruplets found
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Two Sum — LC #1 | Two elements summing to target → hash map no sorting needed | Yes — foundation |
+| Two Sum II — LC #167 | Two elements on sorted array → same two pointer no fix step | Yes — direct foundation |
+| 3Sum — LC #15 | Three elements summing to zero → fix one + two pointer, one less fix step | Yes — direct foundation |
+| 3Sum Closest — LC #16 | Closest triplet sum to target → same fix + two pointer track min diff | Partial — same family |
+| 4Sum II — LC #454 | One element from each of four arrays → hash map of pair sums not sorting | Partial — different structure |
+| Combination Sum — LC #39 | All combinations summing to target with reuse → backtracking not two pointer | No — different pattern |
+| Subarray Sum Equals K — LC #560 | Contiguous subarray summing to k → prefix sum + hash map | No — different pattern |
+| kSum General Pattern | Fix k-2 elements recursively reduce to two pointer → generalizes entire family | Yes — direct generalization |
+
+**How this pattern scales:**
+- **Sort + fix two + two pointer** is the core trick — sort the array, fix first element with outer loop, fix second element with inner loop, run two pointer inward scan on remaining subarray. O(n³) time O(1) space
+- **Two levels of duplicate skipping** — skip duplicates on both fix loops AND on both pointers after finding a valid quadruplet. Four separate skip conditions total — missing any one produces duplicate quadruplets
+- **Overflow handling** — with four integers summing together the total can easily exceed `INT_MAX`. Always cast to `long long` before summing in C++: `(long long)nums[i] + nums[j] + nums[l] + nums[r]`
+- **kSum recursive template** → 4Sum is the last problem worth solving iteratively. For k > 4 implement a recursive kSum that fixes one element and calls kSum(k-1) until k == 2 then runs two pointer. O(n^(k-1)) time generalizes cleanly
+- **4Sum II distinction** → LC #454 has one element from each of four separate arrays making sorting + two pointer impractical. Instead hash all pair sums from arrays A+B then check complement in arrays C+D — completely different approach despite similar name
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> fourSum(vector<int>& nums, int target) {
+    vector<vector<int>> sums;
+    if(nums.size() < 4){
+        return sums;
+    }
+        sort(nums.begin(), nums.end()); //need to sort, common rule for two ptr, n log n
+        for(int i = 0; i < nums.size()- 3; i++){
+            if(i > 0 && nums[i] == nums[i-1]){
+                continue;
+            }
+            for(int j = i+1; j < nums.size() - 2; j++){
+            if(nums[j] == nums[j-1] && j>i+1){ //if i pointer is the same, then keep going to avoid duplicates
+                continue;
+            }
+            int left = j + 1; //start the window right after i
+            int right = nums.size() - 1; //go till the end
+            while(left < right){ //keep going until right and left meet at same place, all combos been looked at
+                if((long long)nums[i] + nums[j] + nums[left] + nums[right] == target){ //if match, add triplet
+                    sums.push_back({nums[i], nums[j], nums[left], nums[right]});
+                    left++; //must rememebr to keep going left
+                    right--; //and going right, to check more possible combos
+                    while(left < right && nums[left]== nums[left - 1]){
+                        left++; //if the next left is same as old left, keep going right
+                    }
+                    while(left < right && nums[right]== nums[right+1]){ 
+                        right--; //if new right is the same as the old right, keep moving left
+                    }
+                }
+                else if((long long)nums[i] + nums[j] + nums[left] + nums[right] < target){
+                    left++; //if less than 0, need to increase the sum, move left pointer to the right 
+                }
+                else{
+                    right--; //if greater than 0, need to decrease the sum, move right pointer to the left
+                }
+            }
+        }
+        }
+        return sums;
+    }
+};
+```
+## Remove Duplicates from Sorted Array LC 26
+
+<!-- notecardId: 1780420209969 -->
+
+Given an integer array nums sorted in non-decreasing order, remove the duplicates in-place such that each unique element appears only once. The relative order of the elements should be kept the same.
+
+Consider the number of unique elements in nums to be k​​​​​​​​​​​​​​. After removing duplicates, return the number of unique elements k.
+
+The first k elements of nums should contain the unique numbers in sorted order. The remaining elements beyond index k - 1 can be ignored.
+
+Custom Judge:
+
+The judge will test your solution with the following code:
+
+int[] nums = [...]; // Input array
+int[] expectedNums = [...]; // The expected answer with correct length
+
+int k = removeDuplicates(nums); // Calls your implementation
+
+assert k == expectedNums.length;
+for (int i = 0; i < k; i++) {
+    assert nums[i] == expectedNums[i];
+}
+If all assertions pass, then your solution will be accepted.
+
+ 
+
+Example 1:
+
+Input: nums = [1,1,2]
+Output: 2, nums = [1,2,_]
+Explanation: Your function should return k = 2, with the first two elements of nums being 1 and 2 respectively.
+It does not matter what you leave beyond the returned k (hence they are underscores).
+Example 2:
+
+Input: nums = [0,0,1,1,1,2,2,3,3,4]
+Output: 5, nums = [0,1,2,3,4,_,_,_,_,_]
+Explanation: Your function should return k = 5, with the first five elements of nums being 0, 1, 2, 3, and 4 respectively.
+It does not matter what you leave beyond the returned k (hence they are underscores).
+ 
+ Constraints:
+
+1 <= nums.length <= 3 * 104
+-100 <= nums[i] <= 100
+nums is sorted in non-decreasing order.
+
+**Link**: [text](https://leetcode.com/problems/remove-duplicates-from-sorted-array/)
+
+%
+
+**Pattern:** Two Pointers
+
+**Approach:** Use two pointers, one to iterate through the array and the other to keep track of the position of the last unique element. The first pointer (i) will traverse the array from the second element to the end, while the second pointer (j) will keep track of the index of the last unique element found. Whenever a new unique element is found (i.e., `nums[i] != nums[j]`), increment j and update `nums[j]` with the new unique element. Finally, return j + 1 as the number of unique elements.
+
+**Key Insight:** The key insight is that since the array is sorted, all duplicates will be adjacent to each other. This allows us to use a two-pointer technique to efficiently remove duplicates in place without needing extra space. The second pointer (j) effectively compresses the array by overwriting duplicate values with unique values as we find them.
+
+**Gotchas:** Be careful to initialize the second pointer (j) correctly and to return j + 1 at the end, since j is an index and the number of unique elements is one more than the last index. Also, make sure to start the first pointer (i) from the second element (index 1) since the first element is always unique. The condition for finding a new unique element is crucial and should be `nums[i] != nums[j]` to ensure that you only update the position of unique elements. Also, do not use erase here for an optimal solution because erasing elements from a vector is O(n) and would lead to an O(n^2) solution. Instead, we overwrite duplicates with unique values and return the count of unique elements.
+
+**Complexity:** Time: O(n) where n is the length of the input array (each element is visited at most once) | Space: O(1) since we are modifying the array in place without using extra space
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Remove Duplicates from Sorted Array II — LC #80 | Allow up to 2 duplicates → same write-head but check two positions back | Yes — direct upgrade |
+| Remove Element — LC #27 | Remove specific value not duplicates → same write-head different condition | Yes — direct variant |
+| Move Zeroes — LC #283 | Move zeros to end preserve order → same write-head keep zeros at back | Yes — close variant |
+| Merge Sorted Array — LC #88 | Merge two sorted arrays in place → same in-place write but from the back | Partial — same in-place idea |
+| Find the Duplicate Number — LC #287 | Find duplicate not remove it → Floyd's cycle detection or index marking | No — different pattern |
+| Sort Colors — LC #75 | Partition into three groups → Dutch National Flag three pointer | Partial — same in-place idea |
+| Squares of a Sorted Array — LC #977 | Square and sort in place → two pointer from both ends | Partial — same two pointer family |
+| Longest Consecutive Sequence — LC #128 | Find longest run without modifying array → hash set | No — different pattern |
+
+**How this pattern scales:**
+- **Write-head pointer** is the core trick — one pointer `i` iterates through the array, one pointer `k` tracks the next position to write. Only write when `nums[i] != nums[k-1]`. O(n) time O(1) space
+- **k duplicates allowed generalization** → LC #80 allows 2 duplicates by checking `nums[i] != nums[k-2]` instead of `nums[k-1]`. For k allowed duplicates check `nums[i] != nums[k - allowedCount]` — same one line change generalizes to any k
+- **In-place from the back** → when merging or filling from the end (LC #88) reverse the write-head direction to avoid overwriting unprocessed elements. Same pointer concept, opposite direction
+- **Write-head family ladder** → LC #26 → LC #80 → LC #27 → LC #283 — each problem is the same write-head skeleton with a different write condition. Knowing LC #26 cold means all four are derivable from the same template
+
+```cpp
+class Solution {
+public:
+    int removeDuplicates(vector<int>& nums) {
+        // for(int i = nums.size() - 2; i >= 0; i--){ //this soltuion is non-optimal but it does work.
+        //     int duplicatePtr = i+1; 
+        //     if(nums[i] == nums[duplicatePtr]){
+        //         nums.erase(nums.begin() + duplicatePtr);
+        //     }
+        // }
+        // return nums.size();
+
+    //optimal solution requires two ptr approach
+    if(nums.empty()) {
+        return 0;
+    }
+    int write = 1; //write marks the index where the next unique value should be placed
+    for(int read = 1; read < nums.size(); read++){ //read is scanning for each unique value
+        if(nums[read] != nums[read -1]){
+            nums[write] = nums[read];
+            write++;
+        }
+    }
+    return write;
+    }
+};
+```
+
+## Trapping Rain Water LC 42
+
+<!-- notecardId: 1780420840490 -->
+
+Given n non-negative integers representing an elevation map where the width of each bar is 1, compute how much water it can trap after raining.
+
+ 
+
+Example 1:
+
+
+Input: height = [0,1,0,2,1,0,1,3,2,1,2,1]
+Output: 6
+Explanation: The above elevation map (black section) is represented by array [0,1,0,2,1,0,1,3,2,1,2,1]. In this case, 6 units of rain water (blue section) are being trapped.
+Example 2:
+
+Input: height = [4,2,0,3,2,5]
+Output: 9
+ 
+
+Constraints:
+
+n == height.length
+1 <= n <= 2 * 104
+0 <= height[i] <= 105
+
+**Link**: [text](https://leetcode.com/problems/trapping-rain-water/)
+
+%
+
+**Pattern:** Two Pointers
+
+**Approach:** Use two pointers, one starting at the beginning of the array and the other starting at the end of the array. Keep track of the maximum height seen from the left and right sides. At each step, move the pointer that points to the shorter bar inward. If the current bar is shorter than the maximum height seen from that side, it can trap water, and you can calculate the trapped water by subtracting the current bar's height from the maximum height. Continue this process until the two pointers meet.
+
+**Key Insight:** The key insight is that the amount of water trapped at any position is determined by the shorter of the two bars on either side. By using two pointers and keeping track of the maximum heights from both sides, you can efficiently calculate the trapped water without needing to check every possible pair of bars. This approach allows you to solve the problem in O(n) time with O(1) extra space.
+
+**Gotchas:** Be careful to update the maximum heights from both sides correctly as you move the pointers inward. The condition for moving the pointers is crucial: always move the pointer that points to the shorter bar, because moving the taller bar cannot increase the amount of trapped water. Also, make sure to calculate the trapped water correctly by using the difference between the maximum height and the current bar's height.
+
+**Complexity:** Time: O(n) where n is the length of the input array (each element is visited at most once by either pointer) | Space: O(1) since we are using only a constant amount of extra space
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Container With Most Water — LC #11 | Maximum water between two bars only → same two pointer greedy inward scan | Yes — simpler foundation |
+| Largest Rectangle in Histogram — LC #84 | Largest rectangle not trapped water → monotonic stack nearest smaller boundary | Partial — same bar array |
+| Product of Array Except Self — LC #238 | Prefix and suffix product not prefix and suffix max → same two pass build | Yes — same structure |
+| Daily Temperatures — LC #739 | Next warmer day → same monotonic stack but store index not water | Partial — same stack family |
+| Sum of Subarray Minimums — LC #907 | Sum minimums across subarrays → same left/right boundary via monotonic stack | Partial — same boundary idea |
+| Maximal Rectangle — LC #85 | Largest rectangle in binary matrix → histogram per row + LC #84 subroutine | No — different pattern |
+| Pour Water — LC #755 | Simulate water drops falling one at a time → greedy left/right scan per drop | Partial — same water idea |
+| Candy — LC #135 | Distribute minimum candies satisfying neighbor constraints → same two pass left then right | Yes — same two pass structure |
+
+**How this pattern scales:**
+- **Two pointer O(1) space** is the optimal approach — maintain left and right pointers with running max from each side. Move the pointer at the shorter max inward, add difference between running max and current height as trapped water. Same greedy argument as LC #11
+- **Prefix/suffix max arrays** is the O(n) space approach — precompute left max and right max arrays, trapped water at each index is `min(leftMax[i], rightMax[i]) - height[i]`. Easier to derive under pressure, same time complexity
+- **Monotonic stack approach** is the third option — process bars left to right, when a taller bar is found pop shorter bars and compute horizontal water trapped between current bar and new stack top. Useful when you need to extend to 2D
+- **Two pass structure generalizes** → Candy (LC #135) uses the exact same left pass then right pass skeleton — first pass satisfies left neighbor constraint, second pass satisfies right neighbor constraint, same idea of building prefix and suffix arrays and combining them
+
+```cpp
+class Solution {
+public:
+    int trap(vector<int>& height) {
+        //O(n) memory would be more inefficient here, you would store the maxL and maxR from each 
+        if(height.empty()) return 0;
+        int result = 0;
+        int l = 0;
+        int r = height.size() - 1;
+        int MaxL = height[l];
+        int MaxR = height[r];
+        while(l < r){
+            if(MaxL < MaxR){ //if the maxL is less than maxR, then we know that the maxL is the limiting factor for how much water can be trapped at the current left pointer. 
+            //This is because the water level at the left pointer cannot exceed the height of the tallest bar to the left, right side can potentially hold more water. 
+            //If we were to move the right pointer instead, we might miss out on trapping water at the left pointer, since the maxL is the smaller of the two.
+                l++;
+                MaxL = max(MaxL, height[l]);
+                result += MaxL - height[l]; //The amount of water trapped at the current left pointer is the difference between the maxL and the height of the current bar at the left pointer. We add this to our result, and then move the left pointer to the right to continue checking for more trapped water.
+                //think of result being the depth, kind of like a basin, and the height of the current bar is the floor of the basin. The maxL is the ceiling of the basin, so the difference between them is how much water can be trapped in that basin.
+            }
+            else{
+               r--;
+                MaxR = max(MaxR, height[r]);
+                result += MaxR - height[r];
+            }
+    }
+            return result;
+    }
+};
+```
+## Merge Sorted Array LC 88
+
+<!-- notecardId: 1780421778684 -->
+
+You are given two integer arrays nums1 and nums2, sorted in non-decreasing order, and two integers m and n, representing the number of elements in nums1 and nums2 respectively.
+
+Merge nums1 and nums2 into a single array sorted in non-decreasing order.
+
+The final sorted array should not be returned by the function, but instead be stored inside the array nums1. To accommodate this, nums1 has a length of m + n, where the first m elements denote the elements that should be merged, and the last n elements are set to 0 and should be ignored. nums2 has a length of n.
+
+ 
+
+Example 1:
+
+Input: nums1 = [1,2,3,0,0,0], m = 3, nums2 = [2,5,6], n = 3
+Output: [1,2,2,3,5,6]
+Explanation: The arrays we are merging are [1,2,3] and [2,5,6].
+The result of the merge is [1,2,2,3,5,6] with the underlined elements coming from nums1.
+Example 2:
+
+Input: nums1 = [1], m = 1, nums2 = [], n = 0
+Output: [1]
+Explanation: The arrays we are merging are [1] and [].
+The result of the merge is [1].
+Example 3:
+
+Input: nums1 = [0], m = 0, nums2 = [1], n = 1
+Output: [1]
+Explanation: The arrays we are merging are [] and [1].
+The result of the merge is [1].
+Note that because m = 0, there are no elements in nums1. The 0 is only there to ensure the merge result can fit in nums1.
+ 
+
+Constraints:
+
+nums1.length == m + n
+nums2.length == n
+0 <= m, n <= 200
+1 <= m + n <= 200
+-109 <= nums1[i], nums2[j] <= 109
+ 
+
+Follow up: Can you come up with an algorithm that runs in O(m + n) time?
+
+**Link**: [text](https://leetcode.com/problems/merge-sorted-array/)
+
+%
+
+**Pattern:** Two Pointers
+
+**Approach:** Use two pointers, one for each array, starting from the end of the valid elements in nums1 and the end of nums2. Compare the elements at these pointers and place the larger one at the end of nums1. Move the pointer of the array from which you took the element. Continue this process until all elements from nums2 have been merged into nums1.
+
+**Key Insight:** The key insight is that since nums1 has enough space to hold all elements from both arrays, we can merge the arrays starting from the end. This way, we avoid overwriting any elements in nums1 that have not yet been compared. By comparing the elements from the end, we can efficiently place the larger elements in their correct positions without needing extra space.
+
+**Gotchas:** Be careful to handle the case where nums2 has remaining elements after nums1 has been fully merged. In this case, you need to copy the remaining elements from nums2 into the beginning of nums1. Also, make sure to compare the correct elements at each step and to move the pointers correctly after placing an element.
+
+**Complexity:** Time: O(m + n) where m and n are the lengths of the valid elements in nums1 and nums2 respectively (each element is visited at most once) | Space: O(1) since we are merging in place without using extra space
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Merge Two Sorted Lists — LC #21 | Linked lists instead of arrays → merge forward from head to tail using a dummy node | Yes — identical linear merge logic |
+| Squares of a Sorted Array — LC #977 | Input has negative numbers making squares a "V" shape → use two pointers at boundaries to fill a new array from back to front | Yes — same reverse-filling mechanic |
+| Merge k Sorted Lists — LC #23 | Merging $k$ sorted streams instead of 2 → requires a Min-Heap (Priority Queue) or Divide & Conquer | Partial — scales the merge sub-problem |
+| Interval List Intersections — LC #986 | Comparing interval overlaps instead of single elements → advanced pointer with the smaller endpoint | Partial — same synchronized two-pointer parallel scan |
+| Remove Duplicates from Sorted Array — LC #26 | Single sorted array, overwriting duplicates → fast and slow pointer tracking write-position moving forward | Partial — same in-place array modification |
+| Intersection of Two Arrays II — LC #350 | Finding common elements instead of merging → advance pointer with smaller value, collect duplicates | Yes — same parallel two-pointer scanning |
+
+**How this pattern scales:**
+- **Two-pointer reverse-fill O(1) space** is the optimal approach for in-place array merges. By initializing three pointers—one at the end of the initialized elements of `nums1`, one at the end of `nums2`, and a write pointer at the absolute end of `nums1`—you can safely place the largest elements first without overwriting unprocessed data. 
+- **Temporary array buffer O(m + n) space** is the standard forward approach. You copy `nums1` to a new array and merge forward into the original `nums1`. This is easier to visualize under pressure but fails the in-place memory constraint.
+- **K-way Merge scalability** is the direct extension of this pattern. When scaling from 2 arrays to $k$ arrays, a simple pointer comparison becomes too slow ($O(k)$ per element). The pattern scales by replacing the manual `if/else` pointer comparison with a Min-Heap (Priority Queue) of size $k$ to extract the minimum/maximum element in $O(\log k)$ time.
+- **In-place array manipulation generalizes** → Whenever a problem requires modifying an array in-place based on sorted data or boundary conditions, always consider working **backwards from the end**. Moving from right to left often transforms an $O(n)$ space requirement into an $O(1)$ space solution because the "empty" or "safe" space naturally sits at the end of the allocated memory blocks.
+
+```cpp
+class Solution {
+public:
+    void merge(vector<int>& nums1, int m, vector<int>& nums2, int n) {
+        //need three pointers for this question
+        //go right to left for indexing purposes here
+        int ptrNums1 = m - 1; //nums1 position
+        int ptrWrite = m + n - 1; //current write position
+        int ptrNums2 = n - 1; //nums2 position
+        while(ptrWrite >= 0 && ptrNums1 >= 0 && ptrNums2 >= 0){
+            int maxNum = max(nums1[ptrNums1], nums2[ptrNums2]);
+            if(nums1[ptrNums1] > nums2[ptrNums2]){
+                ptrNums1--;
+            }
+            else{
+                ptrNums2--;
+            }
+            nums1[ptrWrite] = maxNum;
+            ptrWrite--;
+        }
+        while (ptrNums2 >= 0){
+            nums1[ptrWrite] = nums2[ptrNums2];
+            ptrNums2--;
+            ptrWrite--;
+        }
+    }
+};
+```
+
+## Valid Palindrome LC 125
+
+<!-- notecardId: 1780422124834 -->
+
+A phrase is a palindrome if, after converting all uppercase letters into lowercase letters and removing all non-alphanumeric characters, it reads the same forward and backward. Alphanumeric characters include letters and numbers.
+
+Given a string s, return true if it is a palindrome, or false otherwise.
+
+ 
+
+Example 1:
+
+Input: s = "A man, a plan, a canal: Panama"
+Output: true
+Explanation: "amanaplanacanalpanama" is a palindrome.
+Example 2:
+
+Input: s = "race a car"
+Output: false
+Explanation: "raceacar" is not a palindrome.
+Example 3:
+
+Input: s = " "
+Output: true
+Explanation: s is an empty string "" after removing non-alphanumeric characters.
+Since an empty string reads the same forward and backward, it is a palindrome.
+ 
+
+Constraints:
+
+1 <= s.length <= 2 * 105
+s consists only of printable ASCII characters.
+
+**Link**: [text](https://leetcode.com/problems/valid-palindrome/)
+
+%
+
+**Pattern:** Two Pointers
+
+**Approach:** Use two pointers, one starting at the beginning of the string and the other starting at the end of the string. Move both pointers towards the center while skipping non-alphanumeric characters. At each step, compare the characters at the two pointers (after converting them to lowercase). If they are not equal, return false. If the pointers cross each other, return true.
+
+**Key Insight:** The key insight is that a palindrome reads the same forward and backward, so by using two pointers to compare characters from both ends of the string, you can efficiently determine if the string is a palindrome. By skipping non-alphanumeric characters and converting uppercase letters to lowercase, you can ensure that the comparison is case-insensitive and ignores irrelevant characters.
+
+**Gotchas:** Be careful to correctly identify and skip non-alphanumeric characters. You can use the `isalnum()` function in C++ to check if a character is alphanumeric. Also, make sure to convert uppercase letters to lowercase before comparing them. The condition for moving the pointers should be based on whether the characters are alphanumeric, and the comparison should be case-insensitive.
+
+**Complexity:** Time: O(n) where n is the length of the input string (each character is visited at most once by either pointer) | Space: O(1) since we are using only a constant amount of extra space
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Valid Palindrome II — LC #680 | Allowed to delete at most one character → on first mismatch, branch to check if remaining left or right substring is a palindrome | Yes — direct extension with a one-time branch |
+| Reverse String — LC #344 | Modify string in-place instead of validating → swap elements at left and right pointers while shrinking inward | Yes — identical inward-moving structure |
+| Palindrome Linked List — LC #234 | Nodes cannot be read backwards easily → use fast/slow pointers to find middle, reverse the second half, then compare forward | Partial — same symmetry check but requires list manipulation |
+| Longest Palindromic Substring — LC #5 | Find the largest palindrome instead of validating one → expand outward from $2n-1$ potential centers instead of shrinking inward | Partial — reverse directional mechanics |
+| Palindrome Number — LC #9 | Numeric input without string conversion → use arithmetic modulo and division to reverse the integer (or half of it) to check symmetry | Partial — same math logic applied to digits instead of characters |
+
+**How this pattern scales:**
+- **Two-pointer inward convergence O(1) space** is the optimal strategy for validating sequence symmetry. By placing a pointer at the beginning and end, you verify the matching criteria and step inward. The loop safely terminates when the pointers cross in the middle.
+- **On-the-fly filtering avoids O(n) memory allocation**. Instead of preprocessing the input into a clean string (which takes extra space), scale the two-pointer approach by adding nested loops to skip invalid characters (like spaces or punctuation) dynamically during the scan.
+- **Branching handles tolerance/faults** → When a problem introduces an "allowance" for errors (like LC #680 allowing one deletion), the pattern scales from a strict greedy check to a limited exploration. Upon a mismatch, you tentatively skip the left character OR the right character and evaluate the remaining sub-problems. This scales gracefully to "K-deletions" via recursion with a depth limit of K.
+- **Inward vs. Outward duality generalizes** → Palindrome problems broadly split into two behaviors: **Shrinking** (Inward Two-Pointer) for validation/checking, and **Expanding** (Outward Two-Pointer) for searching/generation. If you are looking to *find* palindromes within a larger body of text (like LC #5 or LC #647), you flip the pattern to start at a center index and push the pointers outward as long as the symmetry holds.
+
+```cpp
+class Solution {
+public:
+    bool isPalindrome(string s) {
+        string result = "";
+        for(char &c : s){
+            if(isalnum(static_cast<unsigned char>(c))){
+                result += tolower(c);
+            }
+        }
+        for(int i = 0; i < result.size() / 2; i++){
+            if(result[i] != result[(result.size()-1) - i]){
+                return false;
+            }
+        }
+        return true;
+    }
+};
+```
+
+## Two Sum II - Input Array Is Sorted LC 167
+
+<!-- notecardId: 1780422894430 -->
+
+Given a 1-indexed array of integers numbers that is already sorted in non-decreasing order, find two numbers such that they add up to a specific target number. Let these two numbers be numbers[index1] and numbers[index2] where 1 <= index1 < index2 <= numbers.length.
+
+Return the indices of the two numbers index1 and index2, each incremented by one, as an integer array [index1, index2] of length 2.
+
+The tests are generated such that there is exactly one solution. You may not use the same element twice.
+
+Your solution must use only constant extra space.
+
+ 
+
+Example 1:
+
+Input: numbers = [2,7,11,15], target = 9
+Output: [1,2]
+Explanation: The sum of 2 and 7 is 9. Therefore, index1 = 1, index2 = 2. We return [1, 2].
+Example 2:
+
+Input: numbers = [2,3,4], target = 6
+Output: [1,3]
+Explanation: The sum of 2 and 4 is 6. Therefore index1 = 1, index2 = 3. We return [1, 3].
+Example 3:
+
+Input: numbers = [-1,0], target = -1
+Output: [1,2]
+Explanation: The sum of -1 and 0 is -1. Therefore index1 = 1, index2 = 2. We return [1, 2].
+ 
+
+Constraints:
+
+2 <= numbers.length <= 3 * 104
+-1000 <= numbers[i] <= 1000
+numbers is sorted in non-decreasing order.
+-1000 <= target <= 1000
+The tests are generated such that there is exactly one solution.
+
+**Link**: [text](https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/)
+
+%
+
+**Pattern:** Two Pointers
+
+**Approach:** Use two pointers, one starting at the beginning of the array and the other starting at the end of the array. Calculate the sum of the elements at these two pointers. If the sum is equal to the target, return the indices (adjusted for 1-indexing). If the sum is less than the target, move the left pointer to the right to increase the sum. If the sum is greater than the target, move the right pointer to the left to decrease the sum. Continue this process until you find the solution.
+
+**Key Insight:** The key insight is that since the array is sorted, you can efficiently find the two numbers that add up to the target by using a two-pointer technique. By starting with one pointer at the beginning and one at the end, you can adjust the pointers based on whether the current sum is too low or too high, which allows you to find the solution in linear time. A hash map would be inefficient here because it would require O(n) space, while the two-pointer approach only requires O(1) extra space.
+
+**Gotchas:** Be careful to adjust the returned indices for 1-indexing, as the problem specifies that the array is 1-indexed. Also, make sure to handle the case where the sum of the two pointers is equal to the target correctly by returning the appropriate indices. The condition for moving the pointers should be based on whether the current sum is less than or greater than the target.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Two Sum — LC #1 | Unsorted array → requires a Hash Map for $O(n)$ space or manual sorting first to achieve $O(n \log n)$ time | Partial — same objective, but array lacks the sorted property |
+| 3Sum — LC #15 | Find unique triplets summing to zero → sort the array, use a loop to fix the first element, then run Two Sum II on the remaining suffix while skipping duplicates | Yes — direct nested extension |
+| 4Sum — LC #18 | Find unique quadruplets summing to target → use two nested loops to fix the first two elements, then run Two Sum II on the remaining suffix | Yes — scales up the k-Sum problem |
+| 3Sum Closest — LC #16 | Find a triplet sum closest to target → instead of looking for an exact match, track and update the minimum absolute difference at every pointer step | Yes — identical pointer movement logic |
+| Two Sum Less Than K — LC #1099 | Find the maximum sum strictly less than $K$ → when `sum < K`, record/maximize the running result and advance `left` to try for a larger sum | Yes — identical pointer movement based on bounds |
+| Boats to Save People — LC #881 | Pair elements to minimize groups given a weight limit → sort elements, greedily try to pair heaviest (`right`) and lightest (`left`). If they exceed limit, heaviest goes alone (`right--`) | Yes — greedy monotonic decision making |
+
+**How this pattern scales:**
+- **Two-pointer boundary convergence O(1) space** is the optimal strategy when searching pairs in a sorted sequence. Monotonicity is the key: if the current `sum < target`, moving the `left` pointer rightward is guaranteed to only increase or maintain the sum. If `sum > target`, moving the `right` pointer leftward is guaranteed to only decrease or maintain the sum. This eliminates a full dimension of search space, collapsing an $O(n^2)$ brute-force search into $O(n)$.
+- **Nesting to solve k-Sum problems generalizes dynamically** → The Two Sum II pattern acts as the foundational base case for all higher-order k-Sum problems. To solve a 3Sum, 4Sum, or $k$-Sum problem, you use $k-2$ nested loops to systematically fix elements, reducing the remaining search space to a standard 2Sum problem handled in $O(n)$ time. This yields a general time complexity scaling of $O(n^{k-1})$.
+- **Duplicate management via pointer skipping** → When scaling this pattern to combinatorial problems requiring unique combinations (like 3Sum/4Sum), the pattern expands to include skip-phases. After a match is recorded, or during pointer increments, internal `while` loops must be added to advance pointers past identical neighboring elements (`nums[l] == nums[l+1]`) to prevent duplicate results.
+- **Optimization of inequalities over exact matches** → The pattern scales seamlessly from strict equality targets (`== target`) to boundary optimization problems (min, max, or closest). Because the direction of pointer movement is strictly dictated by whether the current sum is too small or too large, the exact same control flow works whether you are hunting an exact number, optimizing a capacity limit, or minimizing a delta.
+
+```cpp
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& numbers, int target) {
+        int index1 = 0;
+        int index2 = numbers.size() - 1;
+        vector<int> ans(2);
+        while(numbers[index1] + numbers[index2] != target){
+            if(numbers[index1] + numbers[index2] < target){
+                index1++;
+            }
+            else{
+                index2--;
+            }
+        }
+        ans[0] = index1 + 1;
+        ans[1] = index2 + 1;
+        return ans;
+    }
+};
+```
+## Rotate Array LC 189
+
+<!-- notecardId: 1780423901771 -->
+
+Given an integer array nums, rotate the array to the right by k steps, where k is non-negative.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,3,4,5,6,7], k = 3
+Output: [5,6,7,1,2,3,4]
+Explanation:
+rotate 1 steps to the right: [7,1,2,3,4,5,6]
+rotate 2 steps to the right: [6,7,1,2,3,4,5]
+rotate 3 steps to the right: [5,6,7,1,2,3,4]
+Example 2:
+
+Input: nums = [-1,-100,3,99], k = 2
+Output: [3,99,-1,-100]
+Explanation: 
+rotate 1 steps to the right: [99,-1,-100,3]
+rotate 2 steps to the right: [3,99,-1,-100]
+ 
+
+Constraints:
+
+1 <= nums.length <= 105
+-231 <= nums[i] <= 231 - 1
+0 <= k <= 105
+ 
+
+Follow up:
+
+Try to come up with as many solutions as you can. There are at least three different ways to solve this problem.
+Could you do it in-place with O(1) extra space?
+
+**Link**: [text](https://leetcode.com/problems/rotate-array/)
+
+%
+
+**Pattern:** Two Pointers
+
+**Approach:** One optimal approach to rotate the array in-place with O(1) extra space is to use the reversal algorithm. The idea is to reverse the entire array, then reverse the first k elements, and finally reverse the remaining n-k elements. This effectively rotates the array to the right by k steps.
+
+**Key Insight:** The key insight is that rotating an array to the right by k steps can be achieved by reversing the order of the elements. By first reversing the entire array, you bring the last k elements to the front. Then, by reversing the first k elements, you restore their original order, and by reversing the remaining n-k elements, you restore their original order as well. This method allows you to rotate the array in-place without needing extra space for a temporary array.
+
+**Gotchas:** Be careful to handle the case where k is greater than the length of the array. In such cases, you should take k modulo the length of the array to ensure that you are rotating by the correct number of steps. Also, make sure to implement the reverse function correctly, as it is a crucial part of this algorithm.
+
+**Complexity:** Time: O(n) where n is the length of the input array (each element is visited a constant number of times during the reversals) | Space: O(1) since we are rotating the array in-place without using extra space
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Reverse Words in a String — LC #151 | Words separated by spaces need their order swapped → reverse the entire string globally, then reverse characters within each individual word in-place | Yes — identical block-reversal structure |
+| Rotate List — LC #61 | Linked list instead of an array → cannot use random-access pointers; connect tail to head to form a cycle, traverse $N - (k \pmod N)$ steps, then break the link | Partial — same cyclical shift logic but uses pointer re-linking |
+| Reverse Words in a String III — LC #557 | Reverse characters of each word but keep word order intact → scan for space delimiters and reverse localized sub-segments only, skipping the global reversal | Yes — utilizes the same localized reverse subroutine |
+| Cyclic Sort (e.g., First Missing Positive) — LC #41 | Elements must be placed at their specific index value (`nums[i] == i + 1`) rather than shifted by a fixed offset → use continuous in-place swapping chain | Partial — uses index-destination mapping rather than uniform shifting |
+
+**How this pattern scales:**
+- **Three-Step Block Reversal O(1) space** is the optimal strategy for block shifting or rotating linear sequences. By reversing the entire array, you move the target blocks to their relative correct side (front vs. back). Reversing the sub-segments individually then "restores" their original, non-inverted reading order. This avoids allocating a secondary array buffer.
+- **Modulo Arithmetic handles boundaries and scaling**. Whenever a transformation involves cyclic shifting or wrapping around boundaries where the offset $k$ can exceed array size $n$, applying `k = k % n` standardizes the displacement. If `k % n == 0`, the operation can instantly terminate as a no-op.
+- **Cyclic Replacements (Index Hopping)** is the alternative $O(1)$ space strategy. Instead of block reversing, you treat the array as a set of cycles where each element hops to its destination index `(i + k) % n`. Using a temporary variable to hold the displaced element, you resolve one full cyclic chain before moving to the next. This scales using the Greatest Common Divisor (GCD) of $n$ and $k$ to determine the exact number of independent cycles.
+- **Global-to-Local processing generalizes** → The concept of transforming a dataset globally and then selectively undoing or refining that transformation on localized sub-segments is a powerful pattern. It transforms seemingly complex $O(n)$ space sliding-window buffer problems into elegant, in-place multi-pass algorithms.
+
+```cpp
+class Solution {
+public:
+    void rotate(vector<int>& nums, int k) {
+        if(k > nums.size()){
+            k = k % nums.size();
+        }
+        for(int i = 0; i < nums.size() / 2; i++){
+            swap(nums[i], nums[(nums.size() - 1) - i]);
+        }
+        //need to reverse for each half
+        for(int i = 0; i < k/2; i++){
+            swap(nums[i], nums[(k - 1) - i]);
+        }
+        int left = k;
+        int right = nums.size() - 1;
+        while(left < right){
+            swap(nums[left], nums[right]);
+            left++;
+            right--;
+        }
+    }
+};
+```
+
+## Valid Palindrome II LC 680
+
+<!-- notecardId: 1780424838928 -->
+
+Given a string s, return true if the s can be palindrome after deleting at most one character from it.
+
+ 
+
+Example 1:
+
+Input: s = "aba"
+Output: true
+Example 2:
+
+Input: s = "abca"
+Output: true
+Explanation: You could delete the character 'c'.
+Example 3:
+
+Input: s = "abc"
+Output: false
+ 
+Constraints:
+
+1 <= s.length <= 105
+s consists of lowercase English letters.
+
+**Link**: [text](https://leetcode.com/problems/valid-palindrome-ii/)
+
+%
+
+**Pattern:** Two Pointers
+
+**Approach:** Use two pointers, one starting at the beginning of the string and the other starting at the end of the string. Move both pointers towards the center while comparing characters. If a mismatch is found, you have two options: skip the left character or skip the right character. For each option, check if the resulting substring (after skipping) is a palindrome. If either option results in a palindrome, return true. If neither option works, return false.
+
+**Key Insight:** The key insight is that a string can be a palindrome if at most one character is removed. By using two pointers to compare characters from both ends, you can efficiently identify the first point of mismatch. At that point, you have a choice to skip either the left or right character, and you only need to check the resulting substring for palindrome validity. This allows you to determine if the original string can become a palindrome with at most one deletion.
+
+**Gotchas:** Be careful to correctly implement the logic for checking if the resulting substring is a palindrome after skipping a character. You can create a helper function that takes two pointers and checks if the substring between them is a palindrome. Also, make sure to handle edge cases, such as when the input string is already a palindrome or when it has only one character.
+
+**Complexity:** Time: O(n) where n is the length of the input string (each character is visited at most once by either pointer, and the palindrome check also takes O(n) in the worst case) | Space: O(1) since we are using only a constant amount of extra space
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Valid Palindrome — LC #125 | Strict validation with no error tolerance → simple inward two-pointer scan with no branching on mismatch | Yes — foundational base case |
+| Valid Palindrome III — LC #1216 (Premium) | Allowed to delete up to $K$ characters instead of just 1 → scales branching to a 2D Dynamic Programming table or memoized recursion | Yes — the exact $K$-depth scaling of this pattern |
+| Valid Palindrome IV — LC #2330 (Premium) | Allowed to *change* up to 2 characters instead of deleting them → track a modification count during a strict inward scan without branching | Partial — same budget tracking but simpler index progression |
+| Minimum Insertion Steps to Make a String Palindrome — LC #1312 | Find minimum insertions (equivalent to minimum deletions) to force a palindrome → full optimization over all pairs via Longest Palindromic Subsequence (LPS) DP | Partial — transitions from greedy tracking to global DP alignment |
+| Longest Palindromic Subsequence — LC #516 | Find length of longest non-contiguous palindromic character set → 2D DP processing outer boundaries inward | Partial — uses the same outer-to-inner structural subproblems |
+
+**How this pattern scales:**
+- **Greedy prefix/suffix stripping combined with one-time branching O(1) space** is the optimal strategy for single-fault tolerance. You step inward greedily as long as characters match. The moment a mismatch occurs (`s[l] != s[r]`), you branch into two independent sub-problems: check if the remaining substring is a palindrome by skipping the left character (`l + 1` to `r`), or by skipping the right character (`l` to `r - 1`).
+- **Branching factor scales exponentially to $K$-deletions**. When the allowance scales from 1 deletion to $K$ deletions, a pure greedy decision tree scales to $O(2^K \cdot N)$ via recursion. You maintain a `budget` variable; each mismatch decrements the budget and spawns two branches. If the budget drops below 0, that branch terminates as false.
+- **Dynamic Programming collapses the search space when $K$ is large**. If $K$ approaches $N$, the recursive branching tree becomes too redundant. The pattern scales by converting the two-pointer state variables `(l, r)` into a 2D DP table `dp[i][j]`, which tracks the minimum deletions required to make the substring `s[i...j]` a palindrome. The state transition is defined as: 
+  $$\text{if } s[i] == s[j]: dp[i][j] = dp[i+1][j-1]$$
+  $$\text{else}: dp[i][j] = 1 + \min(dp[i+1][j], dp[i][j-1])$$
+- **State-space reduction before branching generalizes** → Even when forced to use an $O(N^2)$ DP or an expensive recursive strategy for edit-distance style problems, you should always use the two-pointer technique to strip identical prefix/suffix characters first. Reducing the string length to only the "inner conflict zone" dramatically optimizes real-world execution time and minimizes memory overhead.
+
+```cpp
+class Solution {
+public:
+    bool validPalindrome(string s) {
+        int left = 0;
+        int right = s.size() - 1;
+        while(left < right){
+             if(s[left] != s[right]){
+                return isPalindrome(s, left+1, right) || isPalindrome(s, left, right-1); //if the characters at left and right are not the same, we can check if by skipping the letter on the left or right we can get a palindrome. If either of those is true, return true. If not, return false.
+             }
+             left++;
+             right--;
+        }
+        return true;
+    }
+    bool isPalindrome(string& s, int left, int right){ //make helper so can run this function within the main function for when deletion has to take place
+        while(left < right){
+             if(s[left] != s[right]){
+            return false;
+        }
+        left++;
+        right--;
+        }
+        return true;
+    }
+                 /*
+s = "abcbxa"  (needs one skip)
+
+Main loop:
+
+left=0, right=5 → 'a' == 'a' ✓ → left=1, right=4
+left=1, right=4 → 'b' == 'x' ✗ → mismatch!
+
+Now we check two substrings:
+
+isPalindrome(s, 2, 4) — skip left, check "cbx"
+
+left=2, right=4 → 'c' == 'x' ✗ → return false
+
+isPalindrome(s, 1, 3) — skip right, check "bcb"
+
+left=1, right=3 → 'b' == 'b' ✓ → left=2, right=2
+left=2, right=2 → loop ends
+return true
+             */
+};
+```
+
+## Boats to Save People LC 881
+
+<!-- notecardId: 1780425476512 -->
+
+You are given an array people where people[i] is the weight of the ith person, and an infinite number of boats where each boat can carry a maximum weight of limit. Each boat carries at most two people at the same time, provided the sum of the weight of those people is at most limit.
+
+Return the minimum number of boats to carry every given person.
+
+ 
+
+Example 1:
+
+Input: people = [1,2], limit = 3
+Output: 1
+Explanation: 1 boat (1, 2)
+Example 2:
+
+Input: people = [3,2,2,1], limit = 3
+Output: 3
+Explanation: 3 boats (1, 2), (2) and (3)
+Example 3:
+
+Input: people = [3,5,3,4], limit = 5
+Output: 4
+Explanation: 4 boats (3), (3), (4), (5)
+ 
+
+Constraints:
+
+1 <= people.length <= 5 * 104
+1 <= people[i] <= limit <= 3 * 104
+
+**Link**: [text](https://leetcode.com/problems/boats-to-save-people/)
+
+%
+
+**Pattern:** Two Pointers
+
+**Approach:** Sort the array of people by weight. Use two pointers, one starting at the beginning of the array (lightest person) and the other starting at the end of the array (heaviest person). If the sum of the weights of the two people at these pointers is less than or equal to the limit, it means they can share a boat, so move both pointers inward. If the sum exceeds the limit, it means the heavier person must go alone, so move only the right pointer inward. In either case, increment the boat count. Continue this process until all people have been assigned to boats.
+
+**Key Insight:** The key insight is that to minimize the number of boats, you should always try to pair the heaviest person with the lightest person. If they can share a boat, you save space for another person. If they cannot share a boat, the heaviest person must go alone, and you can still try to pair the next heaviest person with the lightest remaining person. This greedy approach works because sorting ensures that you are always making the optimal pairing decisions.
+
+**Gotchas:** Be careful to sort the array of people before applying the two-pointer technique. Also, make sure to correctly handle the case where the sum of the weights at the two pointers is exactly equal to the limit, as this means they can share a boat. The condition for moving the pointers should be based on whether the sum is less than or equal to the limit.
+
+**Complexity:** Time: O(n log n) due to the sorting step, where n is the number of people | Space: O(1) if the sorting is done in-place, otherwise O(n) for the sorting algorithm's space complexity
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Minimize Maximum Pair Sum in Array — LC #1877 | Perfect pairs required for all elements → sort and strictly pair index $i$ with $n-1-i$ without any solo exceptions or condition-skipping | Yes — identical strict extreme-pairing logic |
+| Assign Cookies — LC #455 | Two distinct sorted arrays (children and cookies) → move both pointers forward in the same direction to maximize matches | Partial — greedy matching but uses parallel forward pointers instead of inward boundaries |
+| Bag of Tokens — LC #948 | Trade tokens for score (loss of power) or power (loss of score) → sort tokens, consume smallest to gain score, redeem largest to gain power | Yes — greedy boundary exploitation using two pointers |
+| Two Sum II - Input Array Is Sorted — LC #167 | Find exact pair matching a target sum → step inward from boundaries based on whether the current sum is too low or too high | Yes — boundary convergence dictated by a capacity limit |
+| Capacity To Ship Packages Within D Days — LC #1011 | Pack items into ships but order *cannot* be changed → cannot sort; requires Binary Search on the answer combined with a greedy simulation | No — lack of sorting breaks the two-pointer extreme pairing |
+
+**How this pattern scales:**
+- **Greedy extreme pairing via sorting O(n log n)** is the optimal strategy for matching problems within a single collection where capacity limits apply. Sorting exposes a monotonic relationship: the largest element is always your primary bottleneck. Attempting to pair the absolute largest element (`right`) with the absolute smallest element (`left`) guarantees the most efficient utilization of space. If they cannot fit together, the largest element is completely unpairable and must be processed alone.
+- **Dimensional constraints dictate algorithmic complexity**. The "at most 2 items per container" constraint is the secret pivot that allows an $O(n \log n)$ greedy approach to yield a mathematically perfect solution. If this constraint scales up to allow 3 or more items, or arbitrary numbers of items per container, the problem transforms into the classic **Bin Packing Problem**, which is NP-hard and requires Backtracking, 2D Dynamic Programming, or heuristic approximations.
+- **Inward Convergence vs. Parallel Forward Scanning**. This pattern highlights the two main branches of two-pointer greedy matching:
+  1. *Inward Convergence (LC #881, LC #167):* Pointers start at opposite ends of a single sorted array to balance trade-offs between the largest and smallest elements.
+  2. *Parallel Forward Scanning (LC #455, LC #88):* Pointers start at index 0 of two independent sorted arrays and move concurrently in the same direction to align complementary data sets.
+- **Bottleneck Elimination generalizes** → This framework extends to any resource-allocation problem where you must satisfy a set of demands. By constantly pairing the most constrained demand (the heaviest weight, the highest cost) with the least constrained resource (the lightest weight, the lowest cost), you either solve the bottleneck efficiently or isolate it instantly, monotonically reducing the remaining problem size step by step.
+
+```cpp
+class Solution {
+public:
+    int numRescueBoats(vector<int>& people, int limit) {
+        int boatCt= 0;
+        sort(people.begin(), people.end());
+        int boatPtr1 = 0; //this can be the first member of the boat
+        int boatPtr2 = people.size() - 1; //if below the limit, check the second to see if can be added in the boat
+        while(boatPtr1 <= boatPtr2){
+            if(people[boatPtr1] + people[boatPtr2] <= limit){
+//                 Greedy logic: Always try to pair the heaviest person with the lightest.
+
+                // If they fit together → both board, both pointers move inward
+                // If they don't fit → heavy person goes alone, only heavy moves inward
+                boatPtr1++; //The heaviest person is the hardest to pair. 
+                //The best possible partner for them is the lightest person. 
+                //If even the lightest person can't pair with them, nobody can — so they take a boat alone.
+            }
+            boatPtr2--;
+            boatCt++;
+        }
+        return boatCt;
+
+    }
+};
+```
+
+## Merge Strings Alternately LC 1768
+
+<!-- notecardId: 1780426039574 -->
+
+You are given two strings word1 and word2. Merge the strings by adding letters in alternating order, starting with word1. If a string is longer than the other, append the additional letters onto the end of the merged string.
+
+Return the merged string.
+
+ 
+
+Example 1:
+
+Input: word1 = "abc", word2 = "pqr"
+Output: "apbqcr"
+Explanation: The merged string will be merged as so:
+word1:  a   b   c
+word2:    p   q   r
+merged: a p b q c r
+Example 2:
+
+Input: word1 = "ab", word2 = "pqrs"
+Output: "apbqrs"
+Explanation: Notice that as word2 is longer, "rs" is appended to the end.
+word1:  a   b 
+word2:    p   q   r   s
+merged: a p b q   r   s
+Example 3:
+
+Input: word1 = "abcd", word2 = "pq"
+Output: "apbqcd"
+Explanation: Notice that as word1 is longer, "cd" is appended to the end.
+word1:  a   b   c   d
+word2:    p   q 
+merged: a p b q c   d
+ 
+
+Constraints:
+
+1 <= word1.length, word2.length <= 100
+word1 and word2 consist of lowercase English letters.
+
+**Link**: [text](https://leetcode.com/problems/merge-strings-alternately/)
+
+%
+
+**Pattern:** Two Pointers
+
+**Approach:** Use two pointers, one for each string, to iterate through both strings simultaneously. At each step, append the character from the first string (if available) and then the character from the second string (if available) to the result string. Continue this process until you have iterated through both strings completely.
+
+**Key Insight:** The key insight is that you can merge two strings by iterating through them in parallel using two pointers. By checking the bounds of each string at every step, you can ensure that you only append characters that exist, and you can handle cases where the strings are of different lengths seamlessly.
+
+**Gotchas:** Be careful to check the bounds of both strings at each step to avoid out-of-range errors. You should also ensure that you append characters in the correct order (first from `word1`, then from `word2`) and handle the case where one string is longer than the other by appending the remaining characters after one pointer has reached the end.
+
+**Complexity:** Time: O(n + m) where n and m are the lengths of the two input strings | Space: O(n + m) for the resulting merged string
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Merge Sorted Array — LC #88 | Elements must be merged in sorted order from two arrays → advance the pointer with the smaller value, writing from back to front | Partial — same parallel pointer traversal but with conditional logic |
+| Merge Two Sorted Lists — LC #21 | Linked list inputs merged by sorted value → traverse both lists forward, altering node pointers to link the smaller node next | Partial — parallel list traversal rather than uniform alternation |
+| Zip Strings — (Common Interview Variation) | Alternating characters but can truncate instead of appending leftovers → terminate the loop early when the first string runs out | Yes — identical interleave mechanism |
+| String Compression — LC #443 | Compress consecutive repeating characters in-place → use a read pointer and a write pointer moving at different speeds across a single string | No — different pointer mechanics (Fast/Slow vs. Parallel) |
+
+**How this pattern scales:**
+- **Two-pointer parallel synchronized scan O(n + m) time** is the optimal strategy for merging or interleaving two independent sequences. By managing an independent pointer for each string (`p1` and `p2`), you read elements forward step-by-step. This structural template decouples the progression of the data streams, enabling uniform processing regardless of differences in the lengths of the inputs.
+- **Uniform alternation vs. Conditional progression**. The pattern scales based on what drives the pointer increments:
+  1. *Structural Alternation (LC #1768):* The pointers move forward in a strict, predictable round-robin turn-taking pattern (`p1`, then `p2`, then `p1`...) until a boundary condition is met.
+  2. *Value-Driven Progression (LC #88, LC #21):* The pointers compete. At each step, a conditional evaluation (`if (word1[p1] < word2[p2])`) decides which single pointer is permitted to advance.
+- **Exhaustion phase handling for asymmetric datasets**. When linear inputs vary in length, the primary synchronized loop inevitably breaks when the shorter stream is completely exhausted. The pattern scales by implementing a clean cleanup strategy: you drop out of the interleaved phase and use bulk operations or independent secondary loops to append the remaining trailing segment of the longer collection in a single action.
+- **Stream interleaving generalizes** → This basic pattern serves as the foundation for complex multi-stream processing pipelines. Whether you are multiplexing network packets from different channels, zipping columns together in a tabular data framework, or blending audio tracks, tracking independent read cursors across separate data buffers allows you to stitch information together linearly without wasting memory on intermediate storage structures.
+
+```cpp
+class Solution {
+public:
+    string mergeAlternately(string word1, string word2) {
+        int i = 0;
+        string result = "";
+            while (i < word1.size() || i < word2.size()) {
+        if (i < word1.size()) result += word1[i];
+        if (i < word2.size()) result += word2[i];
+        i++;
+    }
+    return result;
+//     int ptr1 = 0;
+// int ptr2 = 0;
+//         string result = "";
+// while(ptr1 < word1.size() && ptr2 < word2.size()){
+// result += word1[ptr1];
+// result += word2[ptr2];
+// ptr1++;
+// ptr2++;
+//         }
+// if(ptr1 == word1.size() && ptr2 < word2.size()){
+// while(ptr2 < word2.size()){
+// result += word2[ptr2];
+// ptr2++;
+//         }
+//         }
+// else if(ptr1 < word1.size() && ptr2 == word2.size()){
+// while(ptr1 < word1.size()){
+// result += word1[ptr1];
+// ptr1++;
+//         }
+//         }
+// else{
+// return result;
+//         }
+// return result;
+//     }
+    }
+};
+```
 
