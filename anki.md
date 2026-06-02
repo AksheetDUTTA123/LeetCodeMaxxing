@@ -2044,3 +2044,1031 @@ public:
 };
 ```
 
+## Valid Parentheses LC 20
+
+<!-- notecardId: 1780362590830 -->
+
+Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.
+
+An input string is valid if:
+
+Open brackets must be closed by the same type of brackets.
+Open brackets must be closed in the correct order.
+Every close bracket has a corresponding open bracket of the same type.
+ 
+
+Example 1:
+
+Input: s = "()"
+
+Output: true
+
+Example 2:
+
+Input: s = "()[]{}"
+
+Output: true
+
+Example 3:
+
+Input: s = "(]"
+
+Output: false
+
+Example 4:
+
+Input: s = "([])"
+
+Output: true
+
+Example 5:
+
+Input: s = "([)]"
+
+Output: false
+
+ 
+
+Constraints:
+
+1 <= s.length <= 104
+s consists of parentheses only '()[]{}'.
+
+**Link**: [text](https://leetcode.com/problems/valid-parentheses/)
+
+%
+
+**Pattern:** Stack
+
+**Approach:** Use a stack to keep track of the opening brackets. As you iterate through the string, when you encounter an opening bracket, push it onto the stack. When you encounter a closing bracket, check if the stack is not empty and if the top of the stack is the corresponding opening bracket. If it is, pop the stack; otherwise, return false. After processing all characters, if the stack is empty, return true; otherwise, return false.
+
+**Key Insight:** The key insight is that the most recent opening bracket must be closed first, which is a natural fit for a stack data structure. By pushing opening brackets onto the stack and popping them when a matching closing bracket is found, you can easily ensure that the brackets are properly nested and ordered.
+
+**Gotchas:** Be careful with edge cases, such as when the string starts with a closing bracket or when there are unmatched opening brackets left in the stack at the end. Also, ensure that you correctly match each type of bracket (i.e., '(' with ')', '{' with '}', and '[' with ']').
+
+**Complexity:** Time: O(n) | Space: O(n)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Minimum Add to Make Parentheses Valid — LC #921 | Count minimum insertions to balance → track open count instead of stack | Partial — same balance idea |
+| Longest Valid Parentheses — LC #32 | Find longest valid substring → DP or stack with indices | Partial — harder variant |
+| Generate Parentheses — LC #22 | Generate all valid combinations → backtracking with open/close counts | Partial — same validity rules |
+| Remove Invalid Parentheses — LC #301 | Remove minimum brackets to make valid → BFS or backtracking | Partial — same validity rules |
+| Valid Parenthesis String — LC #678 | Wildcards can be open close or empty → greedy with min/max open count | Partial — upgrade |
+| Decode String — LC #394 | Stack to track nested encoding context → same stack nesting idea | Yes — same stack pattern |
+| Basic Calculator — LC #224 | Evaluate expression with parentheses → stack for operator and operand context | Yes — direct generalization |
+| Simplify Path — LC #71 | Stack to process nested directory tokens → same push/pop on structure | Yes — same stack idea |
+
+**How this pattern scales:**
+- **Stack + hash map** is the core trick — map each closing bracket to its opener, push openers onto stack, pop and verify on closing brackets. Single pass O(n) time O(n) space
+- **Balance counter** is the O(1) space simplification when only one bracket type exists — increment on open decrement on close, invalid if ever negative
+- **Stack for nesting** generalizes far beyond brackets — any problem involving nested structures (expressions, directories, encoded strings) uses a stack to track context across levels
+- **Greedy min/max range** → LC #678 (Valid Parenthesis String) replaces the stack with a range of possible open counts, tracking minimum and maximum valid states simultaneously — worth knowing as the hardest variant
+
+```cpp
+class Solution {
+public:
+    bool isValid(string s) {
+        std::stack<char> stk;
+        for(int i = 0; i < s.size(); i++){
+            if(s[i] == '(' || s[i] == '{' || s[i] == '['){
+                stk.push(s[i]);
+            }
+            else{
+                if(stk.empty()){
+                    return false;
+                }
+            char top = stk.top();
+            stk.pop();
+            if(
+                (s[i] == ')' && top != '(')|| 
+                (s[i] == ']' && top != '[') ||
+                (s[i] == '}' && top != '{')
+            ){
+                return false;
+            }
+        }
+        }
+            return stk.empty();
+    }
+};
+```
+
+## Generate Parentheses LC 22
+
+<!-- notecardId: 1780371457088 -->
+
+Given n pairs of parentheses, write a function to generate all combinations of well-formed parentheses.
+
+ 
+
+Example 1:
+
+Input: n = 3
+Output: ["((()))","(()())","(())()","()(())","()()()"]
+Example 2:
+
+Input: n = 1
+Output: ["()"]
+ 
+
+Constraints:
+
+1 <= n <= 8
+
+**Link**: [text](https://leetcode.com/problems/generate-parentheses/)
+
+%
+
+**Pattern:** Backtracking
+
+**Approach:** Use backtracking to generate all possible combinations of parentheses. Start with an empty string and at each step, you can either add an opening parenthesis '(' if you still have one available, or add a closing parenthesis ')' if it would not lead to an invalid sequence (i.e., you can only add a closing parenthesis if there are more opening parentheses than closing parentheses in the current string). Continue this process until you have used all n pairs of parentheses, at which point you can add the valid combination to the result list.
+
+**Key Insight:** The key insight is that at any point in the generation process, the number of closing parentheses cannot exceed the number of opening parentheses, and you cannot add more than n opening parentheses. This ensures that you only generate valid combinations without needing to check for validity after the fact.
+
+**Gotchas:** Be careful with the base case for the recursion, which is when the current string has used all n pairs of parentheses. Also, ensure that you correctly manage the counts of opening and closing parentheses to avoid generating invalid combinations.
+
+**Complexity:** Time: O(4^n / sqrt(n)) | Space: O(n) for the recursion stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Valid Parentheses — LC #20 | Validate existing string instead of generating → stack matching | Yes — foundation |
+| Remove Invalid Parentheses — LC #301 | Remove minimum brackets to make valid → BFS or backtracking on existing string | Partial — same validity rules |
+| Valid Parenthesis String — LC #678 | Wildcards add ambiguity → greedy min/max range instead of backtracking | Partial — same rules harder |
+| Letter Combinations of a Phone Number — LC #17 | Generate all combinations from a digit mapping → same backtracking build | Yes — same pattern |
+| Permutations — LC #46 | Generate all orderings of elements → same backtracking template | Yes — same pattern |
+| Combination Sum — LC #39 | Generate combinations summing to target → same backtracking with pruning | Yes — same pattern |
+| N-Queens — LC #51 | Place queens with no conflicts → same backtracking with constraint pruning | Partial — harder variant |
+| Palindrome Partitioning — LC #131 | Partition string into valid palindromes → same backtracking build and validate | Partial — same structure |
+
+**How this pattern scales:**
+- **Backtracking template** is the core pattern — choose, recurse, unchoose. Add open bracket if `open < n`, add close bracket if `close < open`. Prune invalid states before recursing not after
+- **Pruning is everything** — the reason this is O(4^n / √n) instead of O(2^2n) is that invalid states are pruned immediately. Any backtracking problem lives or dies by how early you can prune
+- **Backtracking family ladder** → LC #22 → LC #46 (Permutations) → LC #39 (Combination Sum) → LC #51 (N-Queens) — each adds more complex constraint checking but the choose/recurse/unchoose skeleton never changes
+- **Catalan number** is the count of valid combinations for n pairs — C(n) = (2n choose n) / (n+1). Worth knowing if an interviewer asks how many valid strings exist for a given n
+
+```cpp
+class Solution {
+public:
+    vector<string> generateParenthesis(int n) {
+        vector<string> answer;
+        backtracking(answer, "", 0, 0, n);
+        return answer;
+    }
+
+private:
+    void backtracking(vector<string>& answer, string current, int open, int close, int n){
+        if(current.size() == 2*n){
+            answer.push_back(current);
+            return;
+        }
+        if(open < n){
+            backtracking(answer, current + "(", open + 1, close, n);
+        }
+        if(close < open){
+            backtracking(answer, current + ")", open, close + 1, n);
+        }
+    }
+};
+```
+
+## Simplify Path LC 71
+
+<!-- notecardId: 1780372745733 -->
+
+You are given an absolute path for a Unix-style file system, which always begins with a slash '/'. Your task is to transform this absolute path into its simplified canonical path.
+
+The rules of a Unix-style file system are as follows:
+
+A single period '.' represents the current directory.
+A double period '..' represents the previous/parent directory.
+Multiple consecutive slashes such as '//' and '///' are treated as a single slash '/'.
+Any sequence of periods that does not match the rules above should be treated as a valid directory or file name. For example, '...' and '....' are valid directory or file names.
+The simplified canonical path should follow these rules:
+
+The path must start with a single slash '/'.
+Directories within the path must be separated by exactly one slash '/'.
+The path must not end with a slash '/', unless it is the root directory.
+The path must not have any single or double periods ('.' and '..') used to denote current or parent directories.
+Return the simplified canonical path.
+
+ 
+
+Example 1:
+
+Input: path = "/home/"
+
+Output: "/home"
+
+Explanation:
+
+The trailing slash should be removed.
+
+Example 2:
+
+Input: path = "/home//foo/"
+
+Output: "/home/foo"
+
+Explanation:
+
+Multiple consecutive slashes are replaced by a single one.
+
+Example 3:
+
+Input: path = "/home/user/Documents/../Pictures"
+
+Output: "/home/user/Pictures"
+
+Explanation:
+
+A double period ".." refers to the directory up a level (the parent directory).
+
+Example 4:
+
+Input: path = "/../"
+
+Output: "/"
+
+Explanation:
+
+Going one level up from the root directory is not possible.
+
+Example 5:
+
+Input: path = "/.../a/../b/c/../d/./"
+
+Output: "/.../b/d"
+
+Explanation:
+
+"..." is a valid name for a directory in this problem.
+
+ 
+
+Constraints:
+
+1 <= path.length <= 3000
+path consists of English letters, digits, period '.', slash '/' or '_'.
+path is a valid absolute Unix path.
+
+**Link**: [text](https://leetcode.com/problems/simplify-path/)
+
+%
+
+**Pattern:** Stack | String Manipulation
+
+**Approach:** Use a stack to process the components of the path. Split the input path by the '/' delimiter to get individual components. Iterate through these components and apply the following rules: if the component is empty or a single period '.', skip it; if it is a double period '..', pop from the stack if it's not empty (to go back to the parent directory); otherwise, push the component onto the stack as it represents a valid directory name. After processing all components, join the elements in the stack with '/' to form the simplified path, and ensure it starts with a '/'.
+
+**Key Insight:** The key insight is that the stack can be used to keep track of the current directory structure as you process each component of the path. By pushing valid directory names onto the stack and popping when you encounter '..', you can effectively navigate through the directory structure and build the simplified path.
+
+**Gotchas:** Be careful with edge cases, such as when the path starts with multiple slashes or when there are multiple consecutive slashes. Also, ensure that you handle the case where the stack is empty when trying to pop for '..', which means you are already at the root directory. Finally, remember to join the stack elements correctly to form the final path. This is the weird part, so to do it, create a vector and then push the stack elements into the vector, then reverse the vector and join with '/'.
+
+**Complexity:** Time: O(n) | Space: O(n)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Valid Parentheses — LC #20 | Stack to match brackets instead of path tokens → same push/pop on structure | Yes — same stack pattern |
+| Decode String — LC #394 | Stack to track nested encoding levels → same context tracking via stack | Yes — same stack idea |
+| Basic Calculator — LC #224 | Stack to track operators and operands in nested expressions → same nesting logic | Yes — same stack pattern |
+| Evaluate Reverse Polish Notation — LC #150 | Stack to evaluate postfix tokens → same token processing via stack | Yes — direct variant |
+| Design File System — LC #1166 | Build a file system supporting path creation and lookup → same path parsing | Partial — upgrade |
+| Find Duplicate File in System — LC #609 | Parse file paths to group duplicates → same path splitting idea | Partial — same parsing |
+| Flatten Nested List Iterator — LC #341 | Flatten nested structure → same stack based traversal | Partial — same nesting idea |
+| Text Justification — LC #68 | Process tokens left to right with decisions at each step → same token processing | No — different pattern |
+
+**How this pattern scales:**
+- **Stack + string split** is the core trick — split path by `/`, process each token, push valid directory names, pop on `..`, ignore `.` and empty strings. Rejoin stack with `/` at the end
+- **Token processing pattern** generalizes to any problem where you scan left to right and need to undo a previous decision — stack lets you "go back" in O(1)
+- **Deque upgrade** → when you need to reconstruct the path efficiently without reversing, use a deque and append to the back — same logic, cleaner join
+- **Design File System (LC #1166)** is the direct upgrade — instead of just simplifying a path you actually need to store and retrieve values at paths, requiring a Trie or hash map on top of the same path parsing logic
+
+```cpp
+class Solution {
+public:
+    string simplifyPath(string path) {
+        stack<string> dir;
+        std::stringstream ss(path);
+        std::string token;
+        while(getline(ss, token, '/')){
+            // dir.push(token);            
+            if(token.empty() || token == "."){
+                continue; // . means we are in current directory, dont add to stack
+            }
+            else if(token == ".."){
+                if(!dir.empty()){
+                    dir.pop(); //pop because go back to parent.
+                }
+            }
+            else{
+                dir.push(token); //normal dir, add to dir stack
+            }
+        }
+        vector<string> parts;
+        while(!dir.empty()) {
+            parts.push_back(dir.top());
+            dir.pop();
+        }
+        
+        string result = "";
+        for(int i = parts.size() - 1; i >= 0; i--) {
+            result += "/" + parts[i];
+        }
+    return result.empty() ? "/" : result; 
+    }
+};
+```
+
+## Largest Rectangle in Histogram LC 84
+
+<!-- notecardId: 1780374823009 -->
+
+Given an array of integers heights representing the histogram's bar height where the width of each bar is 1, return the area of the largest rectangle in the histogram.
+
+ 
+
+Example 1:
+
+
+Input: heights = [2,1,5,6,2,3]
+Output: 10
+Explanation: The above is a histogram where width of each bar is 1.
+The largest rectangle is shown in the red area, which has an area = 10 units.
+Example 2:
+
+
+Input: heights = [2,4]
+Output: 4
+
+
+**Link**: [text](https://leetcode.com/problems/largest-rectangle-in-histogram/)
+
+%
+
+**Pattern:** Stack
+
+**Approach:** Use a stack to keep track of the indices of the histogram bars. Iterate through the heights array, and for each bar, pop from the stack until you find a bar that is shorter than the current bar. For each popped index, calculate the area of the rectangle that can be formed with the height of the bar at that index and the width determined by the current index and the index of the new top of the stack. Keep track of the maximum area found. After processing all bars, pop any remaining indices from the stack and calculate their areas as well.
+
+**Key Insight:** The key insight is that the stack helps you efficiently find the nearest smaller bar to the left and right of each bar, which allows you to calculate the maximum area for rectangles that can be formed with each bar as the height. By maintaining a stack of indices, you can ensure that you are always calculating areas for valid rectangles.
+
+**Gotchas:** Be careful with the edge case when the stack is empty, which means that the current bar is the smallest so far and can extend all the way back to the beginning. Also, remember to process any remaining bars in the stack after iterating through the heights array to ensure you account for all possible rectangles.
+
+**Complexity:** Time: O(n) | Space: O(n)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Maximal Rectangle — LC #85 | Same histogram logic applied row by row on a 2D matrix → build histogram per row then apply LC #84 | Yes — direct generalization |
+| Trapping Rain Water — LC #42 | Water trapped between bars instead of rectangle area → same monotonic stack left/right boundary idea | Yes — same stack pattern |
+| Maximum Rectangle in Binary Matrix — LC #85 | Reduce to histogram problem row by row → LC #84 as a subroutine | Yes — direct application |
+| Daily Temperatures — LC #739 | Find next warmer day → same monotonic stack next greater element | Partial — same stack idea |
+| Next Greater Element — LC #496 | Find next greater element for each position → same monotonic stack | Partial — foundation |
+| Sum of Subarray Minimums — LC #907 | Sum of minimums across all subarrays → same monotonic stack left/right boundary | Yes — same structure |
+| Maximum Width Ramp — LC #962 | Find widest ramp between indices → monotonic stack with two pointer scan | Partial — same stack idea |
+
+**How this pattern scales:**
+- **Monotonic stack** is the core trick — maintain a stack of increasing bar heights. When a shorter bar is encountered pop taller bars and compute their maximum rectangle using the current index as the right boundary
+- **Sentinel values** simplify implementation — append a `0` at the end of heights to flush all remaining bars from the stack without special casing the end of the array
+- **Left/right boundary pattern** → the stack implicitly tracks the nearest smaller bar to the left for each popped bar. This "nearest smaller element" idea is the same mechanism used in Trapping Rain Water and Sum of Subarray Minimums
+- **2D generalization** → LC #85 (Maximal Rectangle) runs LC #84 as a subroutine on each row's cumulative height array — the entire solution is just building histograms row by row and calling the same monotonic stack logic
+
+```cpp
+class Solution {
+public:
+    int largestRectangleArea(vector<int>& heights) {
+        int largestRect = 0;
+        stack<int> stk;
+        
+        // Push sentinel value to avoid empty stack checks
+        // and simplify width calculation for bars that extend to the leftmost boundary
+        stk.push(-1);
+        
+        for (int i = 0; i < heights.size(); i++) {
+            // Pop bars that are taller than the current bar, since the current bar
+            // limits how far right their rectangle can extend
+            while (stk.top() != -1 && heights[stk.top()] >= heights[i]) { //while the current bar is shorter than the bar at the top of the stack, 
+            //pop from the stack, because the current bar limits how far right the rectangle of the bar at the top of the stack can extend
+                int height = heights[stk.top()];
+                stk.pop();
+                // Width is from the new top of stack (left boundary) to current index (right boundary)
+                int width = i - stk.top() - 1;
+                largestRect = max(largestRect, height * width);
+            }
+            // Current bar hasn't been bounded yet, push it for future processing
+            stk.push(i);
+        }
+
+        // Remaining bars in the stack never found a shorter bar to their right
+        // so their right boundary is the end of the array
+        while (stk.top() != -1) {
+            int height = heights[stk.top()];
+            stk.pop();
+            int width = heights.size() - stk.top() - 1;
+            largestRect = max(largestRect, height * width);
+        }
+
+        return largestRect;
+    }
+};
+```
+
+## Evaluate Reverse Polish Notation LC 150
+
+<!-- notecardId: 1780375083681 -->
+
+
+You are given an array of strings tokens that represents an arithmetic expression in a Reverse Polish Notation.
+
+Evaluate the expression. Return an integer that represents the value of the expression.
+
+Note that:
+
+The valid operators are '+', '-', '*', and '/'.
+Each operand may be an integer or another expression.
+The division between two integers always truncates toward zero.
+There will not be any division by zero.
+The input represents a valid arithmetic expression in a reverse polish notation.
+The answer and all the intermediate calculations can be represented in a 32-bit integer.
+ 
+
+Example 1:
+
+Input: tokens = ["2","1","+","3","*"]
+Output: 9
+Explanation: ((2 + 1) * 3) = 9
+Example 2:
+
+Input: tokens = ["4","13","5","/","+"]
+Output: 6
+Explanation: (4 + (13 / 5)) = 6
+Example 3:
+
+Input: tokens = ["10","6","9","3","+","-11","*","/","*","17","+","5","+"]
+Output: 22
+Explanation: ((10 * (6 / ((9 + 3) * -11))) + 17) + 5
+= ((10 * (6 / (12 * -11))) + 17) + 5
+= ((10 * (6 / -132)) + 17) + 5
+= ((10 * 0) + 17) + 5
+= (0 + 17) + 5
+= 17 + 5
+= 22
+ 
+
+Constraints:
+
+1 <= tokens.length <= 104
+tokens[i] is either an operator: "+", "-", "*", or "/", or an integer in the range [-200, 200].
+
+**Link**: [text](https://leetcode.com/problems/evaluate-reverse-polish-notation/)
+
+%
+
+**Pattern:** Stack
+
+**Approach:** Use a stack to evaluate the expression. Iterate through the tokens, and for each token, if it is an operand (number), push it onto the stack. If it is an operator, pop the top two operands from the stack, apply the operator to these operands in the correct order (the second popped operand is the left operand), and push the result back onto the stack. After processing all tokens, the final result will be the only element remaining in the stack.
+
+**Key Insight:** The key insight is that Reverse Polish Notation (RPN) allows for straightforward evaluation using a stack because the operators come after their operands. By pushing operands onto the stack and applying operators as they are encountered, you can efficiently compute the result without needing to worry about operator precedence or parentheses.
+
+**Gotchas:** Be careful with the order of operands when applying the operator, especially for subtraction and division. The second popped operand is the left operand, and the first popped operand is the right operand. Also, ensure that you handle integer division correctly, truncating towards zero as specified in the problem.
+
+**Complexity:** Time: O(n) | Space: O(n)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Basic Calculator — LC #224 | Evaluate infix expression with parentheses → stack for operators and operands | Yes — same stack pattern |
+| Basic Calculator II — LC #227 | Infix with +−×÷ no parentheses → stack with operator precedence | Yes — direct variant |
+| Basic Calculator III — LC #772 | Infix with parentheses and all operators → recursive descent or stack | Yes — hardest variant |
+| Simplify Path — LC #71 | Stack to process directory tokens → same token processing via stack | Yes — same stack idea |
+| Valid Parentheses — LC #20 | Stack to match bracket tokens → same push/pop on tokens | Partial — simpler variant |
+| Decode String — LC #394 | Stack to track nested encoding context → same stack nesting idea | Partial — same stack pattern |
+| Expression Add Operators — LC #282 | Add operators between digits to hit target → backtracking + expression evaluation | Partial — evaluation focus |
+| Convert Expression to RPN — Shunting Yard | Convert infix to postfix → operator stack with precedence rules | Yes — inverse of LC #150 |
+
+**How this pattern scales:**
+- **Operand stack** is the core trick — push numbers onto stack, on every operator pop two operands apply the operator and push the result back. Single pass O(n) time O(n) space
+- **Operator precedence disappears in RPN** — this is the entire point of postfix notation, operators appear exactly when they should be applied so no precedence tracking is needed. This is why RPN is simpler than infix evaluation
+- **Infix evaluation upgrade** → LC #224 and LC #227 add precedence handling back — use two stacks (one for operands, one for operators) and apply operators based on precedence rules when a lower precedence operator is encountered
+- **Shunting Yard algorithm** is the inverse — converts infix to RPN using an operator stack. Worth knowing as a follow-up since it completes the full picture of expression parsing
+
+```cpp
+class Solution {
+public:
+    int evalRPN(vector<string>& tokens) {
+        std::stack<int> tokenStk;
+        for(int i = 0; i < tokens.size(); i++){
+        if(tokens[i] != "+" &&
+        tokens[i] != "-" &&
+        tokens[i] != "*" &&
+        tokens[i] != "/" 
+        )  {
+            tokenStk.push(std::stoi(tokens[i]));
+            continue;
+        }
+
+            int num1 = tokenStk.top();
+            tokenStk.pop();
+            int num2 = tokenStk.top();
+            tokenStk.pop();
+        if(tokens[i] == "+"){
+            tokenStk.push(num1+num2);
+        }
+        else if(tokens[i] == "-"){
+            tokenStk.push(num2-num1);
+        }
+        else if(tokens[i] == "*"){
+            tokenStk.push(num1*num2);
+        }
+        else{
+            tokenStk.push(num2/num1);
+        }
+        }
+
+        return tokenStk.top();
+    }
+};
+```
+
+## Min Stack LC 155
+
+<!-- notecardId: 1780375464978 -->
+
+Design a stack that supports push, pop, top, and retrieving the minimum element in constant time.
+
+Implement the MinStack class:
+
+MinStack() initializes the stack object.
+void push(int val) pushes the element val onto the stack.
+void pop() removes the element on the top of the stack.
+int top() gets the top element of the stack.
+int getMin() retrieves the minimum element in the stack.
+You must implement a solution with O(1) time complexity for each function.
+
+ 
+
+Example 1:
+
+Input
+["MinStack","push","push","push","getMin","pop","top","getMin"]
+[[],[-2],[0],[-3],[],[],[],[]]
+
+Output
+[null,null,null,null,-3,null,0,-2]
+
+Explanation
+MinStack minStack = new MinStack();
+minStack.push(-2);
+minStack.push(0);
+minStack.push(-3);
+minStack.getMin(); // return -3
+minStack.pop();
+minStack.top();    // return 0
+minStack.getMin(); // return -2
+ 
+
+Constraints:
+
+-231 <= val <= 231 - 1
+Methods pop, top and getMin operations will always be called on non-empty stacks.
+At most 3 * 104 calls will be made to push, pop, top, and getMin.
+
+**Link**: [text](https://leetcode.com/problems/min-stack/)
+
+%
+
+**Pattern:** Stack with Auxiliary Data Structure
+
+**Approach:** Use two stacks to implement the MinStack. The first stack will be used to store all the elements of the stack, while the second stack will keep track of the minimum values. When pushing a new value onto the main stack, compare it with the current minimum (the top of the min stack). If the new value is smaller than or equal to the current minimum, also push it onto the min stack. When popping from the main stack, if the popped value is the same as the top of the min stack, pop from the min stack as well. This way, the top of the min stack always represents the minimum element in the main stack. Another way to do this is to store the minimum value at the time of each push in the main stack itself, so that you can retrieve it in O(1) time without needing a separate min stack.
+
+**Key Insight:** The key insight is that by maintaining a separate stack (or embedding the minimum value in the main stack), you can keep track of the minimum element at all times without needing to search through the stack, allowing for O(1) retrieval of the minimum.
+
+**Gotchas:** Be careful when pushing values onto the min stack to ensure that you only push values that are less than or equal to the current minimum. Also, when popping from the main stack, make sure to check if the popped value is the current minimum and pop from the min stack accordingly to maintain the correct minimum value.
+
+**Complexity:** Time: O(1) for all operations | Space: O(n) in the worst case if all elements are the same and are pushed onto the min stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Max Stack — LC #716 | Track maximum instead of minimum → same auxiliary stack idea | Yes — direct variant |
+| Sliding Window Maximum — LC #239 | Track maximum in a sliding window → monotonic deque instead of aux stack | Partial — same tracking idea |
+| Design Stack With Increment Operation — LC #1381 | Increment bottom k elements → lazy increment array instead of aux stack | Partial — same design pattern |
+| Valid Parentheses — LC #20 | Stack for matching brackets → same push/pop structure | No — different pattern |
+| Evaluate Reverse Polish Notation — LC #150 | Stack for expression evaluation → same push/pop structure | No — different pattern |
+| Basic Calculator — LC #224 | Stack tracking running state at each nesting level → same "snapshot per level" idea | Partial — same aux state idea |
+| Queue Using Stacks — LC #232 | Simulate queue using two stacks → same multi-stack design thinking | Partial — same design family |
+| Stock Price Fluctuation — LC #2034 | Track min and max of streaming prices → sorted set instead of aux stack | Partial — same min/max tracking |
+
+**How this pattern scales:**
+- **Auxiliary stack** is the core trick — maintain a second stack that only pushes when the new value is less than or equal to the current minimum. O(1) push pop and getMin, O(n) space
+- **Space optimization** → instead of a full auxiliary stack store pairs `{value, currentMin}` on a single stack — same O(1) operations but cleaner implementation with one stack instead of two
+- **Monotonic deque upgrade** → when the window slides (elements leave from the front) a stack is no longer sufficient — LC #239 (Sliding Window Maximum) uses a deque to efficiently track the maximum as elements enter and leave
+- **"Snapshot per level" pattern** → Basic Calculator uses the same idea of saving state (running sum, sign) onto a stack when entering a nested parenthesis level and restoring it on exit — same auxiliary state tracking, different context
+
+```cpp
+class MinStack {
+public:
+//     MinStack() {
+//         //dont have to do anything here
+//     }
+    
+//     void push(int val) {
+//         stk.push(val);
+//         if(pastMin.empty() || pastMin.top() >= val){
+//             pastMin.push(val);
+//         }
+//     }
+    
+//     void pop() {
+
+//         int top = stk.top();
+//         stk.pop();
+//         if(pastMin.top() == top){
+//             pastMin.pop();
+//         }
+//     }
+    
+//     int top() {
+//         return stk.top();
+//     }
+    
+//     int getMin() {
+//         return pastMin.top();
+//     }
+
+// private:
+// stack<int> stk;
+// stack<int> pastMin;
+
+    MinStack() {
+        //dont have to do anything here
+    }
+    
+    void push(int val) {
+        if (val <= min || stk.empty()){
+            min = val;
+        }
+        stk.push({val, min});
+        // if(pastMin.empty() || pastMin.top() >= val){
+        //     pastMin.push(val);
+        // }
+    }
+    
+    void pop() {
+        stk.pop();
+        if(!stk.empty()){
+            min = stk.top().second;
+        }
+        else{
+            min = INT_MAX;
+        }
+    }
+    
+    int top() {
+        return stk.top().first;
+    }
+    
+    int getMin() {
+        return stk.top().second;
+    }
+
+private:
+stack<pair<int, int>> stk;
+int min = INT_MAX;
+};
+/**
+ * Your MinStack object will be instantiated and called as such:
+ * MinStack* obj = new MinStack();
+ * obj->push(val);
+ * obj->pop();
+ * int param_3 = obj->top();
+ * int param_4 = obj->getMin();
+ */
+// @lc code=end
+```
+
+## Implement Stack using Queues LC 225
+
+<!-- notecardId: 1780375638858 -->
+
+Implement a last-in-first-out (LIFO) stack using only two queues. The implemented stack should support all the functions of a normal stack (push, top, pop, and empty).
+
+Implement the MyStack class:
+
+void push(int x) Pushes element x to the top of the stack.
+int pop() Removes the element on the top of the stack and returns it.
+int top() Returns the element on the top of the stack.
+boolean empty() Returns true if the stack is empty, false otherwise.
+Notes:
+
+You must use only standard operations of a queue, which means that only push to back, peek/pop from front, size and is empty operations are valid.
+Depending on your language, the queue may not be supported natively. You may simulate a queue using a list or deque (double-ended queue) as long as you use only a queue's standard operations.
+ 
+
+Example 1:
+
+Input
+["MyStack", "push", "push", "top", "pop", "empty"]
+[[], [1], [2], [], [], []]
+Output
+[null, null, null, 2, 2, false]
+
+Explanation
+MyStack myStack = new MyStack();
+myStack.push(1);
+myStack.push(2);
+myStack.top(); // return 2
+myStack.pop(); // return 2
+myStack.empty(); // return False
+ 
+
+Constraints:
+
+1 <= x <= 9
+At most 100 calls will be made to push, pop, top, and empty.
+All the calls to pop and top are valid.
+ 
+
+Follow-up: Can you implement the stack using only one queue?
+
+**Link**: [text](https://leetcode.com/problems/implement-stack-using-queues/)
+
+%
+
+**Pattern:** Queue Simulation
+
+**Approach:** Use two queues to simulate the behavior of a stack. For the push operation, enqueue the new element into the first queue. Then, dequeue all elements from the first queue and enqueue them into the second queue, effectively reversing the order of the elements. Finally, swap the names of the two queues so that the first queue always contains the elements in stack order. For pop and top operations, simply dequeue from the first queue to get the top element of the stack. The empty operation checks if the first queue is empty. If you want to implement the stack using only one queue, you can enqueue the new element and then rotate the queue by dequeuing and enqueuing all elements except the newly added one, which will move it to the front of the queue.
+
+**Key Insight:** The key insight is that by using two queues and reversing the order of elements during the push operation, you can maintain the LIFO order required for a stack. This allows you to implement stack operations using only queue operations.
+
+**Gotchas:** Be careful with the order of operations when pushing elements to ensure that the stack order is maintained. Also, remember to swap the queues after each push to keep the first queue as the main storage for stack elements. When implementing with one queue, be mindful of the rotation step to ensure that the newly added element becomes the new top of the stack.
+
+**Complexity:** Time: O(n) for push (due to reversing the queue), O(1) for pop, top, and empty | Space: O(n) for storing the elements in the queues
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Implement Queue Using Stacks — LC #232 | Simulate queue using two stacks → inverse of this problem, same two structure idea | Yes — direct inverse |
+| Min Stack — LC #155 | Augment stack with min tracking → same stack design family | Partial — same design thinking |
+| Design Circular Queue — LC #622 | Implement queue with fixed size array → array based not stack based | Partial — same queue design |
+| Design Circular Deque — LC #641 | Double ended queue with fixed size → same circular array idea | Partial — same design family |
+| Max Stack — LC #716 | Augment stack with max tracking → same auxiliary structure idea | Partial — same design thinking |
+| Design Hit Counter — LC #362 | Queue to track hits in time window → same queue as sliding window | No — different pattern |
+| Moving Average from Data Stream — LC #346 | Queue to maintain sliding window average → same fixed window queue idea | No — different pattern |
+
+**How this pattern scales:**
+- **Single queue rotation** is the core trick — after pushing a new element rotate all previous elements behind it by dequeuing and re-enqueuing one by one. O(n) push O(1) pop — cleaner than two queue approach
+- **Two queue approach** is the alternative — push to queue 2, drain queue 1 into queue 2, swap references. Same O(n) push O(1) pop but requires managing two queue references
+- **Push heavy vs pop heavy** tradeoff — you can alternatively make push O(1) and pop O(n) by rotating on pop instead of push. Choose based on which operation is called more frequently
+- **Design problem ladder** → LC #225 → LC #232 → LC #622 → LC #641 — each builds on the previous, moving from simulated structures to purpose built ones with additional constraints like fixed size or double ended access
+
+```cpp
+class MyStack {
+// public:
+//     MyStack() {
+//         //not necessary to do anything here
+//     }
+    
+//     void push(int x) {
+//         q2.push(x);
+//         while(!q1.empty()){
+//             q2.push(q1.front());
+//             q1.pop();
+//         }
+//         swap(q1,q2);
+//     }
+    
+//     int pop() {
+//         int val =  q1.front();
+//         q1.pop();
+//         return val;
+//     }
+    
+//     int top() {
+//         return q1.front();
+//     }
+    
+//     bool empty() {
+//         return (q1.empty() && q2.empty());
+//     }
+// private:
+// std::queue<int> q1;
+// std::queue<int> q2; //maybe treat this as the top
+
+public:
+    MyStack() {
+        //not necessary to do anything here
+    }
+    
+    void push(int x) {
+        q1.push(x);
+        for(int i = 0; i < q1.size()-1; i++){
+            int val = q1.front();
+            q1.pop();
+            q1.push(val);
+        }
+    }
+    
+    int pop() {
+        int val =  q1.front();
+        q1.pop();
+        return val;
+    }
+    
+    int top() {
+        return q1.front();
+    }
+    
+    bool empty() {
+        return (q1.empty());
+    }
+private:
+std::queue<int> q1; //only one queue
+};
+/**
+ * Your MyStack object will be instantiated and called as such:
+ * MyStack* obj = new MyStack();
+ * obj->push(x);
+ * int param_2 = obj->pop();
+ * int param_3 = obj->top();
+ * bool param_4 = obj->empty();
+ */
+```
+
+## Implement Queue using Stacks LC 232
+
+<!-- notecardId: 1780376276505 -->
+
+mplement a first in first out (FIFO) queue using only two stacks. The implemented queue should support all the functions of a normal queue (push, peek, pop, and empty).
+
+Implement the MyQueue class:
+
+void push(int x) Pushes element x to the back of the queue.
+int pop() Removes the element from the front of the queue and returns it.
+int peek() Returns the element at the front of the queue.
+boolean empty() Returns true if the queue is empty, false otherwise.
+Notes:
+
+You must use only standard operations of a stack, which means only push to top, peek/pop from top, size, and is empty operations are valid.
+Depending on your language, the stack may not be supported natively. You may simulate a stack using a list or deque (double-ended queue) as long as you use only a stack's standard operations.
+ 
+
+Example 1:
+
+Input
+["MyQueue", "push", "push", "peek", "pop", "empty"]
+[[], [1], [2], [], [], []]
+Output
+[null, null, null, 1, 1, false]
+
+Explanation
+MyQueue myQueue = new MyQueue();
+myQueue.push(1); // queue is: [1]
+myQueue.push(2); // queue is: [1, 2] (leftmost is front of the queue)
+myQueue.peek(); // return 1
+myQueue.pop(); // return 1, queue is [2]
+myQueue.empty(); // return false
+ 
+
+Constraints:
+
+1 <= x <= 9
+At most 100 calls will be made to push, pop, peek, and empty.
+All the calls to pop and peek are valid.
+ 
+
+Follow-up: Can you implement the queue such that each operation is amortized O(1) time complexity? In other words, performing n operations will take overall O(n) time even if one of those operations may take longer.
+
+**Link**: [text](https://leetcode.com/problems/implement-queue-using-stacks/)
+
+%
+
+**Pattern:** Stack Simulation
+
+**Approach:** Use two stacks to simulate the behavior of a queue. The first stack (input stack) is used for enqueueing new elements, while the second stack (output stack) is used for dequeueing elements. For the push operation, simply push the new element onto the input stack. For pop and peek operations, if the output stack is empty, pop all elements from the input stack and push them onto the output stack, effectively reversing their order. Then, pop or peek from the output stack to get the front element of the queue. The empty operation checks if both stacks are empty. This approach ensures that each element is moved at most twice (once to the input stack and once to the output stack), resulting in amortized O(1) time complexity for each operation.
+
+**Key Insight:** The key insight is that by using two stacks and reversing the order of elements when moving them from the input stack to the output stack, you can maintain the FIFO order required for a queue. This allows you to implement queue operations using only stack operations.
+
+**Gotchas:** Be careful to only move elements from the input stack to the output stack when the output stack is empty. This ensures that you maintain the correct order of elements and achieve amortized O(1) time complexity. Also, remember to check both stacks for emptiness when implementing the empty operation.
+
+**Complexity:** Time: Amortized O(1) for all operations | Space: O(n) for storing the elements in the stacks
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Implement Stack Using Queues — LC #225 | Inverse problem simulate stack using queues → rotate queue on every push | Yes — direct inverse |
+| Min Stack — LC #155 | Augment stack with min tracking → same auxiliary stack design | Partial — same design family |
+| Design Circular Queue — LC #622 | Purpose built queue with fixed size array → no stack simulation needed | Partial — same queue design |
+| Design Circular Deque — LC #641 | Double ended fixed size queue → same circular array idea | Partial — same design family |
+| Moving Average from Data Stream — LC #346 | Sliding window average over stream → queue as sliding window | Partial — queue application |
+| Design Hit Counter — LC #362 | Count hits in last 300 seconds → queue to track time window | Partial — same queue idea |
+| Snake Game — LC #353 | Deque to track snake body → same front/back queue operations | Partial — queue application |
+| Sliding Window Maximum — LC #239 | Monotonic deque for window max → same deque operations under constraints | No — different pattern |
+
+**How this pattern scales:**
+- **Two stack amortized O(1)** is the core trick — push to inbox stack always, pop from outbox stack when needed. When outbox is empty drain entire inbox into outbox. Each element moves at most twice so amortized O(1) per operation
+- **Amortized analysis** is the key concept interviewers probe here — worst case single pop is O(n) but averaged across all operations it's O(1). Being able to explain why is more important than the implementation itself
+- **Lazy transfer** is the transferable pattern — instead of keeping both stacks in sync on every operation, defer the expensive reorganization until absolutely necessary. Same idea appears in lazy propagation in segment trees
+- **Design ladder** → LC #232 → LC #622 (Circular Queue) → LC #641 (Circular Deque) → LC #239 (Sliding Window Maximum) — each adds one constraint on top of the previous, moving from simulated to purpose built to constrained window structures
+
+```cpp
+class MyQueue {
+    //solution 1, working but inefficient push
+// public:
+//     MyQueue() {
+//         //dont need to do anything ehre
+//     }
+    
+//     void push(int x) {
+//         //say s1 is the main stack
+//         while(!s1.empty()){
+//             int val = s1.top();
+//             s1.pop();
+//             s2.push(val);
+//         }
+//         s1.push(x);
+//         while(!s2.empty()){
+//             int val = s2.top();
+//             s2.pop();
+//             s1.push(val);
+//         }
+
+//     }
+    
+//     int pop() {
+//         int val = s1.top();
+//         s1.pop();
+//         return val;
+//     }
+    
+//     int peek() {
+//         return s1.top();
+//     }
+    
+//     bool empty() {
+//         return s1.empty();
+//     }
+// private:
+// stack<int> s1;
+// stack<int> s2;
+
+public:
+    MyQueue() {
+        //dont need to do anything ehre
+    }
+    
+    void push(int x) {
+        input.push(x); //main stack for push, add to input
+
+    }
+    
+    int pop() {
+        if(output.empty()){ //if output empty, move everything from input into output, will be in reverse order
+            while(!input.empty()){
+                output.push(input.top()); //reverse order so front of stack will be front of the queue
+                input.pop();
+            }
+        }
+        int val = output.top(); //this is now the front of the queue, pop off and return
+        output.pop(); //only time pop is called is when popping from output stack, so output size can decrease
+        return val;
+    }
+    
+    int peek() {
+    if(output.empty()){
+            while(!input.empty()){
+                output.push(input.top());
+                input.pop();
+            }
+        }
+        return output.top();
+    }
+    
+    bool empty() {
+        return (output.empty() && input.empty());
+    }
+private:
+stack<int> input; //push
+stack<int> output; //pop and peek
+};
+
+/**
+ * Your MyQueue object will be instantiated and called as such:
+ * MyQueue* obj = new MyQueue();
+ * obj->push(x);
+ * int param_2 = obj->pop();
+ * int param_3 = obj->peek();
+ * bool param_4 = obj->empty();
+ */
+```
+
