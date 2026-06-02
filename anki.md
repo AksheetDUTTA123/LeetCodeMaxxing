@@ -3072,3 +3072,784 @@ stack<int> output; //pop and peek
  */
 ```
 
+## Decode String LC 394
+
+<!-- notecardId: 1780412161745 -->
+
+Given an encoded string, return its decoded string.
+
+The encoding rule is: k[encoded_string], where the encoded_string inside the square brackets is being repeated exactly k times. Note that k is guaranteed to be a positive integer.
+
+You may assume that the input string is always valid; there are no extra white spaces, square brackets are well-formed, etc. Furthermore, you may assume that the original data does not contain any digits and that digits are only for those repeat numbers, k. For example, there will not be input like 3a or 2[4].
+
+The test cases are generated so that the length of the output will never exceed 105.
+
+ 
+
+Example 1:
+
+Input: s = "3[a]2[bc]"
+Output: "aaabcbc"
+Example 2:
+
+Input: s = "3[a2[c]]"
+Output: "accaccacc"
+Example 3:
+
+Input: s = "2[abc]3[cd]ef"
+Output: "abcabccdcdcdef"
+
+Constraints:
+
+1 <= s.length <= 30
+s consists of lowercase English letters, digits, and square brackets '[]'.
+s is guaranteed to be a valid input.
+All the integers in s are in the range [1, 300].
+
+**Link**: [text](https://leetcode.com/problems/decode-string/)
+
+%
+
+**Pattern:** Stack with Auxiliary Data Structure
+
+**Approach:** Use a stack to store the strings and frequencies. There are 4 cases to be aware of. If there is a number, then you don't know how big it is until you hit the opening bracket, so you keep multipliying the previous by 10 and adding new digits. This is necessary because the integer can be in rage 1 to 300. When you hit an opening bracket, push the current string and frequency onto the stack and reset them. When you hit a closing bracket, pop from the stack to get the previous string and frequency, and append the current string repeated frequency times to the previous string. When you hit a letter, just add it to the current string.
+
+**Key Insight:** The key insight is that the nested structure of the encoded string can be effectively managed using a stack. By pushing the current state (string and frequency) onto the stack when encountering an opening bracket and popping it when encountering a closing bracket, you can correctly build the decoded string in a structured manner.
+
+**Gotchas:** Be careful with the order of operations when pushing and popping from the stack. When you pop from the stack, you need to append the current string repeated frequency times to the previous string, not the other way around. Also, make sure to reset the current string and frequency after pushing onto the stack when you encounter an opening bracket. Nesting is the trickiest part of this question. For example, in "3[a2[c]]", when you hit the first closing bracket, you need to pop and get "a" and 3, but the current string is "acc" because of the nested "2[c]". So you need to append "acc" repeated 3 times to "a", not just "a" repeated 3 times. The stack works because it allows you to keep track of the previous string and frequency at each level of nesting, so when you pop, you have all the information you need to correctly build the decoded string.
+
+**Complexity:** Time: O(n * k) where n is the length of the input string and k is the maximum frequency (since you may have to repeat a string k times) | Space: O(n * k) in the worst case if you have a string that needs to be repeated many times
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Valid Parentheses — LC #20 | Match brackets without decoding → same stack nesting structure | Yes — foundation |
+| Encode and Decode Strings — LC #271 | Encode/decode without nesting → length prefix, no stack needed | Partial — same encoding idea |
+| Basic Calculator — LC #224 | Evaluate nested arithmetic expressions → same stack save/restore per level | Yes — same stack pattern |
+| Simplify Path — LC #71 | Process path tokens with stack → same token by token stack processing | Partial — same stack idea |
+| Flatten Nested List Iterator — LC #341 | Flatten nested structure iteratively → same stack based nesting traversal | Yes — same nesting pattern |
+| Number of Atoms — LC #726 | Parse chemical formula with nested groups → same stack save/restore per bracket | Yes — direct variant |
+| Remove All Adjacent Duplicates — LC #1047 | Stack to track and remove adjacent chars → same character stack idea | Partial — simpler variant |
+| Evaluate Reverse Polish Notation — LC #150 | Stack to evaluate postfix tokens → same operand stack pattern | Partial — same stack family |
+
+**How this pattern scales:**
+- **Stack save/restore per bracket level** is the core trick — when `[` is encountered push current string and current count onto stack, reset both, build inner string. When `]` is encountered pop saved string and count, repeat inner string count times and append to saved string
+- **Two stack approach** — maintain separate stacks for counts and strings. Count stack tracks repetition at each nesting level, string stack tracks the accumulated string before each `[`
+- **Recursive descent** is the clean alternative — treat each `[...]` block as a recursive call, return the decoded string up the call stack. Cleaner to reason about but uses implicit call stack instead of explicit stack
+- **Nesting pattern generalizes** → Number of Atoms (LC #726) applies the exact same bracket save/restore logic but tracks element counts in a hash map instead of a string — same skeleton, different payload
+
+```cpp
+class Solution {
+public:
+    string decodeString(string s) {
+        stack<int> frequency; //store frequency numbers
+        stack<string> strings; //store the string built so far, this is important when nesting occurs, 
+        int num = 0; //to help with calculating frequencies
+        string curr = ""; //starting current string is 0
+        for(int i = 0; i < s.size(); i++){
+            if(isdigit(s[i])){ //if a number, we dont know how big it is, multiply previous by 10 and add new digit, needed since number is 1-300
+                num = num * 10 + (s[i] - '0');
+            }
+            else if (s[i] == '['){ /*
+            when a [ is there, that means the current string is done, frequency has also been obtained, so store them in their respective stacks, then reset the current string and frequency to start the new string inside the brackets, 
+            when we encounter the closing bracket, we will know how many times to repeat the current string, and what the previous string was, so we can pop from both stacks and update the current string to be the previous string + the current string repeated frequency number of times, t
+            this is important for nesting, because if there are multiple nested brackets, then when we encounter a closing bracket, we will only repeat the current string inside that specific bracket, and then add it to the previous string, which may also be inside another bracket, 
+            but that is fine because when we encounter the closing bracket for that one, we will repeat the entire current string which includes the previous string that was just added to it
+            */
+            frequency.push(num);
+            strings.push(curr);
+            curr = "";
+            num = 0;
+            }
+            else if (s[i] == ']'){
+                //when a closing bracket is reached, current string is done, so then we take the top of the stack for frequency and string
+                int ct = frequency.top();
+                frequency.pop();
+                string str = strings.top();
+                strings.pop();
+                
+                string freqStr = "";
+                //CURRENT STRING is repeated ct times, and then is added to the PREVIOUS STRING, which is str, this is important for nesting,
+                // because if there are multiple nested brackets, then when we encounter a closing bracket, we will only repeat the current string inside that specific bracket, 
+                //and then add it to the previous string, which may also be inside another bracket
+                for(int i = 0; i < ct; i++){
+                    freqStr += curr;
+                }
+                curr = str + freqStr;
+
+            }
+            else{
+                curr += s[i]; //add to current string if it is a character
+            }
+        }
+    return curr;
+    }
+};
+```
+
+## Baseball Game LC 682
+
+<!-- notecardId: 1780413607450 -->
+
+You are keeping the scores for a baseball game with strange rules. At the beginning of the game, you start with an empty record.
+
+You are given a list of strings operations, where operations[i] is the ith operation you must apply to the record and is one of the following:
+
+An integer x.
+Record a new score of x.
+'+'.
+Record a new score that is the sum of the previous two scores.
+'D'.
+Record a new score that is the double of the previous score.
+'C'.
+Invalidate the previous score, removing it from the record.
+Return the sum of all the scores on the record after applying all the operations.
+
+The test cases are generated such that the answer and all intermediate calculations fit in a 32-bit integer and that all operations are valid.
+
+ 
+
+Example 1:
+
+Input: ops = ["5","2","C","D","+"]
+Output: 30
+Explanation:
+"5" - Add 5 to the record, record is now [5].
+"2" - Add 2 to the record, record is now [5, 2].
+"C" - Invalidate and remove the previous score, record is now [5].
+"D" - Add 2 * 5 = 10 to the record, record is now [5, 10].
+"+" - Add 5 + 10 = 15 to the record, record is now [5, 10, 15].
+The total sum is 5 + 10 + 15 = 30.
+Example 2:
+
+Input: ops = ["5","-2","4","C","D","9","+","+"]
+Output: 27
+Explanation:
+"5" - Add 5 to the record, record is now [5].
+"-2" - Add -2 to the record, record is now [5, -2].
+"4" - Add 4 to the record, record is now [5, -2, 4].
+"C" - Invalidate and remove the previous score, record is now [5, -2].
+"D" - Add 2 * -2 = -4 to the record, record is now [5, -2, -4].
+"9" - Add 9 to the record, record is now [5, -2, -4, 9].
+"+" - Add -4 + 9 = 5 to the record, record is now [5, -2, -4, 9, 5].
+"+" - Add 9 + 5 = 14 to the record, record is now [5, -2, -4, 9, 5, 14].
+The total sum is 5 + -2 + -4 + 9 + 5 + 14 = 27.
+Example 3:
+
+Input: ops = ["1","C"]
+Output: 0
+Explanation:
+"1" - Add 1 to the record, record is now [1].
+"C" - Invalidate and remove the previous score, record is now [].
+Since the record is empty, the total sum is 0.
+ 
+
+Constraints:
+
+1 <= operations.length <= 1000
+operations[i] is "C", "D", "+", or a string representing an integer in the range [-3 * 104, 3 * 104].
+For operation "+", there will always be at least two previous scores on the record.
+For operations "C" and "D", there will always be at least one previous score on the record.
+
+**Link**: [text](https://leetcode.com/problems/baseball-game/)
+
+%
+
+**Pattern:** Stack with Auxiliary Data Structure
+
+**Approach:** Use a stack to keep track of the scores. For each operation, perform the corresponding action on the stack. If the operation is an integer, push it onto the stack. If it's "+", pop the top two scores, sum them, push the result back onto the stack, and also push the two popped scores back onto the stack. If it's "D", pop the top score, double it, and push it back onto the stack along with the original score. If it's "C", simply pop the top score from the stack. After processing all operations, sum up all the scores in the stack to get the final result.
+
+**Key Insight:** The key insight is that the stack data structure allows you to easily manage the scores and perform the required operations in a last-in-first-out manner. This is particularly useful for handling the "C" operation, which invalidates the previous score, and the "+" and "D" operations, which depend on the previous scores.
+
+**Gotchas:** Be careful when handling the "+" operation to ensure that you correctly pop the top two scores, sum them, and then push both the original scores and the new score back onto the stack. Also, make sure to handle the "D" operation correctly by doubling the top score and pushing both the original and doubled scores back onto the stack. Finally, remember to sum all the scores in the stack at the end to get the final result.
+
+**Complexity:** Time: O(n) where n is the number of operations (each operation is processed once, and summing the stack at the end takes O(n)) | Space: O(n) in the worst case if all operations are integers and no "C" operations
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Valid Parentheses — LC #20 | Stack to match brackets instead of scores → same push/pop on tokens | Yes — same stack pattern |
+| Evaluate Reverse Polish Notation — LC #150 | Stack to evaluate postfix operators → same token by token stack processing | Yes — same stack pattern |
+| Remove All Adjacent Duplicates — LC #1047 | Stack to remove adjacent matching chars → same conditional push/pop | Partial — same stack idea |
+| Decode String — LC #394 | Stack to track nested encoding context → same save/restore per level | Partial — same stack family |
+| Mini Parser — LC #385 | Parse nested integers with stack → same token processing via stack | Partial — same parsing idea |
+| Design Stack With Increment — LC #1381 | Augmented stack with bulk increment → same stack design family | Partial — same design idea |
+| Next Greater Element — LC #496 | Monotonic stack to find next greater → same stack but with ordering constraint | No — different pattern |
+
+**How this pattern scales:**
+- **Stack as running history** is the core trick — each operation either adds to history (integer, `+`, `D`) or removes from it (`C`). Stack lets you access and undo the most recent entry in O(1)
+- **Token parsing pattern** — split input into tokens, process each token with a switch/if-else, push results onto stack. Same skeleton used in LC #150 (RPN) and LC #224 (Basic Calculator)
+- **Undo via stack** generalizes to any problem where operations can be reversed — the stack implicitly maintains a history of states, and popping is equivalent to undoing the last operation
+- **Simplest stack problem in the family** → LC #682 is the easiest entry point into the stack token processing family. The ladder goes LC #682 → LC #150 → LC #227 → LC #224 — each adds operator precedence or nesting complexity on top of the same core token loop
+
+```cpp
+class Solution {
+public:
+    int calPoints(vector<string>& operations) {
+        std::stack<int> stk;
+        int total = 0;
+        for(int i = 0; i < operations.size(); i++){
+            if(operations[i] == "+"){
+                int holder1 = stk.top();
+                stk.pop();
+                int holder2 = stk.top();
+                int sum = holder1 + holder2;
+                stk.push(holder1);
+                stk.push(sum);
+            }
+            else if(operations[i] == "D"){
+                stk.push(2 * stk.top());
+            }
+            else if(operations[i] == "C"){
+                stk.pop();
+            }
+            else{
+                stk.push(stoi(operations[i]));
+            }
+        }
+        while(stk.size() > 0){
+            total += stk.top();
+            stk.pop();
+        }
+        return total;
+    }
+};
+```
+## Asteroid Collision LC 735
+
+<!-- notecardId: 1780414502836 -->
+
+We are given an array asteroids of integers representing asteroids in a row. The indices of the asteroid in the array represent their relative position in space.
+
+For each asteroid, the absolute value represents its size, and the sign represents its direction (positive meaning right, negative meaning left). Each asteroid moves at the same speed.
+
+Find out the state of the asteroids after all collisions. If two asteroids meet, the smaller one will explode. If both are the same size, both will explode. Two asteroids moving in the same direction will never meet.
+
+ 
+
+Example 1:
+
+Input: asteroids = [5,10,-5]
+Output: [5,10]
+Explanation: The 10 and -5 collide resulting in 10. The 5 and 10 never collide.
+Example 2:
+
+Input: asteroids = [8,-8]
+Output: []
+Explanation: The 8 and -8 collide exploding each other.
+Example 3:
+
+Input: asteroids = [10,2,-5]
+Output: [10]
+Explanation: The 2 and -5 collide resulting in -5. The 10 and -5 collide resulting in 10.
+Example 4:
+
+Input: asteroids = [3,5,-6,2,-1,4]​​​​​​​
+Output: [-6,2,4]
+Explanation: The asteroid -6 makes the asteroid 3 and 5 explode, and then continues going left. On the other side, the asteroid 2 makes the asteroid -1 explode and then continues going right, without reaching asteroid 4.
+ 
+
+Constraints:
+
+2 <= asteroids.length <= 104
+-1000 <= asteroids[i] <= 1000
+asteroids[i] != 0
+
+**Link**: [text](https://leetcode.com/problems/asteroid-collision/)
+
+%
+
+**Pattern:** Stack with Auxiliary Data Structure
+
+**Approach:** Use a stack to keep track of the asteroids that are still in play. Iterate through the list of asteroids and for each asteroid, check if it will collide with the top of the stack (i.e., if the current asteroid is moving left and the top of the stack is moving right). If there is a collision, compare their sizes and determine which one will explode. If the current asteroid is larger, pop the top of the stack and continue checking for collisions with the new top. If they are the same size, pop the top of the stack and do not push the current asteroid. If there is no collision, simply push the current asteroid onto the stack. After processing all asteroids, the stack will contain only those that have survived.
+
+**Key Insight:** The key insight is that the stack data structure allows you to easily manage the asteroids and perform the required collision checks in a last-in-first-out manner. This is particularly useful for handling the collisions between asteroids moving in opposite directions.
+
+**Gotchas:** Be careful when handling the collision logic to ensure that you correctly compare the sizes of the asteroids and determine which one should be popped from the stack. Also, make sure to continue checking for collisions with the new top of the stack after popping an asteroid, as there may be multiple collisions in a row. Finally, remember to return the contents of the stack as the final result after processing all asteroids. Something a bit tricky to see is that if the current asteroid is moving right, it will never collide with the top of the stack, because the top of the stack will also be moving right (since if it were moving left, it would have already collided with a previous asteroid and been popped). So you only need to check for collisions when the current asteroid is moving left.
+
+**Complexity:** Time: O(n) where n is the number of asteroids (each asteroid is processed once, and in the worst case, each asteroid could cause a collision with every other asteroid) | Space: O(n) in the worst case if all asteroids are moving in the same direction and none collide
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Valid Parentheses — LC #20 | Match opposing bracket pairs → same collision/cancellation via stack | Yes — same stack pattern |
+| Remove All Adjacent Duplicates — LC #1047 | Remove matching adjacent pairs → same push/pop cancellation idea | Yes — direct variant |
+| Remove All Adjacent Duplicates II — LC #1209 | Remove k adjacent duplicates → same stack with count tracking | Yes — upgrade |
+| Daily Temperatures — LC #739 | Find next warmer day → same monotonic stack next greater element | Partial — same stack idea |
+| Next Greater Element — LC #496 | Find next greater for each element → same right-to-left stack scan | Partial — same stack family |
+| Trapping Rain Water — LC #42 | Left/right boundary tracking → same opposing direction comparison | No — different pattern |
+| Buildings With an Ocean View — LC #1762 | Keep buildings not blocked from right → same "survival" stack logic | Yes — direct variant |
+| Score of Parentheses — LC #856 | Nested scoring via stack → same push/pop with value tracking | Partial — same stack family |
+
+**How this pattern scales:**
+- **Collision simulation via stack** is the core trick — iterate left to right, push positive asteroids, when negative asteroid encountered pop and compare with stack top until collision resolves. Three outcomes: incoming destroyed, stack top destroyed, mutual destruction
+- **Three outcome handling** is the key implementation detail — (1) incoming asteroid destroyed: stop processing (2) stack top destroyed: keep popping (3) equal size: pop and stop. Missing any case causes subtle bugs
+- **Cancellation pattern** generalizes → Remove All Adjacent Duplicates (LC #1047) is the same push/check/cancel loop but cancels on equality instead of opposing signs. Any problem where new elements can cancel or consume previous ones uses this stack structure
+- **Monotonic stack variant** → when elements don't cancel but instead you want to find the next element that "beats" the current one (Daily Temperatures, Next Greater Element) the same stack is used but elements are popped to record answers rather than to simulate destruction
+
+```cpp
+class Solution {
+public:
+    vector<int> asteroidCollision(vector<int>& asteroids) {
+        // Stack to keep track of surviving asteroids
+        // The stack maintains order from left to right (bottom to top)
+        stack<int> past;
+
+        // Process each asteroid from left to right
+        for(int i = 0; i < asteroids.size(); i++){
+            
+            // Case 1: Current asteroid is moving LEFT (negative)
+            if(asteroids[i] < 0){
+                
+                // Subcase 1.1: Stack empty OR top asteroid also moving left
+                // No collision possible since both move same direction
+                if(past.empty() || past.top() < 0){
+                    past.push(asteroids[i]);
+                }
+                
+                // Subcase 1.2: Current left-moving asteroid is LARGER than top right-moving asteroid
+                else if(abs(asteroids[i]) > past.top()){
+                    // Keep destroying right-moving asteroids that are smaller
+                    while(!past.empty() && past.top() > 0 && abs(asteroids[i]) > past.top()){
+                        past.pop();
+                    }
+                    
+                    // After destroying all smaller asteroids, check the new top
+                    if(past.empty() || past.top() < 0){
+                        // All right-moving asteroids destroyed, current survives
+                        past.push(asteroids[i]);
+                    }
+                    else if(past.top() > 0 && abs(asteroids[i]) == past.top()){
+                        // Equal size: both are destroyed (pop the right-moving one)
+                        past.pop();
+                    }
+                    // If past.top() > 0 && abs(asteroids[i]) < past.top()
+                    // Current asteroid is destroyed, do nothing
+                }
+                
+                // Subcase 1.3: Current left-moving asteroid is SMALLER than top right-moving asteroid
+                else if(abs(asteroids[i]) < past.top()){
+                    // Current asteroid is destroyed, move to next asteroid
+                    continue;
+                }
+                
+                // Subcase 1.4: Current left-moving asteroid is EQUAL to top right-moving asteroid
+                else{ // equal
+                    if(!past.empty() && past.top() > 0 && abs(asteroids[i]) == past.top()){
+                        // Both explode - just remove the top right-moving asteroid
+                        past.pop();
+                    }
+                }
+            }
+            
+            // Case 2: Current asteroid is moving RIGHT (positive)
+            // No collision possible yet (future left-moving asteroids might collide)
+            else{
+                past.push(asteroids[i]);
+            }
+        }
+        
+        // Build result vector from stack (stack gives reverse order)
+        vector<int> ans(past.size());
+        int index = past.size() - 1;  // Start from the last index
+        
+        // Pop from stack and fill from end to beginning to maintain original order
+        while(!past.empty()){
+            ans[index--] = past.top();  // Place top asteroid at current index, then decrement
+            past.pop();
+        }
+        
+        return ans;
+    }
+};
+```
+## Daily Temperatures LC 739
+
+<!-- notecardId: 1780414881404 -->
+
+Given an array of integers temperatures represents the daily temperatures, return an array answer such that answer[i] is the number of days you have to wait after the ith day to get a warmer temperature. If there is no future day for which this is possible, keep answer[i] == 0 instead.
+
+ 
+
+Example 1:
+
+Input: temperatures = [73,74,75,71,69,72,76,73]
+Output: [1,1,4,2,1,1,0,0]
+Example 2:
+
+Input: temperatures = [30,40,50,60]
+Output: [1,1,1,0]
+Example 3:
+
+Input: temperatures = [30,60,90]
+Output: [1,1,0]
+ 
+
+Constraints:
+
+1 <= temperatures.length <= 105
+30 <= temperatures[i] <= 100
+
+**Link**: [text](https://leetcode.com/problems/daily-temperatures/)
+
+%
+
+**Pattern:** Stack with Auxiliary Data Structure
+
+**Approach:** Use a stack to keep track of the indices of the temperatures. Iterate through the list of temperatures and for each temperature, check if it is warmer than the temperature at the index on the top of the stack. If it is, pop the index from the stack and calculate the number of days by taking the difference between the current index and the popped index, and store this in the answer array at the popped index. Continue this process until the stack is empty or the current temperature is not warmer than the temperature at the index on top of the stack. Finally, push the current index onto the stack. After processing all temperatures, any indices remaining in the stack will have an answer of 0 since there are no warmer future days. Remember to store indices in the stack, and not the actual temperatures, since temperatures is stored in an array and we need to calculate the difference in days using indices.
+
+**Key Insight:** The key insight is that the stack data structure allows you to efficiently keep track of the indices of the temperatures that have not yet found a warmer future day. By comparing the current temperature with the temperature at the index on top of the stack, you can determine when a warmer day has been found and update the answer array accordingly.
+
+**Gotchas:** Be careful to store indices in the stack instead of the actual temperatures, as you need to calculate the number of days by taking the difference between indices. Also, make sure to continue popping from the stack until you find a temperature that is not warmer than the current temperature or until the stack is empty. Finally, remember to initialize the answer array with 0s, since any indices remaining in the stack after processing all temperatures will have an answer of 0.
+
+**Complexity:** Time: O(n) where n is the number of temperatures (each temperature is processed once, and each index is pushed and popped from the stack at most once) | Space: O(n) in the worst case if all temperatures are in decreasing order and all indices are stored in the stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Next Greater Element I — LC #496 | Find next greater across two arrays → same monotonic stack, no index math | Yes — simpler foundation |
+| Next Greater Element II — LC #503 | Circular array next greater → same stack but iterate twice with modulo | Yes — direct upgrade |
+| Next Greater Element III — LC #556 | Next greater permutation of digits → no stack, digit rearrangement | No — different pattern |
+| Asteroid Collision — LC #735 | Elements cancel each other → same stack pop on conflict | Partial — same stack family |
+| Largest Rectangle in Histogram — LC #84 | Find nearest smaller bar on both sides → same monotonic stack boundaries | Yes — same pattern |
+| Trapping Rain Water — LC #42 | Left/right boundary tracking → monotonic stack or two pointer | Partial — same boundary idea |
+| Sum of Subarray Minimums — LC #907 | Sum minimums across all subarrays → same left/right nearest smaller boundary | Yes — same structure |
+| Online Stock Span — LC #901 | Count consecutive days price was lower → same monotonic stack span counting | Yes — direct variant |
+
+**How this pattern scales:**
+- **Monotonic decreasing stack** is the core trick — maintain stack of indices with decreasing temperatures. When a warmer day is found pop all cooler indices and record their answer as current index minus popped index
+- **Store indices not values** — storing indices instead of temperatures is what lets you compute the distance answer in O(1). A common mistake is storing temperatures and losing the position information
+- **Next greater element family** → LC #739 → LC #496 → LC #503 is the cleanest ladder. LC #739 finds distance to next greater, LC #496 finds the value of next greater, LC #503 adds circular wrapping — same monotonic stack, three different output types
+- **Left and right boundary extension** → when a problem needs both the nearest smaller/greater on the left AND right (LC #84, LC #907), run the same monotonic stack twice — once left to right for right boundaries, once right to left for left boundaries
+- **Circular array trick** → for LC #503 iterate through the array twice using `i % n` as the index — same stack logic handles the wrap-around without any special casing
+
+```cpp
+class Solution {
+public:
+    vector<int> dailyTemperatures(vector<int>& temperatures) {
+        vector<int> answer(temperatures.size(), 0); //store the result vector
+        stack<int> days; //stack to keep track of the indices of the days
+        for(int i = 0; i < temperatures.size(); i++){
+            while(!days.empty() && temperatures[i] > temperatures[days.top()]){ //while the current temp is greater than the temp of the day at the top of the stack, a warmer day has been found
+            //the reason we have a while loop is because there may be multiple days in the stack that are colder than the current day, so pop all of those off and then update the answer for all of those days
+               int prevIndex = days.top(); //index of previous day with a colder temp
+               days.pop(); //pop it off the stack
+               answer[prevIndex] = i - prevIndex; //the number of days until a warmer day is the difference between the current index and the previous index
+
+        }
+        days.push(i); //push current day into the stack, use stack to check if a warmer day for that specific day will come
+    }
+    return answer;
+    }
+
+};
+```
+## Car Fleet LC 853
+
+<!-- notecardId: 1780415092812 -->
+
+There are n cars at given miles away from the starting mile 0, traveling to reach the mile target.
+
+You are given two integer arrays position and speed, both of length n, where position[i] is the starting mile of the ith car and speed[i] is the speed of the ith car in miles per hour.
+
+A car cannot pass another car, but it can catch up and then travel next to it at the speed of the slower car.
+
+A car fleet is a single car or a group of cars driving next to each other. The speed of the car fleet is the minimum speed of any car in the fleet.
+
+If a car catches up to a car fleet at the mile target, it will still be considered as part of the car fleet.
+
+Return the number of car fleets that will arrive at the destination.
+
+ 
+
+Example 1:
+
+Input: target = 12, position = [10,8,0,5,3], speed = [2,4,1,1,3]
+
+Output: 3
+
+Explanation:
+
+The cars starting at 10 (speed 2) and 8 (speed 4) become a fleet, meeting each other at 12. The fleet forms at target.
+The car starting at 0 (speed 1) does not catch up to any other car, so it is a fleet by itself.
+The cars starting at 5 (speed 1) and 3 (speed 3) become a fleet, meeting each other at 6. The fleet moves at speed 1 until it reaches target.
+Example 2:
+
+Input: target = 10, position = [3], speed = [3]
+
+Output: 1
+
+Explanation:
+
+There is only one car, hence there is only one fleet.
+Example 3:
+
+Input: target = 100, position = [0,2,4], speed = [4,2,1]
+
+Output: 1
+
+Explanation:
+
+The cars starting at 0 (speed 4) and 2 (speed 2) become a fleet, meeting each other at 4. The car starting at 4 (speed 1) travels to 5.
+Then, the fleet at 4 (speed 2) and the car at position 5 (speed 1) become one fleet, meeting each other at 6. The fleet moves at speed 1 until it reaches target.
+
+**Link**: [text](https://leetcode.com/problems/car-fleet/)
+
+%
+
+**Pattern:** Stack with Auxiliary Data Structure
+
+**Approach:** Use a stack to keep track of the time it takes for each car to reach the target. First, pair up the position and speed of each car and sort them based on their starting position in descending order (from closest to target to farthest). Then, iterate through the sorted list of cars and calculate the time it takes for each car to reach the target using the formula `time = (target - position) / speed`. If the stack is empty or if the time for the current car is greater than the time at the top of the stack, push the current time onto the stack. If the time for the current car is less than or equal to the time at the top of the stack, it means that this car will catch up to the fleet represented by the top of the stack before reaching the target, so we do not push it onto the stack. Finally, the number of fleets will be equal to the size of the stack.
+
+**Key Insight:** The key insight is that by sorting the cars based on their starting position and using a stack to keep track of the time it takes for each car to reach the target, we can easily determine when a car will catch up to a fleet and when it will form a new fleet. The stack allows us to efficiently manage the fleets as we iterate through the cars.
+
+**Gotchas:** Be careful to sort the cars in descending order of their starting position, as we want to process the cars from closest to the target to farthest. Also, make sure to correctly calculate the time it takes for each car to reach the target and compare it with the time at the top of the stack to determine if it will catch up to an existing fleet or form a new fleet. The time comparison is a bit tricky, but know that if a car is going too fast, it can slow down and join a fleet, but if it is going too slow, it will never catch up to the fleet in front of it, so it will form its own fleet.
+
+**Complexity:** Time: O(n log n) due to sorting the cars based on their starting position | Space: O(n) in the worst case if all cars form their own fleet and are stored in the stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Daily Temperatures — LC #739 | Find next warmer day → same monotonic stack next greater element | Partial — same stack family |
+| Asteroid Collision — LC #735 | Elements cancel on collision → same stack absorption idea | Partial — same stack pattern |
+| Next Greater Element I — LC #496 | Find next greater value across arrays → same monotonic stack | Partial — same stack family |
+| Largest Rectangle in Histogram — LC #84 | Find nearest smaller bar boundaries → same monotonic stack | Partial — same stack idea |
+| Meeting Rooms II — LC #253 | Count overlapping intervals instead of merging fleets → sort + heap | No — different pattern |
+| Merge Intervals — LC #56 | Merge overlapping intervals → sort + linear scan | Partial — same sort first idea |
+| Task Scheduler — LC #621 | Schedule tasks with cooldown constraints → greedy frequency count | No — different pattern |
+| Queue Reconstruction by Height — LC #406 | Sort then insert by second key → same sort by one key first idea | Partial — same sort strategy |
+
+**How this pattern scales:**
+- **Sort by position descending + monotonic stack** is the core trick — compute each car's time to reach target, iterate from closest to furthest, push times onto stack and pop when a car behind arrives no later than the car ahead (it joins that fleet)
+- **Time to target formula** `time = (target - position) / speed` converts the problem from a spatial simulation into a simple comparison of arrival times — this reduction is the key insight
+- **Stack as fleet tracker** — each element remaining on the stack after processing represents one distinct fleet. The answer is simply `stack.size()`
+- **Sort direction matters** — sorting descending by position (closest to target first) ensures that when you process a car you already know the fleet ahead of it. Sorting ascending would require looking ahead instead of behind
+- **Greedy absorption pattern** → any car that arrives no later than the fleet ahead joins it and can never overtake — this greedy observation is what makes a single pass sufficient. Same greedy "absorb if you catch up" logic appears in merge intervals problems
+
+```cpp
+class Solution {
+public:
+    int carFleet(int target, vector<int>& position, vector<int>& speed) {
+        vector<pair<int,int>> car(position.size()); //first stores position, second stores speed
+        stack<double> fleet; //arrival times of the fleet, order will go from earliest at the bottom and latest at top of the stack
+    
+        for(int i = 0; i < position.size(); i++){
+            car[i]= {position[i],speed[i]};
+        }
+        sort(car.begin(), car.end()); //sort, position A car can only catch cars that start ahead of it
+        for(int i = car.size() - 1; i >= 0; i--){ //start from back since this will guarantee the lowest arrival time, so stack goes from low to high(at the top)
+            double arrivalTime = (target - car[i].first)/(double)car[i].second;
+            if(fleet.empty()){
+                fleet.push(arrivalTime);
+            }
+            else{
+                if(arrivalTime <= fleet.top()){
+                    continue; //joins the top of the fleet, slows down, so number of fleets stay the same
+                }
+                else{
+                    fleet.push(arrivalTime); //if arrival time is more than top of the stack
+                    //then wont reach previous fleet, will create a new fleet
+                }
+            }
+        }
+        return fleet.size();
+        //in theory, a stack is not needed, just store the latest arrivalTime instead, as that is what the top of the stack stores anyways
+    }
+};
+```
+## Maximum Frequency Stack LC 895
+
+<!-- notecardId: 1780415523618 -->
+
+Design a stack-like data structure to push elements to the stack and pop the most frequent element from the stack.
+
+Implement the FreqStack class:
+
+FreqStack() constructs an empty frequency stack.
+void push(int val) pushes an integer val onto the top of the stack.
+int pop() removes and returns the most frequent element in the stack.
+If there is a tie for the most frequent element, the element closest to the stack's top is removed and returned.
+ 
+
+Example 1:
+
+Input
+["FreqStack", "push", "push", "push", "push", "push", "push", "pop", "pop", "pop", "pop"]
+[[], [5], [7], [5], [7], [4], [5], [], [], [], []]
+Output
+[null, null, null, null, null, null, null, 5, 7, 5, 4]
+
+Explanation
+FreqStack freqStack = new FreqStack();
+freqStack.push(5); // The stack is [5]
+freqStack.push(7); // The stack is [5,7]
+freqStack.push(5); // The stack is [5,7,5]
+freqStack.push(7); // The stack is [5,7,5,7]
+freqStack.push(4); // The stack is [5,7,5,7,4]
+freqStack.push(5); // The stack is [5,7,5,7,4,5]
+freqStack.pop();   // return 5, as 5 is the most frequent. The stack becomes [5,7,5,7,4].
+freqStack.pop();   // return 7, as 5 and 7 is the most frequent, but 7 is closest to the top. The stack becomes [5,7,5,4].
+freqStack.pop();   // return 5, as 5 is the most frequent. The stack becomes [5,7,4].
+freqStack.pop();   // return 4, as 4, 5 and 7 is the most frequent, but 4 is closest to the top. The stack becomes [5,7].
+ 
+
+Constraints:
+
+0 <= val <= 109
+At most 2 * 104 calls will be made to push and pop.
+It is guaranteed that there will be at least one element in the stack before calling pop.
+
+**Link**: [text](https://leetcode.com/problems/maximum-frequency-stack/)
+
+%
+
+**Pattern:** Stack with Auxiliary Data Structure
+
+**Approach:** Use a stack to keep track of the elements in the order they were added, and a hash map to keep track of the frequency of each element. Additionally, maintain a variable to keep track of the maximum frequency. When pushing an element, update its frequency in the hash map and push it onto the stack. When popping an element, pop from the stack until you find an element that has the maximum frequency. Decrease its frequency in the hash map and return it. If after popping an element, there are no more elements with the current maximum frequency, decrease the maximum frequency by one.
+
+**Key Insight:** The key insight is that by using a stack to maintain the order of elements and a hash map to track their frequencies, we can efficiently determine which element to pop based on the maximum frequency. The stack allows us to easily access the most recently added elements, while the hash map allows us to quickly update and check the frequency of each element.
+
+**Gotchas:** Be careful to update the maximum frequency correctly after popping an element. If the popped element was the only one with the maximum frequency, you need to decrease the maximum frequency by one. Also, make sure to handle the case where multiple elements have the same maximum frequency, in which case you should pop the most recently added one (the one closest to the top of the stack). If in the stack the number that had the maximumFrequency is popped, then we need to check if there are any more numbers with the same maximumFrequency, if not, we need to decrease the maximumFrequency by 1, because now the new maximumFrequency will be 1 less than the previous maximumFrequency. This is a bit tricky to see, but it is important to maintain the correct maximumFrequency after popping an element and it will only decrease by 1.
+
+**Complexity:** Time: O(1) for both push and pop operations (amortized) | Space: O(n) in the worst case if all elements are unique and stored in the stack and hash map
+
+```cpp
+class FreqStack {
+public:
+    FreqStack() {
+        
+    }
+    
+    void push(int val) {
+    int freqNum = ++freq[val];
+    maxFreq = max(freqNum, maxFreq);
+    stkVal[freqNum].push(val);
+    }
+    
+    int pop() {
+    int val = stkVal[maxFreq].top();
+    stkVal[maxFreq].pop();
+    if(stkVal[maxFreq].empty()){
+        maxFreq--;
+    }
+    freq[val]--;
+    return val;
+    }
+private:
+int maxFreq = 0;
+unordered_map<int, int> freq;
+unordered_map<int, stack<int>> stkVal;
+};
+/**
+ * Your FreqStack object will be instantiated and called as such:
+ * FreqStack* obj = new FreqStack();
+ * obj->push(val);
+ * int param_2 = obj->pop();
+ */
+```
+
+
+## Online Stock Span LC 901
+
+<!-- notecardId: 1780415953098 -->
+
+Design an algorithm that collects daily price quotes for some stock and returns the span of that stock's price for the current day.
+
+The span of the stock's price in one day is the maximum number of consecutive days (starting from that day and going backward) for which the stock price was less than or equal to the price of that day.
+
+For example, if the prices of the stock in the last four days is [7,2,1,2] and the price of the stock today is 2, then the span of today is 4 because starting from today, the price of the stock was less than or equal 2 for 4 consecutive days.
+Also, if the prices of the stock in the last four days is [7,34,1,2] and the price of the stock today is 8, then the span of today is 3 because starting from today, the price of the stock was less than or equal 8 for 3 consecutive days.
+Implement the StockSpanner class:
+
+StockSpanner() Initializes the object of the class.
+int next(int price) Returns the span of the stock's price given that today's price is price.
+ 
+
+Example 1:
+
+Input
+["StockSpanner", "next", "next", "next", "next", "next", "next", "next"]
+[[], [100], [80], [60], [70], [60], [75], [85]]
+Output
+[null, 1, 1, 1, 2, 1, 4, 6]
+
+Explanation
+StockSpanner stockSpanner = new StockSpanner();
+stockSpanner.next(100); // return 1
+stockSpanner.next(80);  // return 1
+stockSpanner.next(60);  // return 1
+stockSpanner.next(70);  // return 2
+stockSpanner.next(60);  // return 1
+stockSpanner.next(75);  // return 4, because the last 4 prices (including today's price of 75) were less than or equal to today's price.
+stockSpanner.next(85);  // return 6
+ 
+
+Constraints:
+
+1 <= price <= 105
+At most 104 calls will be made to next.
+
+**Link**: [text](https://leetcode.com/problems/online-stock-span/)
+
+%
+
+**Pattern:** Stack with Auxiliary Data Structure
+
+**Approach:** Use a stack to keep track of the prices and their corresponding spans. When a new price is added, pop from the stack until you find a price that is greater than the current price. The span for the current price will be the sum of the spans of all the popped prices plus one (for the current price itself). Then, push the current price and its span onto the stack. This way, the stack will always maintain prices in decreasing order, and you can efficiently calculate the span for each new price.
+
+**Key Insight:** The key insight is that by using a stack to maintain the prices in decreasing order, you can efficiently calculate the span for each new price by summing the spans of all the prices that are less than or equal to it. The stack allows you to easily access the most recent prices and their spans, which is essential for calculating the span for the current price.
+
+**Gotchas:** Be careful to correctly calculate the span for the current price by summing the spans of all the popped prices plus one. Also, make sure to push the current price and its span onto the stack after popping the smaller prices. The stack should always maintain prices in decreasing order, so if you encounter a price that is greater than the current price, you should stop popping and calculate the span based on the remaining top of the stack. The clever solution is that once a span is calculated, future calculations can then use that span to skip over multiple entries in the stack at once, which is what allows the next() function to run in O(1) amortized time.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Daily Temperatures — LC #739 | Find days until next warmer day → same monotonic stack, store index not span | Yes — direct variant |
+| Next Greater Element I — LC #496 | Find next greater value across two arrays → same monotonic stack foundation | Yes — foundation |
+| Next Greater Element II — LC #503 | Circular array next greater → same stack with modulo index wrapping | Partial — same family |
+| Largest Rectangle in Histogram — LC #84 | Nearest smaller bar on both sides → same left/right boundary via stack | Partial — same boundary idea |
+| Car Fleet — LC #853 | Group cars that catch up → same stack absorption when condition met | Partial — same stack family |
+| Sliding Window Maximum — LC #239 | Maximum in sliding window → monotonic deque instead of stack | Partial — same tracking idea |
+| Sum of Subarray Minimums — LC #907 | Sum minimums across all subarrays → same left/right nearest smaller boundary | Yes — same structure |
+| Stock Price Fluctuation — LC #2034 | Track min/max of streaming prices → sorted set instead of stack | No — different pattern |
+
+**How this pattern scales:**
+- **Monotonic stack storing (price, span) pairs** is the core trick — when a new price arrives pop all stack entries with price less than or equal to current price, accumulate their spans into the current span, then push the new (price, accumulated span) pair
+- **Span accumulation is the key upgrade from LC #739** — instead of storing raw indices and computing distance by subtraction, store the span directly and sum it during pops. This handles the online streaming nature without needing to store all historical prices
+- **Online vs offline distinction** — LC #739 processes the full array at once (offline), LC #901 processes one price at a time (online/streaming). The stack structure is identical but span accumulation replaces index subtraction because historical indices are unavailable
+- **Compressed history** → by storing accumulated spans instead of individual prices the stack never grows beyond O(n) but in practice stays much smaller — consecutive decreasing prices get compressed into a single entry on the next higher price
+- **Streaming pattern** → any problem processing elements one at a time where each query depends on all previous elements uses this online stack approach. The key design question is always what to store per stack entry to answer queries in O(1)
+
+```cpp
+class StockSpanner {
+public:
+    StockSpanner() {
+        //dont need to do anything here
+    }
+    
+    int next(int price) {
+        int countCheck= 1;
+            while(!Stk.empty() && price >= Stk.top().first){
+                countCheck += Stk.top().second;
+                Stk.pop();
+            }
+            Stk.push({price, countCheck});
+            return countCheck;
+    }
+private:
+    stack<pair<int, int>> Stk; //insight, score both the price and the span, 
+};
+
+/**
+ * Your StockSpanner object will be instantiated and called as such:
+ * StockSpanner* obj = new StockSpanner();
+ * int param_1 = obj->next(price);
+ */
+```
+
