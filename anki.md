@@ -5907,3 +5907,403 @@ public:
     }
 };
 ```
+## Median of Two Sorted Arrays LC 4
+
+<!-- notecardId: 1780503031420 -->
+
+Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays.
+
+The overall run time complexity should be O(log (m+n)).
+
+ 
+
+Example 1:
+
+Input: nums1 = [1,3], nums2 = [2]
+Output: 2.00000
+Explanation: merged array = [1,2,3] and median is 2.
+Example 2:
+
+Input: nums1 = [1,2], nums2 = [3,4]
+Output: 2.50000
+Explanation: merged array = [1,2,3,4] and median is (2 + 3) / 2 = 2.5.
+ 
+
+Constraints:
+
+nums1.length == m
+nums2.length == n
+0 <= m <= 1000
+0 <= n <= 1000
+1 <= m + n <= 2000
+-106 <= nums1[i], nums2[i] <= 106
+
+**Link**: [text](https://leetcode.com/problems/median-of-two-sorted-arrays/)
+
+%
+
+**Pattern:** Binary Search
+
+**Approach:** Use binary search to partition the two sorted arrays such that the left partition contains the same number of elements as the right partition (or one more if the total number of elements is odd). The key is to find the correct partition point in both arrays where all elements in the left partitions are less than or equal to all elements in the right partitions. Once the correct partition is found, the median can be calculated based on the maximum of the left partitions and the minimum of the right partitions.
+
+**Key Insight:** The key insight is that the median can be found by partitioning the two arrays into two halves. By using binary search on the smaller array, you can efficiently find the correct partition point that satisfies the conditions for the median. This approach avoids the need to merge the arrays and allows you to find the median in logarithmic time.
+
+**Gotchas:** Be careful to handle edge cases where one of the arrays is empty. In such cases, the median will simply be the median of the non-empty array. Additionally, ensure that you are correctly calculating the maximum of the left partitions and the minimum of the right partitions, especially when the total number of elements is odd. Also, remember to always perform binary search on the smaller array to maintain the O(log(min(m,n))) time complexity. nums1 always has to be the shorter array to ensure that the binary search is performed on the smaller array, which guarantees the logarithmic time complexity.
+
+**Complexity:** Time: O(log(min(m, n))) where m and n are the lengths of the two input arrays (binary search is performed on the smaller array) | Space: O(1) for the variables used to store partition indices and median values
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Find K Closest Elements — LC #658 | Binary search on window boundary in one sorted array → same partition idea simpler | Partial — same binary search family |
+| Kth Smallest Element in Sorted Matrix — LC #378 | Kth smallest across sorted matrix rows → binary search on value not partition | Partial — same kth element idea |
+| Find K-th Smallest Pair Distance — LC #719 | Kth smallest distance between pairs → binary search on answer + sliding window | Partial — same binary search on answer |
+| Split Array Largest Sum — LC #410 | Minimize largest subarray sum → binary search on answer + greedy validation | Partial — same binary search on answer |
+| Median of a Data Stream — LC #295 | Median updates dynamically → two heaps not binary search | No — different pattern |
+| Search in Rotated Sorted Array — LC #33 | Binary search with rotation constraint → same binary search different condition | Partial — same binary search family |
+| Kth Largest Element in Array — LC #215 | Kth largest in unsorted array → QuickSelect or heap | No — different pattern |
+| Merge k Sorted Lists — LC #23 | Merge not find median → heap or divide and conquer | No — different pattern |
+
+**How this pattern scales:**
+- **Binary search on partition** is the core O(log min(m,n)) trick — binary search on the smaller array to find a partition point such that all elements on the left of both partitions are less than all elements on the right. Median is derived from the four boundary elements maxLeft1, maxLeft2, minRight1, minRight2
+- **Partition invariant** — `maxLeft1 <= minRight2` and `maxLeft2 <= minRight1` must both hold. If `maxLeft1 > minRight2` move partition left in array 1. If `maxLeft2 > minRight1` move partition right. When both hold the correct partition is found
+- **Even vs odd total length** — when total length is odd median is `min(minRight1, minRight2)`. When even median is `(max(maxLeft1, maxLeft2) + min(minRight1, minRight2)) / 2.0`. Handle both cases explicitly
+- **Always binary search the smaller array** — ensures O(log min(m,n)) time and simplifies boundary handling. If `nums1` is longer swap the arrays before starting
+- **Binary search on answer pattern generalizes** → Split Array Largest Sum (LC #410) and Find K-th Smallest Pair Distance (LC #719) use the same "binary search on the answer space then validate" idea — instead of searching for a partition index you search for the answer value directly and validate feasibility with a greedy or sliding window check
+
+```cpp
+class Solution {
+public:
+//This is a hard problem, definitely one of the hardest problems on LeetCode. The key to solving this problem is to use binary search to find the correct partition of the two arrays. We want to partition the two arrays into two halves such that the left half of the first array and the left half of the second array together contain the same number of elements as the right half of the first array and the right half of the second array. We can then calculate the median based on the maximum of the left halves and the minimum of the right halves. The time complexity of this solution is O(log(min(m, n))) where m and n are the lengths of the two arrays, because we are doing binary search on the shorter array.
+//REVIEW THIS QUESTION
+    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+    if(nums1.size() > nums2.size()) { //nums1 always has to be the shorter array because we are doing binary search on the first array, so we want to minimize the number of operations we have to do. If nums1 is the longer array, we can just swap the two arrays and call the func again.
+            return findMedianSortedArrays(nums2, nums1);
+        }
+        
+        int left = 0;
+        int right = nums1.size();
+        while(left <= right){
+            int mid1 = left + (right - left) / 2; //binary search the first array, find index of the first half of the array.
+            int mid2 = (nums1.size() + nums2.size() + 1) / 2 - mid1; //we want to split the two arrays into two halves, so we need to find the index of the second half of the second array. We can do this by taking the total length of the two arrays, adding 1 to it (to account for odd lengths), and then dividing by 2 to get the index of the second half of the second array. We then subtract mid1 from this index to get the index of the second half of the first array.
+            int left1 = mid1 == 0 ? INT_MIN : nums1[mid1 - 1]; //if mid1 is 0, then there are no elements in the left half of the first array, so we can set left1 to be negative infinity to ensure that it does not affect the median calculation. Otherwise, we can set left1 to be the last element of the left half of the first array, which is nums1[mid1 - 1];
+            int left2 = mid2 == 0 ? INT_MIN : nums2[mid2 - 1];
+            int right1 = mid1 == nums1.size() ? INT_MAX : nums1[mid1];
+            int right2 = mid2 == nums2.size() ? INT_MAX : nums2[mid2];
+            if(left1 <= right2 && left2 <= right1){ //need to check if left half of the first array is less than the second half of the second array, and if the first half of the second array is less than the second half of the first array. If both of these conditions are true, then we have found the correct partition of the two arrays, and we can calculate the median based on the maximum of the left halves and the minimum of the right halves. If the total length of the two arrays is even, then the median is the average of the maximum of the left halves and the minimum of the right halves. If the total length of the two arrays is odd, then the median is simply the maximum of the left halves, since there will be one extra element in one of the halves.
+                if((nums1.size() + nums2.size()) % 2 == 0){
+                    return (max(left1, left2) + min(right1, right2)) / 2.0;
+                }
+                else{
+                    return (max(left1, left2));
+                }
+            }
+                else if(left1 > right2){ //if the left half of the first array is greater than the right half of the second array, then we need to move the partition in the first array to the left, which means we need to decrease mid1. This is because we want to find a smaller value in the left half of the first array that can be paired with a larger value in the right half of the second array to satisfy the condition for finding the median.
+                    right = mid1 - 1;
+                }
+                else{
+                    left = mid1 + 1;
+                }
+            }
+        return 0.0;
+        }
+};
+```
+
+## Search in Rotated Sorted Array LC 33
+
+<!-- notecardId: 1780503470170 -->
+
+There is an integer array nums sorted in ascending order (with distinct values).
+
+Prior to being passed to your function, nums is possibly left rotated at an unknown index k (1 <= k < nums.length) such that the resulting array is [nums[k], nums[k+1], ..., nums[n-1], nums[0], nums[1], ..., nums[k-1]] (0-indexed). For example, [0,1,2,4,5,6,7] might be left rotated by 3 indices and become [4,5,6,7,0,1,2].
+
+Given the array nums after the possible rotation and an integer target, return the index of target if it is in nums, or -1 if it is not in nums.
+
+You must write an algorithm with O(log n) runtime complexity.
+
+ 
+
+Example 1:
+
+Input: nums = [4,5,6,7,0,1,2], target = 0
+Output: 4
+Example 2:
+
+Input: nums = [4,5,6,7,0,1,2], target = 3
+Output: -1
+Example 3:
+
+Input: nums = [1], target = 0
+Output: -1
+ 
+
+Constraints:
+
+1 <= nums.length <= 5000
+-104 <= nums[i] <= 104
+All values of nums are unique.
+nums is an ascending array that is possibly rotated.
+-104 <= target <= 104
+
+**Link**: [text](https://leetcode.com/problems/search-in-rotated-sorted-array/)
+
+%
+
+**Pattern:** Binary Search
+
+**Approach:** Use binary search to find the target in the rotated sorted array. The key is to determine which half of the array is properly sorted at each step of the binary search. If the left half is sorted, check if the target lies within that half; if it does, continue searching in that half, otherwise search in the right half. If the right half is sorted, check if the target lies within that half; if it does, continue searching in that half, otherwise search in the left half. This way, you can effectively narrow down the search space while maintaining O(log n) time complexity. 
+
+**Key Insight:** The key insight is that in a rotated sorted array, at least one half of the array will always be sorted. By comparing the target with the boundary values of the sorted half, you can determine which half to continue searching in. This allows you to maintain the efficiency of binary search even in the presence of rotation.
+
+**Gotchas:** Be careful to handle edge cases where the target is not present in the array, or when the target is at the boundaries of the sorted halves. Additionally, ensure that you are correctly identifying which half of the array is sorted at each step, as this is crucial for determining the correct search direction. Also, remember to check for the target in both halves if necessary, especially when the target is equal to one of the boundary values.
+
+**Complexity:** Time: O(log n) where n is the length of the input array (binary search is performed on the entire array) | Space: O(1) for the variables used to store indices and target value
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Search in Rotated Sorted Array II — LC #81 | Array may contain duplicates → same approach but skip duplicates when nums[left] == nums[mid] | Yes — direct upgrade |
+| Find Minimum in Rotated Sorted Array — LC #153 | Find minimum not target → same rotation detection different goal | Yes — same pattern |
+| Find Minimum in Rotated Sorted Array II — LC #154 | Duplicates allowed → same as LC #153 but skip equal elements | Yes — direct upgrade |
+| Binary Search — LC #704 | Standard binary search no rotation → same left/right/mid skeleton simpler condition | Yes — foundation |
+| Search a 2D Matrix — LC #74 | Binary search on flattened 2D matrix → same binary search no rotation | Partial — same family |
+| Peak Index in Mountain Array — LC #852 | Find peak in bitonic array → same rotation style binary search | Partial — same binary search idea |
+| Find K Closest Elements — LC #658 | Binary search on window boundary → same binary search different condition | Partial — same family |
+| Median of Two Sorted Arrays — LC #4 | Binary search on partition across two arrays → same partition idea harder | Partial — same binary search family |
+
+**How this pattern scales:**
+- **Identify sorted half first** is the core trick — at every step one half of the array is guaranteed to be sorted. Check if `nums[left] <= nums[mid]` to identify the sorted half, then determine if target falls within that half to decide which side to discard. O(log n) time O(1) space
+- **Two cases to handle explicitly** — (1) left half sorted: target in `[nums[left], nums[mid])` → go left, else go right. (2) right half sorted: target in `(nums[mid], nums[right]]` → go right, else go left. Drawing these two cases before coding eliminates all boundary confusion
+- **Duplicates upgrade** → LC #81 adds duplicates which breaks the sorted half identification when `nums[left] == nums[mid]`. Fix by incrementing left and decrementing right when equal — degrades worst case to O(n) but maintains O(log n) average
+- **Rotation point connection** → LC #153 (Find Minimum) finds the rotation point directly — the minimum element is always the inflection point where sorted order breaks. LC #33 implicitly uses the same rotation structure but searches for a target instead
+- **Binary search on answer vs binary search on index** → LC #33 searches for a target index in a rotated array. Problems like LC #410 (Split Array) binary search on the answer value space instead. Both use the same left/right/mid skeleton but the search space is fundamentally different
+
+```cpp
+class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        int left = 0;
+        int right = nums.size() - 1;
+        while(left <= right){
+            int mid = left + (right - left) / 2;
+            if(nums[mid] == target){
+                return mid;
+            }
+            else if(nums[mid] >= nums[left]){ //if mid is greater than or equal to left, then the left half of the array is sorted.
+                if(nums[mid] > target  && target >= nums[left]){ //if target is less than mid and greater than or equal to left, then the target must be in the left half of the array
+                    right = mid -1;
+                }
+                else{ //if the target is greater than mid or less than left, then the target must be in the right half of the array
+                    left = mid + 1;
+                }
+            }
+            else{ // if mid is less than left, then the right half of the array is sorted
+                if(nums[mid] < target && target <= nums[right]){ //if target is greater than mid and less than or equal to right, then the target must be in the right half of the array
+                    left = mid + 1;
+                }
+                else{
+                    right = mid - 1;
+                }
+            }
+        }
+        return -1;
+    }
+};
+```
+
+## Search Insert Position LC 35
+
+<!-- notecardId: 1780505019101 -->
+
+Given a sorted array of distinct integers and a target value, return the index if the target is found. If not, return the index where it would be if it were inserted in order.
+
+You must write an algorithm with O(log n) runtime complexity.
+
+ 
+
+Example 1:
+
+Input: nums = [1,3,5,6], target = 5
+Output: 2
+Example 2:
+
+Input: nums = [1,3,5,6], target = 2
+Output: 1
+Example 3:
+
+Input: nums = [1,3,5,6], target = 7
+Output: 4
+ 
+
+Constraints:
+
+1 <= nums.length <= 104
+-104 <= nums[i] <= 104
+nums contains distinct values sorted in ascending order.
+-104 <= target <= 104
+
+**Link**: [text](https://leetcode.com/problems/search-insert-position/)
+
+%
+
+**Pattern:** Binary Search
+
+**Approach:** Use binary search to find the target in the sorted array. If the target is found, return its index. If the target is not found, the LEFT pointer will indicate the position where the target can be inserted while maintaining the sorted order. This is because when the binary search concludes without finding the target, the LEFT pointer will have moved past all elements that are less than the target, making it the correct insertion point.
+
+**Key Insight:** The key insight is that the binary search algorithm can be used not only to find the target but also to determine the correct insertion point when the target is not present in the array. By returning the left pointer at the end of the search, you can efficiently find the index where the target should be inserted without needing to perform additional checks or iterations.
+
+**Gotchas:** Be careful to handle edge cases where the target is smaller than all elements in the array (in which case it should be inserted at index 0) or larger than all elements in the array (in which case it should be inserted at the end of the array). Additionally, ensure that you are correctly updating the left and right pointers during the binary search to avoid infinite loops or incorrect results.
+
+**Complexity:** Time: O(log n) where n is the length of the input array (binary search is performed on the entire array) | Space: O(1) for the variables used to store indices and target value
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Binary Search — LC #704 | Find exact target not insert position → same skeleton return -1 if not found | Yes — foundation |
+| Search in Rotated Sorted Array — LC #33 | Binary search with rotation → same left/right/mid skeleton extra sorted half check | Yes — same family |
+| Find First and Last Position — LC #34 | Find leftmost and rightmost occurrence → same binary search run twice with different conditions | Yes — direct upgrade |
+| Find Minimum in Rotated Sorted Array — LC #153 | Find minimum in rotated array → same binary search rotation detection | Partial — same family |
+| Kth Missing Positive Number — LC #1539 | Find kth missing in sorted array → binary search on missing count | Partial — same insert idea |
+| Count of Smaller Numbers After Self — LC #315 | Count elements smaller than each → binary search insert position per element | Partial — same insert idea |
+| Median of Two Sorted Arrays — LC #4 | Binary search on partition across two arrays → same partition idea much harder | Partial — same family |
+| Capacity to Ship Packages — LC #1011 | Binary search on answer not index → same left/right/mid different search space | Partial — same binary search family |
+
+**How this pattern scales:**
+- **Left boundary binary search** is the core trick — when target is not found `left` naturally lands at the correct insert position. Standard binary search template: `while left <= right`, `mid = (left + right) // 2`, move `right = mid - 1` when `nums[mid] >= target`, move `left = mid + 1` when `nums[mid] < target`. Return `left`
+- **Why left is the answer** — when the loop exits `left > right` and `left` points to the first element greater than target which is exactly where target would be inserted to maintain sorted order. This termination invariant is worth understanding deeply not just memorizing
+- **Leftmost occurrence generalization** → LC #34 (Find First and Last Position) uses the exact same left boundary search for the first occurrence. For the last occurrence flip the condition to find the right boundary. LC #35 is the degenerate case where you only need the left boundary
+- **Binary search on answer** → Capacity to Ship Packages (LC #1011) and Split Array Largest Sum (LC #410) use the same `while left <= right` skeleton but search over the answer space not array indices. LC #35 is the purest form of the template making it the ideal problem to internalize before tackling answer-space binary search problems
+- **Off by one is the main pitfall** — using `mid = left + (right - left) / 2` prevents integer overflow in C++. Using `right = mid` instead of `right = mid - 1` creates infinite loops. These are the two implementation bugs that cause most wrong submissions on binary search problems
+
+```cpp
+class Solution {
+public:
+    int searchInsert(vector<int>& nums, int target) {
+        int left = 0;
+        int right = nums.size() - 1;
+        //int returnIdx = 0;
+        while(left <= right){
+            int currIndex = left + (right - left)/2;
+            if(nums[currIndex] == target){
+                return currIndex;
+            }
+            else if(nums[currIndex] < target){
+                left = currIndex + 1;
+            }
+            else{
+                right = currIndex - 1;
+            }
+        }
+        return left; //left is the index where the target would be inserted, 
+        //because if the target is not found in the array, left will end up being the index of the first element that is greater than the target, 
+        //which is where the target should be inserted to maintain the sorted order of the array.
+
+        /*
+        Key Pattern:
+
+Notice that left always ends up at the correct insertion position:
+
+When target is smaller than all elements → left stays 0
+When target belongs between two elements → left points to where it should go
+When target is larger than all elements → left becomes nums.size()
+        */
+
+    }
+};
+```
+
+## Sqrt(x) LC 69
+
+<!-- notecardId: 1780505307837 -->
+
+Given a non-negative integer x, return the square root of x rounded down to the nearest integer. The returned integer should be non-negative as well.
+
+You must not use any built-in exponent function or operator.
+
+For example, do not use pow(x, 0.5) in c++ or x ** 0.5 in python.
+ 
+
+Example 1:
+
+Input: x = 4
+Output: 2
+Explanation: The square root of 4 is 2, so we return 2.
+Example 2:
+
+Input: x = 8
+Output: 2
+Explanation: The square root of 8 is 2.82842..., and since we round it down to the nearest integer, 2 is returned.
+ 
+
+Constraints:
+
+0 <= x <= 231 - 1
+
+**Link**: [text](https://leetcode.com/problems/sqrtx/)
+
+%
+
+**Pattern:** Binary Search
+
+**Approach:** Use binary search to find the largest integer `mid` such that `mid * mid <= x`. Start with `left` at 0 and `right` at `x`. Calculate the midpoint `mid` and check if `mid * mid` is equal to `x`, less than `x`, or greater than `x`. If it is equal, return `mid`. If it is less than `x`, move the `left` pointer to `mid + 1` to search in the right half. If it is greater than `x`, move the `right` pointer to `mid - 1` to search in the left half. Continue this process until the pointers cross each other. The largest integer that satisfies the condition will be at the position of the 'left' pointer when the loop ends as we know the returned integer is rounded down.
+
+**Key Insight:** The key insight is that the square root of a number `x` must be less than or equal to `x` itself. Therefore, you can use binary search within the range of 0 to `x` to efficiently find the largest integer whose square is less than or equal to `x`. This approach avoids the need for more complex mathematical functions and allows you to achieve logarithmic time complexity.
+
+**Gotchas:** Be careful to handle edge cases where `x` is 0 or 1, as the square root of these numbers is the number itself. Additionally, ensure that you are correctly updating the `left` and `right` pointers during the binary search to avoid infinite loops or incorrect results. 
+
+**Complexity:** Time: O(log x) where x is the input number (binary search is performed on the range from 0 to x) | Space: O(1) for the variables used to store indices and target value
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Search Insert Position — LC #35 | Lower bound binary search on array → same left convergence different search space | Yes — same pattern |
+| First Bad Version — LC #278 | First true in boolean predicate → same lower bound binary search on answer | Yes — direct variant |
+| Koko Eating Bananas — LC #875 | Minimum eating speed satisfying constraint → same binary search on answer with feasibility check | Yes — same pattern |
+| Capacity to Ship Packages — LC #1011 | Minimum capacity to ship within days → same lower bound on answer space | Yes — same pattern |
+| Find Peak Element — LC #162 | Find peak in unsorted array → binary search on slope not value | Partial — same binary search family |
+| Pow(x, n) — LC #50 | Compute x raised to power n → fast exponentiation not binary search | Partial — same math idea |
+| Valid Perfect Square — LC #367 | Check if n is a perfect square → same binary search on answer boolean result | Yes — direct variant |
+| Integer Break — LC #343 | Break integer for maximum product → math/DP not binary search | No — different pattern |
+
+**How this pattern scales:**
+- **Binary search on answer space** is the core trick — search on `[0, x]` for the largest integer m such that `m * m <= x`. When loop terminates `right` points to the floor of the square root. O(log x) time O(1) space
+- **Right converges to the answer here** — unlike LC #35 where `left` is the answer, here you want the largest valid value so `right` converges to the answer. When `mid * mid <= x` move left boundary up (mid is valid, try larger). When `mid * mid > x` move right boundary down (mid is invalid, must go smaller)
+- **Overflow handling** — `mid * mid` can overflow `int` for large x. Always cast to `long long` before multiplying: `(long long)mid * mid`. Missing this causes silent wrong answers on large inputs
+- **Upper bound vs lower bound** → LC #35 finds the first position satisfying a condition (lower bound, `left` is answer). LC #69 finds the last position satisfying a condition (upper bound, `right` is answer). These are the two fundamental binary search on answer patterns — every binary search problem is one or the other
+- **Feasibility check pattern** → Koko Eating Bananas (LC #875) and Capacity to Ship (LC #1011) replace `mid * mid <= x` with a more complex feasibility function but the binary search skeleton is identical — search on answer space, validate with condition, converge left or right accordingly
+
+```cpp
+class Solution {
+public:
+    int mySqrt(int x) {
+        int left = 1;
+        int right = x;
+        int answer = 0;
+        while(left <= right){
+            int mid = left + (right - left) / 2; //dont forget the (right - left) / 2
+            if((long long)mid * mid == x){ //remember (long long) since big number, need it to avoid overflow
+                return mid;
+            }
+            else if ((long long)mid * mid < x){
+                answer = mid;
+                left = mid + 1;
+            }
+            else{
+                //cant be a potential answer, since we only want lower numbers
+                right = mid - 1;
+            }
+        }
+        return answer;
+    }
+};
+```
+
+## Search a 2D Matrix LC 74
+
+<!-- notecardId: 1780505721532 -->
+
