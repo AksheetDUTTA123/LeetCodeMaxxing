@@ -17,7 +17,7 @@ public:
 
         for(int i = 0; i < s1.size(); i++){s1char[s1[i]]++;}
         for(int i = 0; i < s1.size(); i++){
-            s2char[s2[i]]++;
+            s2char[s2[i]]++; //go up until the size of s1, then we will start sliding the window
         }
         if(s1char == s2char){
             return true;

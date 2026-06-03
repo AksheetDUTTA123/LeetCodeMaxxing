@@ -5092,4 +5092,818 @@ public:
     }
 };
 ```
+## Longest Substring without Repeating Characters LC 3
 
+<!-- notecardId: 1780455896415 -->
+
+Given a string s, find the length of the longest substring without duplicate characters.
+
+ 
+
+Example 1:
+
+Input: s = "abcabcbb"
+Output: 3
+Explanation: The answer is "abc", with the length of 3. Note that "bca" and "cab" are also correct answers.
+Example 2:
+
+Input: s = "bbbbb"
+Output: 1
+Explanation: The answer is "b", with the length of 1.
+Example 3:
+
+Input: s = "pwwkew"
+Output: 3
+Explanation: The answer is "wke", with the length of 3.
+Notice that the answer must be a substring, "pwke" is a subsequence and not a substring.
+ 
+
+Constraints:
+
+0 <= s.length <= 5 * 104
+s consists of English letters, digits, symbols and spaces.
+
+**Link**: [text](https://leetcode.com/problems/longest-substring-without-repeating-characters/)
+
+%
+
+**Pattern:** Sliding Window, Two Pointers
+
+**Approach:** Use a sliding window approach with two pointers to maintain a window of characters that contains no duplicates. Start both pointers at the beginning of the string. Move the right pointer to expand the window and add characters to a hash set to track which characters are currently in the window. If you encounter a duplicate character, move the left pointer to shrink the window until the duplicate character is removed from the set. Keep track of the maximum length of the window at each step.
+
+**Key Insight:** The key insight is that you can maintain a dynamic window of unique characters by using two pointers and a hash set. The right pointer expands the window by adding new characters, while the left pointer contracts the window when a duplicate is found. This allows you to efficiently find the longest substring without repeating characters in linear time.
+
+**Gotchas:** Be careful to update the maximum length of the substring at each step after moving the right pointer. Also, make sure to remove characters from the hash set when moving the left pointer to ensure that it accurately reflects the current window of unique characters. Also, at the end, you have to check of the final substring mader by the right pointer is the longest one, since the loop only checks for the longest substring when a duplicate is found, but the longest substring could be at the end of the string and not have a duplicate after it.
+
+**Complexity:** Time: O(n) where n is the length of the input string (each character is visited at most twice by the left and right pointers) | Space: O(min(m, n)) where m is the size of the character set and n is the length of the string (the hash set can grow up to the size of the longest substring without duplicates)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Longest Substring with At Most Two Distinct Characters — LC #159 | Allow up to 2 distinct chars → same sliding window shrink when distinct count exceeds 2 | Yes — direct upgrade |
+| Longest Substring with At Most K Distinct Characters — LC #340 | Allow up to k distinct chars → same window shrink when distinct count exceeds k | Yes — direct generalization |
+| Minimum Window Substring — LC #76 | Smallest window containing all target chars → same sliding window different shrink condition | Yes — same pattern |
+| Find All Anagrams in String — LC #438 | Fixed size window matching char frequency → same hash map window but fixed size | Yes — same pattern |
+| Permutation in String — LC #567 | Check if any permutation exists in string → same fixed size frequency window | Yes — direct variant |
+| Longest Repeating Character Replacement — LC #424 | Replace up to k chars to maximize repeating window → sliding window with max freq tracking | Yes — upgrade |
+| Fruit Into Baskets — LC #904 | At most 2 distinct values in subarray → exact restatement of LC #159 | Yes — disguised variant |
+| Substring with Concatenation of All Words — LC #30 | Window must contain all words exactly once → same sliding window with word frequency map | Partial — harder variant |
+
+**How this pattern scales:**
+- **Sliding window + hash map** is the core trick — expand right pointer always, shrink left pointer when a duplicate is found by moving left past the last occurrence of the duplicate character. O(n) time O(min(n,m)) space where m is charset size
+- **Jump optimization** — instead of moving left one step at a time store the last seen index of each character and jump left directly to `lastSeen[char] + 1`. Reduces constant factor significantly for large windows
+- **At most k distinct generalization** → LC #159 and LC #340 replace the "no duplicates" condition with "at most k distinct characters." Same window expand/shrink skeleton, just change the shrink condition from duplicate detected to `distinctCount > k`
+- **Sliding window decision tree** → fixed size window (LC #438, #567) vs variable size window (LC #3, #76). Fixed size slides one step at a time. Variable size expands greedily and shrinks until valid. LC #3 is the cleanest variable size example to learn first
+
+```cpp
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        unordered_map<char, int> seen;
+        int longest = 0;
+        int leftW = 0;
+        //int currLongest= 0;
+        for(int i = 0; i < s.size(); i++){
+            if(seen.find(s[i]) != seen.end() && seen[s[i]] >= leftW){ //alr seen that element before, seen after leftWindow marker
+                longest = max(longest, i - leftW); //update longest before moving leftW, because current longest is from leftW to i, so length is i - leftW
+                leftW = seen[s[i]] + 1; //move leftW to the right of the last seen index of the current character, start a new substring that doesnt include repeated char
+                //clean optimization instead of having to iterate until you find the repeat
+            }
+           seen[s[i]] = i; //update the last seen index of the current character
+        }
+        return max(longest, (int)s.size() - leftW); //after loop, check if the longest substring is from leftW to the end of the string, if so, update longest accordingly
+        //This is necessary because if the longest substring is at the end of the string, it would not have been update in the loop since the loop only updates longest when a repeat is found, 
+        //and if the longest substring is at the end, there would be no repeat to trigger the update.
+
+    }
+};
+```
+
+## Minimum Window Substring LC 76
+
+<!-- notecardId: 1780456914376 -->
+
+Given two strings s and t of lengths m and n respectively, return the minimum window substring of s such that every character in t (including duplicates) is included in the window. If there is no such substring, return the empty string "".
+
+The testcases will be generated such that the answer is unique.
+
+ 
+
+Example 1:
+
+Input: s = "ADOBECODEBANC", t = "ABC"
+Output: "BANC"
+Explanation: The minimum window substring "BANC" includes 'A', 'B', and 'C' from string t.
+Example 2:
+
+Input: s = "a", t = "a"
+Output: "a"
+Explanation: The entire string s is the minimum window.
+Example 3:
+
+Input: s = "a", t = "aa"
+Output: ""
+Explanation: Both 'a's from t must be included in the window.
+Since the largest window of s only has one 'a', return empty string.
+ 
+
+Constraints:
+
+m == s.length
+n == t.length
+1 <= m, n <= 105
+s and t consist of uppercase and lowercase English letters.
+ 
+
+Follow up: Could you find an algorithm that runs in O(m + n) time?
+
+**Link**: [text](https://leetcode.com/problems/minimum-window-substring/)
+
+%
+
+**Pattern:** Sliding Window, Two Pointers
+
+**Approach:** Use a sliding window approach with two pointers to maintain a window of characters in string `s` that contains all characters of string `t`. Create a frequency map for the characters in `t` to keep track of how many of each character you need. Move the right pointer to expand the window and update the frequency map accordingly. When the window contains all characters of `t`, move the left pointer to shrink the window while still maintaining all required characters. Keep track of the minimum length of such a window throughout the process.
+
+**Key Insight:** The key insight is that you can use a sliding window to efficiently find the minimum substring that contains all characters of another string. By maintaining a frequency map and two pointers, you can expand and contract the window dynamically based on whether it currently satisfies the condition of containing all required characters. This allows you to find the optimal solution in linear time.
+
+**Gotchas:** Be careful to correctly update the frequency map when moving the right pointer to expand the window and when moving the left pointer to shrink the window. You should also ensure that you only update the minimum length of the window when it currently contains all required characters. Additionally, make sure to handle edge cases, such as when `t` is longer than `s` or when there are no valid windows. If there is a successful substring, and then you shift left and the substring doesnt satisfy the condition anymore, your formed counter will have to recrement, the left pointer will have to increment, and your right pointer will have to keep moving until you find a new valid substring, and then you can update the minimum length again.
+
+**Complexity:** Time: O(m + n) where m is the length of string `s` and n is the length of string `t` (each character in `s` is visited at most twice by the left and right pointers, and building the frequency map for `t` takes O(n)) | Space: O(m + n) for the frequency maps and the resulting substring
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Longest Substring Without Repeating Characters — LC #3 | Variable window no duplicate constraint → same expand/shrink skeleton simpler condition | Yes — foundation |
+| Find All Anagrams in String — LC #438 | Fixed size window exact frequency match → same hash map window fixed not variable | Yes — same pattern |
+| Permutation in String — LC #567 | Check if any permutation exists → same fixed size frequency window | Yes — direct variant |
+| Longest Substring with At Most K Distinct — LC #340 | At most k distinct chars → same window shrink when distinct count exceeds k | Yes — same family |
+| Minimum Size Subarray Sum — LC #209 | Minimum length subarray summing to target → same shrink when valid simpler condition | Yes — same structure |
+| Substring with Concatenation of All Words — LC #30 | Window must contain all words exactly once → same frequency map but word level | Partial — harder variant |
+| Sliding Window Maximum — LC #239 | Maximum value in fixed size window → monotonic deque not frequency map | No — different pattern |
+| Minimum Window Subsequence — LC #727 | Target must appear as subsequence not substring → two pointer not sliding window | Partial — harder variant |
+
+**How this pattern scales:**
+- **Have/need counters** is the core trick — maintain a `need` map of required character frequencies and a `have` counter of how many characters are currently satisfied. Expand right always, shrink left when `have == need` recording minimum window each time. O(n) time O(m) space where m is charset size
+- **Satisfied character tracking** — only increment `have` when a character's frequency in the window exactly meets its required frequency. Only decrement `have` when shrinking causes a character to drop below its required frequency. This avoids recounting the entire map on every window change
+- **Template for all variable window problems** → LC #76 is the hardest and most general variable window problem. Every simpler sliding window problem (LC #3, #209, #340) is a special case with a simpler validity condition. Mastering LC #76's have/need framework means all simpler variants are trivially derived
+- **Fixed vs variable window** → when the target length is known use a fixed window (LC #438, #567). When the target length is unknown use variable window with expand/shrink (LC #76, #3). This distinction determines the entire approach before writing a single line
+
+```cpp
+class Solution {
+public:
+    string minWindow(string s, string t) {
+        unordered_map<char, int> charFreq; //store t character frequency
+        unordered_map<char, int> windowFreq; //store current window character frequency
+        for(int i = 0; i < t.size(); i++){
+            charFreq[t[i]]++;
+        }
+        int left = 0;
+        int right = 0;
+        int minStart; //starting index of the minimum window found so far
+        int minLength = INT_MAX;
+        int required = charFreq.size();
+        int formed = 0; //number of unique characters in the current window that match the required frequency in t
+
+        while(right < s.size()){
+            char c = s[right]; //add character at right pointer to the window
+            windowFreq[c]++;
+
+
+            if(charFreq.count(c) && windowFreq[c] == charFreq[c]){ //if character is in t and frequency is equal, formed can be incrememented, because we have one more character that matches the required frequency in t
+                formed++;
+            }
+            while(left <= right && formed == required){ //this is here, we want to shrink window as much as possible, while still maintaining the condition that all required characters are present in the window with the correct frequency
+                if(right - left + 1 < minLength){ //if current window smaller than minLength, update minLength and minStart
+                    minLength = right - left + 1;
+                    minStart = left;
+                }
+
+            char leftChar = s[left]; //remove character at left pointer from the window
+            windowFreq[leftChar]--; 
+            if(charFreq.count(leftChar) && windowFreq[leftChar] < charFreq[leftChar]){
+                formed--; //since frequency of leftChar in the window is now less than the required frequency in t, we decrement formed, because we no longer have all required characters with the correct frequency in the window
+            }
+            left++;  //move left pointer to the right to shrink the window
+            }
+            right++; //move right pointer to the right to expand the window
+        }
+        return minLength == INT_MAX ? "": s.substr(minStart, minLength);
+    }
+};
+```
+
+## Best Time to Buy and Sell Stock LC 121
+
+<!-- notecardId: 1780457297500 -->
+
+You are given an array prices where prices[i] is the price of a given stock on the ith day.
+
+You want to maximize your profit by choosing a single day to buy one stock and choosing a different day in the future to sell that stock.
+
+Return the maximum profit you can achieve from this transaction. If you cannot achieve any profit, return 0.
+
+ 
+
+Example 1:
+
+Input: prices = [7,1,5,3,6,4]
+Output: 5
+Explanation: Buy on day 2 (price = 1) and sell on day 5 (price = 6), profit = 6-1 = 5.
+Note that buying on day 2 and selling on day 1 is not allowed because you must buy before you sell.
+Example 2:
+
+Input: prices = [7,6,4,3,1]
+Output: 0
+Explanation: In this case, no transactions are done and the max profit = 0.
+ 
+
+Constraints:
+
+1 <= prices.length <= 105
+0 <= prices[i] <= 104
+
+**Link**: [text](https://leetcode.com/problems/best-time-to-buy-and-sell-stock/)
+
+%
+
+**Pattern:** Sliding Window, Two Pointers
+
+**Approach:** Use two pointers to represent the buying day and the selling day. Initialize the buying pointer at the first day and the selling pointer at the second day. Iterate through the array of prices, updating the buying pointer to the lowest price seen so far and calculating the profit if you were to sell on the current day. Keep track of the maximum profit encountered during this process.
+
+**Key Insight:** The key insight is that to maximize profit, you want to buy at the lowest price and sell at the highest price that comes after it. By using two pointers, you can efficiently track the minimum price (buying day) and calculate potential profits as you iterate through the prices. This allows you to find the maximum profit in a single pass through the array.
+
+**Gotchas:** Be careful to update the buying pointer only when you find a new minimum price. When calculating profit, always use the current price as the selling price and the minimum price found so far as the buying price. Also, ensure that you return 0 if no profit can be made (i.e., if the prices are in descending order).
+
+**Complexity:** Time: O(n) where n is the length of the input array (each price is visited once) | Space: O(1) for the variables used to track minimum price and maximum profit
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Best Time to Buy and Sell Stock II — LC #122 | Unlimited transactions → greedy accumulate every positive difference | Partial — upgrade |
+| Best Time to Buy and Sell Stock III — LC #123 | At most two transactions → DP with two buy/sell state pairs | Partial — harder upgrade |
+| Best Time to Buy and Sell Stock IV — LC #188 | At most k transactions → generalized DP with k state pairs | Partial — hardest upgrade |
+| Best Time to Buy and Sell Stock with Cooldown — LC #309 | Must wait one day after selling → DP with cooldown state | Partial — constraint added |
+| Best Time to Buy and Sell Stock with Fee — LC #714 | Pay fee per transaction → same greedy as LC #122 subtract fee on sell | Partial — direct variant |
+| Maximum Subarray — LC #53 | Maximum sum contiguous subarray → Kadane's mirrors min tracking logic | Yes — same structure |
+| Maximum Profit in Job Scheduling — LC #1235 | Schedule non overlapping jobs for max profit → DP + binary search | No — different pattern |
+| Jump Game — LC #55 | Greedy decision at each step → same single pass scan different condition | Partial — same greedy family |
+
+**How this pattern scales:**
+- **Track running minimum** is the core trick — single pass, maintain the minimum price seen so far, compute profit at each step as `price - minSoFar`, track global maximum profit. O(n) time O(1) space
+- **Kadane's algorithm connection** → Maximum Subarray (LC #53) is structurally identical — convert prices to daily differences `diff[i] = prices[i] - prices[i-1]`, then maximum subarray sum on differences equals maximum profit. Both problems reduce to the same running min/max tracking
+- **Stock problem ladder** → LC #121 → LC #122 → LC #309 → LC #714 → LC #123 → LC #188 — each adds one constraint forcing progressively more complex state tracking. LC #121 is the only one where greedy with a single variable suffices
+- **DP state design for harder variants** → LC #123 and LC #188 require explicit state machines. For k transactions define states `hold[i]` and `cash[i]` for each transaction count. LC #121 is the degenerate case with k=1 where the state machine collapses to a single running minimum
+
+```cpp
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        int buyTime = 0;
+        int sellTime = 1;
+        int maxProfit = 0;
+        for(; sellTime < prices.size(); sellTime++){
+            if(prices[buyTime] < prices[sellTime]){
+                maxProfit = max(maxProfit, prices[sellTime] - prices[buyTime]); //if price at buy is less than sell, then profit could be made, check if it is the biggest so far
+            }
+            else{
+                buyTime = sellTime; //found a cheaper price, so this becomes the new buy price
+            }
+        }
+        return maxProfit;
+    }
+};
+```
+
+## Minimum Size Subarray Sum LC 209
+
+<!-- notecardId: 1780458451455 -->
+
+Given an array of positive integers nums and a positive integer target, return the minimal length of a subarray whose sum is greater than or equal to target. If there is no such subarray, return 0 instead.
+
+ 
+
+Example 1:
+
+Input: target = 7, nums = [2,3,1,2,4,3]
+Output: 2
+Explanation: The subarray [4,3] has the minimal length under the problem constraint.
+Example 2:
+
+Input: target = 4, nums = [1,4,4]
+Output: 1
+Example 3:
+
+Input: target = 11, nums = [1,1,1,1,1,1,1,1]
+Output: 0
+ 
+
+Constraints:
+
+1 <= target <= 109
+1 <= nums.length <= 105
+1 <= nums[i] <= 104
+ 
+
+Follow up: If you have figured out the O(n) solution, try coding another solution of which the time complexity is O(n log(n)).
+ 
+**Link**: [text](https://leetcode.com/problems/minimum-size-subarray-sum/)
+
+%
+
+**Pattern:** Sliding Window, Two Pointers
+
+**Approach:** Use a sliding window approach with two pointers to maintain a window of contiguous elements in the array. Start both pointers at the beginning of the array and keep expanding the right pointer to increase the sum of the current window. When the sum of the window is greater than or equal to the target, move the left pointer to shrink the window while still maintaining the condition. Keep track of the minimum length of such a window throughout the process.
+
+**Key Insight:** The key insight is that you can use a sliding window to efficiently find the minimum length of a contiguous subarray that meets a certain sum condition. By maintaining a running sum of the current window and adjusting the left and right pointers accordingly, you can find the optimal solution in linear time.
+
+**Gotchas:** Be careful to update the minimum length of the subarray at each step after moving the right pointer. Also, make sure to handle edge cases, such as when there is no valid subarray that meets the condition. If there is a valid subarray, and then you shift left and the sum of the subarray doesnt satisfy the condition anymore, your left pointer will have to keep moving until you find a new valid subarray, and then you can update the minimum length again.
+
+**Complexity:** Time: O(n) where n is the length of the input array (each element is visited at most twice by the left and right pointers) | Space: O(1) for the variables used to track the current sum and minimum length
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Minimum Window Substring — LC #76 | Minimum window containing all target chars → same shrink when valid framework | Yes — direct generalization |
+| Longest Substring Without Repeating Characters — LC #3 | Maximum window with no duplicates → same expand/shrink different condition | Yes — same family |
+| Subarray Sum Equals K — LC #560 | Exact sum not minimum length → prefix sum + hash map, negatives allowed | Partial — different approach |
+| Maximum Size Subarray Sum Equals K — LC #325 | Maximum length subarray summing to k → prefix sum + hash map | Partial — inverse problem |
+| Fruit Into Baskets — LC #904 | Minimum window with at most 2 distinct → same shrink when invalid pattern | Yes — same structure |
+| Maximum Average Subarray I — LC #643 | Fixed size window maximum average → fixed not variable window | Partial — same window family |
+| Count Number of Nice Subarrays — LC #1248 | Count subarrays with exactly k odd numbers → prefix sum + hash map | No — different pattern |
+| Minimum Operations to Reduce X to Zero — LC #1658 | Minimum elements from ends summing to x → inverse sliding window max middle | Yes — disguised variant |
+
+**How this pattern scales:**
+- **Shrink when valid** is the core trick — expand right pointer always, shrink left pointer while `windowSum >= target` recording minimum length each time the condition holds. O(n) time O(1) space
+- **Positive numbers only limitation** — sliding window works here because all values are positive guaranteeing that shrinking the window reduces the sum. As soon as negatives are introduced shrinking no longer guarantees reduction and prefix sum + hash map becomes necessary
+- **Binary search alternative** — build prefix sum array then binary search for the smallest subarray ending at each index with sum >= target. O(n log n) time O(n) space. Worth mentioning as a follow-up showing you know multiple approaches
+- **Inverse sliding window** → Minimum Operations to Reduce X (LC #1658) reframes as finding the maximum middle subarray summing to `total - x` — same sliding window but inverted. Recognizing disguised sliding window problems by inverting the objective is a high value interview skill
+- **Shrink vs expand decision** → shrink when valid (LC #209) finds minimum windows. Expand until invalid (LC #3, LC #76) finds maximum windows. This distinction determines the entire loop structure before writing a single line
+
+```cpp
+class Solution {
+public:
+    int minSubArrayLen(int target, vector<int>& nums) {
+        int leftPtr= 0;
+        int total = 0;
+        int minLen = INT_MAX;
+        for(int i = 0; i< nums.size(); i++){
+            total += nums[i];
+
+            while(total >= target){
+                minLen = min(minLen, i - leftPtr + 1);
+                total -= nums[leftPtr];
+                leftPtr++;
+            }
+        }
+        return minLen == INT_MAX ? 0 : minLen;
+    }
+};
+```
+
+## Contains Duplicate II LC 219
+
+<!-- notecardId: 1780458948659 -->
+
+Given an integer array nums and an integer k, return true if there are two distinct indices i and j in the array such that nums[i] == nums[j] and abs(i - j) <= k.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,3,1], k = 3
+Output: true
+Example 2:
+
+Input: nums = [1,0,1,1], k = 1
+Output: true
+Example 3:
+
+Input: nums = [1,2,3,1,2,3], k = 2
+Output: false
+ 
+
+Constraints:
+
+1 <= nums.length <= 105
+-109 <= nums[i] <= 109
+0 <= k <= 105
+
+**Link**: [text](https://leetcode.com/problems/contains-duplicate-ii/)
+
+%
+
+**Pattern:** Sliding Window, Two Pointers
+
+**Approach:** Use a sliding window approach with two pointers to maintain a window of the last `k` elements in the array. Use a hash set to track the unique elements in the current window. As you iterate through the array, add the current element to the set and check if it already exists. If it does, return true. If the size of the set exceeds `k`, remove the element that is sliding out of the window (the left pointer) from the set.
+
+**Key Insight:** The key insight is that you only need to check for duplicates within a window of size `k`. By maintaining a hash set of the last `k` elements, you can efficiently determine if a duplicate exists within that range. This allows you to solve the problem in linear time.
+
+**Gotchas:** Be careful to remove the element that is sliding out of the window from the hash set when the size exceeds `k`. Also, ensure that you are checking for duplicates before adding the current element to the set, as adding it first would always result in a duplicate. Additionally, handle edge cases where `k` is 0 or when the array has fewer than 2 elements.
+
+**Complexity:** Time: O(n) where n is the length of the input array (each element is visited once) | Space: O(min(n, k)) for the hash set storing the last `k` elements
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Contains Duplicate — LC #217 | Just check existence no distance constraint → hash set no window needed | Yes — foundation |
+| Contains Duplicate III — LC #220 | Duplicate within k indices AND value diff ≤ t → sorted set bucket sort | Partial — harder upgrade |
+| Longest Substring Without Repeating Characters — LC #3 | Maximum window with no duplicates → same sliding window hash map | Yes — same pattern |
+| Two Sum — LC #1 | Find two indices summing to target → hash map complement lookup | Partial — same hash map idea |
+| Find the Duplicate Number — LC #287 | One duplicate no index constraint → Floyd's cycle detection or index marking | No — different pattern |
+| Subarray Product Less Than K — LC #713 | Product constraint on window → same sliding window different condition | Yes — same window family |
+| Number of Sub-arrays of Size K and Average ≥ Threshold — LC #1343 | Fixed size window average check → fixed not variable window | Partial — same window family |
+| Sliding Window Maximum — LC #239 | Maximum value in fixed size window → monotonic deque not hash map | No — different pattern |
+
+**How this pattern scales:**
+- **Sliding window + hash map** is the core trick — maintain a window of size at most k using a hash map. For each new element check if it already exists in the map. If yes return true. If no add it and remove the element leaving the window when size exceeds k. O(n) time O(k) space
+- **Hash set suffices here** — unlike LC #1 which needs to store indices, LC #219 only needs to know if a value exists within the current window. A hash set of size k is cleaner than a full hash map for this reason
+- **Fixed window sliding** — the window slides exactly one step at a time making this a fixed size window problem disguised as a variable window. Add new element check condition remove oldest element. This fixed slide pattern is simpler than the expand/shrink pattern of LC #3 and LC #76
+- **Upgrade to LC #220** → Contains Duplicate III adds a value difference constraint `|nums[i] - nums[j]| <= t` on top of the index constraint. Hash set no longer works because you need to find values within a range — use a sorted set (C++ `std::set`) with `lower_bound` or bucket sort with bucket size t+1
+- **Contains Duplicate ladder** → LC #217 → LC #219 → LC #220 — each adds one constraint. LC #217 checks existence, LC #219 adds index distance, LC #220 adds value distance. Each constraint forces a more sophisticated data structure
+
+```cpp
+
+class Solution {
+public:
+    bool containsNearbyDuplicate(vector<int>& nums, int k) {
+        //main idea, use an unordered set here for O(1) lookup, very cheeky
+
+        unordered_set<int> window;
+        for(int i = 0; i < nums.size(); i++){
+            if(window.count(nums[i])) return true;
+
+            window.insert(nums[i]);
+
+            if(window.size() > k){
+                window.erase(nums[i-k]);
+            }
+        }
+        return false;
+    }
+};
+
+```
+
+## Sliding Window Maximum LC 239
+
+<!-- notecardId: 1780459385593 -->
+
+You are given an array of integers nums, there is a sliding window of size k which is moving from the very left of the array to the very right. You can only see the k numbers in the window. Each time the sliding window moves right by one position.
+
+Return the max sliding window.
+
+ 
+
+Example 1:
+
+Input: nums = [1,3,-1,-3,5,3,6,7], k = 3
+Output: [3,3,5,5,6,7]
+Explanation: 
+Window position                Max
+---------------               -----
+[1  3  -1] -3  5  3  6  7       3
+ 1 [3  -1  -3] 5  3  6  7       3
+ 1  3 [-1  -3  5] 3  6  7       5
+ 1  3  -1 [-3  5  3] 6  7       5
+ 1  3  -1  -3 [5  3  6] 7       6
+ 1  3  -1  -3  5 [3  6  7]      7
+Example 2:
+
+Input: nums = [1], k = 1
+Output: [1]
+ 
+
+Constraints:
+
+1 <= nums.length <= 105
+-104 <= nums[i] <= 104
+1 <= k <= nums.length
+
+
+**Link**: [text](https://leetcode.com/problems/sliding-window-maximum/)
+
+%
+
+**Pattern:** Sliding Window, Monotonic Queue
+
+**Approach:** Use a deque (double-ended queue) to maintain the indices of the elements in the current window. The deque will store indices in decreasing order of their corresponding values in the array. As you iterate through the array, remove indices from the back of the deque while the current element is greater than or equal to the elements at those indices. This ensures that the front of the deque always contains the index of the maximum element for the current window. When the left pointer moves out of the window, remove its index from the front of the deque if it is present.
+
+**Key Insight:** The key insight is that by maintaining a monotonic decreasing queue of indices, you can efficiently track the maximum element in the current window. The front of the deque will always represent the index of the maximum element, and by removing indices of smaller elements as you iterate, you ensure that the deque remains valid for each window.
+
+**Gotchas:** Be careful to remove indices from the back of the deque when the current element is greater than or equal to the elements at those indices. Also, ensure that you remove the index of the left pointer from the front of the deque when it moves out of the window. Additionally, handle edge cases where `k` is 1 or when the array has only one element.
+
+**Complexity:** Time: O(n) where n is the length of the input array (each element is added and removed from the deque at most once) | Space: O(k) for the deque storing indices of the current window
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Sliding Window Minimum — LC variant | Track minimum instead of maximum → same monotonic deque flip comparison | Yes — direct variant |
+| Min Stack — LC #155 | Track running minimum with O(1) access → same monotonic structure no sliding | Partial — same tracking idea |
+| Contains Duplicate II — LC #219 | Fixed window duplicate check → hash set window no deque needed | Partial — same window family |
+| Minimum Window Substring — LC #76 | Variable window all chars present → frequency map not monotonic deque | No — different pattern |
+| Jump Game VI — LC #1696 | Maximum score path with window constraint → same monotonic deque DP optimization | Yes — direct generalization |
+| Longest Continuous Subarray With Absolute Diff ≤ Limit — LC #1438 | Track both max and min in window → two monotonic deques simultaneously | Yes — direct upgrade |
+| Maximum Number of Robots Within Budget — LC #2398 | Sliding window with max cost constraint → same monotonic deque for window max | Yes — same pattern |
+| Stock Price Fluctuation — LC #2034 | Track min and max of streaming prices → sorted set not deque | Partial — same min/max tracking |
+
+**How this pattern scales:**
+- **Monotonic decreasing deque** is the core trick — maintain a deque of indices in decreasing order of their values. For each new element pop from the back while the back element is smaller than the current element. Pop from the front when the front index falls outside the window. Front of deque is always the current window maximum. O(n) time O(k) space
+- **Deque stores indices not values** — storing indices is what allows checking if the front element has left the window in O(1). Storing values loses position information making expiry detection impossible
+- **Monotonic deque vs monotonic stack** → stack handles "next greater element" problems where elements only enter from one end. Deque handles sliding window problems where elements expire from the front — use deque whenever the window slides and old elements must be evicted
+- **DP optimization pattern** → Jump Game VI (LC #1696) uses the exact same monotonic deque to optimize a DP transition — instead of scanning all previous k states in O(k) the deque maintains the maximum in O(1). Any DP with a sliding window maximum transition can be optimized this way
+- **Two deque upgrade** → Longest Continuous Subarray With Absolute Diff ≤ Limit (LC #1438) maintains two monotonic deques simultaneously — one for max one for min — shrinking the window when `max - min > limit`. Same deque operations, doubled structure
+
+```cpp
+class Solution {
+public:
+    vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+        //this is a deque problem, because maintain max value while being able to remove from front and back of deque
+        deque<int> window;
+        vector<int> result;
+        for(int i = 0; i < nums.size(); i++){
+            if(!window.empty() && window.front() <= i - k){
+                window.pop_front(); //if index at front of the deque is out of the window  (i - k), remove from deque
+            }
+            while(!window.empty() && nums[window.back()] < nums[i]){
+                window.pop_back(); //if current number is greater than the number at the back of the deque, remove the back of the deque, because it can never be the maximum if there is a greater number in the window
+            }
+            window.push_back(i); //store the index within the deque
+            if(i >= k - 1){
+                result.push_back(nums[window.front()]); //store the actual value within the answer vector
+            }
+        }
+        return result;
+    }
+};
+```
+
+## Longest Repeating Character Replacement LC 424
+
+<!-- notecardId: 1780459933679 -->
+
+You are given a string s and an integer k. You can choose any character of the string and change it to any other uppercase English character. You can perform this operation at most k times.
+
+Return the length of the longest substring containing the same letter you can get after performing the above operations.
+
+ 
+
+Example 1:
+
+Input: s = "ABAB", k = 2
+Output: 4
+Explanation: Replace the two 'A's with two 'B's or vice versa.
+Example 2:
+
+Input: s = "AABABBA", k = 1
+Output: 4
+Explanation: Replace the one 'A' in the middle with 'B' and form "AABBBBA".
+The substring "BBBB" has the longest repeating letters, which is 4.
+There may exists other ways to achieve this answer too.
+ 
+
+Constraints:
+
+1 <= s.length <= 105
+s consists of only uppercase English letters.
+0 <= k <= s.length
+
+**Link**: [text](https://leetcode.com/problems/longest-repeating-character-replacement/)
+
+%
+
+**Pattern:** Sliding Window, Two Pointers
+
+**Approach:** Use a sliding window approach with two pointers to maintain a window of characters in the string. Keep track of the frequency of each character in the current window using a hash map. The key insight is that the length of the longest valid substring can be determined by the formula: `windowLength - maxFreq <= k`, where `maxFreq` is the count of the most frequent character in the current window. If this condition is satisfied, it means we can replace at most `k` characters to make all characters in the window the same. Expand the right pointer to increase the window size and update the frequency map. If the condition is not satisfied, move the left pointer to shrink the window until it becomes valid again.
+
+**Key Insight:** The key insight is that the number of characters that need to be replaced to make all characters in the window the same is equal to the length of the window minus the count of the most frequent character. By maintaining this count and ensuring it does not exceed `k`, you can efficiently find the longest valid substring.
+
+**Gotchas:** Be careful to update the frequency map correctly when expanding and shrinking the window. Also, ensure that you are calculating the maximum frequency of any character in the current window at each step, as this is crucial for determining whether the window is valid. Additionally, handle edge cases where `k` is 0 or when the string has only one character. Something to keep in mind is that when shifting the left pointer, maxFrequency is not decremented, because the window can still be valid even if the count of the most frequent character decreases, as long as the condition `windowLength - maxFreq <= k` is still satisfied.
+
+**Complexity:** Time: O(n) where n is the length of the input string (each character is visited at most twice by the left and right pointers) | Space: O(1) for the frequency map since there are only 26 uppercase English letters
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Longest Substring Without Repeating Characters — LC #3 | No replacements allowed → same sliding window simpler shrink condition | Yes — foundation |
+| Minimum Window Substring — LC #76 | Minimum window containing target chars → same frequency map different shrink condition | Yes — same pattern |
+| Max Consecutive Ones III — LC #1004 | Flip at most k zeros in binary array → same window shrink when zeros exceed k | Yes — direct variant |
+| Longest Subarray of 1s After Deleting One Element — LC #1493 | Delete exactly one element → same window with one zero allowed | Yes — close variant |
+| Longest Substring with At Most K Distinct — LC #340 | At most k distinct chars → same window shrink when distinct count exceeds k | Yes — same family |
+| Minimum Number of Operations to Make Array Continuous — LC #2009 | Make array continuous with minimum replacements → sort + sliding window | Partial — same replacement idea |
+| Permutation in String — LC #567 | Fixed size window exact frequency match → same frequency map fixed window | Partial — same map idea |
+| Encode String with Shortest Length — LC #471 | Minimize encoded string length → DP not sliding window | No — different pattern |
+
+**How this pattern scales:**
+- **Max frequency tracking** is the core trick — maintain a frequency map of characters in the window and track `maxFreq` (the most frequent character count). Window is valid when `windowSize - maxFreq <= k`. Shrink left when invalid. O(n) time O(1) space since charset is fixed at 26
+- **maxFreq never decreases optimization** — a subtle but important insight: `maxFreq` only needs to increase to find a longer valid window. Even if the actual max frequency drops when shrinking you don't need to recompute it — a smaller maxFreq can never produce a longer window than previously seen so shrinking by one step suffices
+- **Binary array generalization** → Max Consecutive Ones III (LC #1004) is the exact same problem with a binary alphabet — `maxFreq` is always the count of 1s and k is the number of allowed flips. Same `windowSize - maxFreq <= k` validity condition, different alphabet size
+- **Shrink by one insight** — unlike LC #76 which shrinks aggressively until valid, LC #424 only ever shrinks by one step at a time because we only care about finding a longer window than the current best. This means the window size never decreases making the sliding truly monotonic
+- **Validity condition** `windowSize - maxFreq <= k` is the core formula to memorize — it captures "how many characters need to be replaced to make the window uniform" in O(1) using just the window size and the dominant character count
+
+```cpp
+class Solution {
+public:
+    int characterReplacement(string s, int k) {
+        unordered_map<char,int> freq;
+        int l = 0;
+        int maxFreq = 0;
+        int longest = 0;
+        for(int i = 0; i < s.size(); i++){
+            freq[s[i]]++;
+            maxFreq = max(maxFreq, freq[s[i]]);
+            while((i - l + 1) - maxFreq > k){ //need to update window, will shrink
+            freq[s[l]]--;
+            l++;
+            }
+            longest = max(longest, i - l + 1);
+        }
+        return longest;
+    }
+};
+```
+
+## Permutation in String LC 567
+
+<!-- notecardId: 1780461196544 -->
+
+Given two strings s1 and s2, return true if s2 contains a permutation of s1, or false otherwise.
+
+In other words, return true if one of s1's permutations is the substring of s2.
+
+ 
+
+Example 1:
+
+Input: s1 = "ab", s2 = "eidbaooo"
+Output: true
+Explanation: s2 contains one permutation of s1 ("ba").
+Example 2:
+
+Input: s1 = "ab", s2 = "eidboaoo"
+Output: false
+ 
+
+Constraints:
+
+1 <= s1.length, s2.length <= 104
+s1 and s2 consist of lowercase English letters.
+
+**Link**: [text](https://leetcode.com/problems/permutation-in-string/)
+
+%
+
+**Pattern:** Sliding Window, Two Pointers
+
+**Approach:** Use a sliding window approach with two pointers to maintain a window of characters in `s2` that is the same length as `s1`. Keep track of the frequency of each character in the current window using a hash map. Compare the frequency map of the current window with the frequency map of `s1`. If they match, it means the current window is a permutation of `s1`, and you can return true. If they do not match, move the right pointer to expand the window and update the frequency map accordingly. When the window size exceeds the length of `s1`, move the left pointer to shrink the window and update the frequency map until it matches again or you exhaust all possibilities.
+
+**Key Insight:** The key insight is that a permutation of `s1` will have the same frequency of characters as `s1`. By maintaining a sliding window of the same length as `s1` and comparing frequency maps, you can efficiently determine if any substring of `s2` is a permutation of `s1`.
+
+**Gotchas:** Be careful to update the frequency map correctly when expanding and shrinking the window. Also, ensure that you are comparing the frequency maps at the right times — only when the window size matches `s1`'s length. Additionally, handle edge cases where `s1` is longer than `s2`, in which case you can immediately return false. At the beginning, start with the first window of size `s1.length()` and compare frequency maps before entering the loop to handle the case where the first window is already a permutation.
+
+**Complexity:** Time: O(n) where n is the length of `s2` (each character is visited at most twice by the left and right pointers) | Space: O(1) for the frequency maps since there are only 26 lowercase English letters
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Find All Anagrams in String — LC #438 | Return all anagram start indices not just boolean → same fixed window collect positions | Yes — direct variant |
+| Minimum Window Substring — LC #76 | Minimum variable window containing all chars → same frequency map variable not fixed size | Yes — same pattern |
+| Longest Substring Without Repeating Characters — LC #3 | Variable window no duplicates → same sliding window simpler condition | Yes — same family |
+| Longest Repeating Character Replacement — LC #424 | Variable window with k replacements → same frequency map different validity condition | Yes — same family |
+| Valid Anagram — LC #242 | Check two strings of same length → same frequency map no sliding needed | Yes — foundation |
+| Group Anagrams — LC #49 | Group all anagrams together → sorted key or frequency tuple hash map | Partial — same frequency idea |
+| Scramble String — LC #87 | Check if string is scrambled version → DP or recursion with memoization | No — different pattern |
+| String Permutation — general | Generate all permutations → backtracking not sliding window | No — different pattern |
+
+**How this pattern scales:**
+- **Fixed size sliding window + have/need counters** is the core trick — window size is always `len(s1)`. Slide one character at a time, add incoming character on right, remove outgoing character on left, maintain `have` count of satisfied characters. Return true when `have == need`. O(n) time O(1) space since charset fixed at 26
+- **Have/need counter optimization** — same framework as LC #76 but simpler since window size is fixed. Only update `have` when a character crosses its required threshold in either direction — increment when frequency hits exactly required, decrement when it drops below
+- **Fixed vs variable window decision** — the moment the problem specifies an exact target length (here `len(s1)`) the window is fixed size and slides one step at a time. Variable window expand/shrink is only needed when the target length is unknown
+- **LC #567 → LC #438 upgrade** — the only difference is LC #438 collects all valid window start indices instead of returning a boolean on first match. Same fixed window loop, just append `left` to result whenever `have == need` instead of returning immediately
+- **Frequency array vs hash map** — since input is lowercase English letters only, a 26-element integer array is faster and cleaner than a hash map. Reduces constant factor significantly and simplifies the have/need counting logic
+
+```cpp
+class Solution {
+public:
+    bool checkInclusion(string s1, string s2) {
+        if(s1.size() > s2.size()) return false;
+        unordered_map<char, int> s1char; //character and frequency
+                unordered_map<char, int> s2char; //character and frequency
+
+        for(int i = 0; i < s1.size(); i++){s1char[s1[i]]++;}
+        for(int i = 0; i < s1.size(); i++){
+            s2char[s2[i]]++; //go up until the size of s1, then we will start sliding the window
+        }
+        if(s1char == s2char){
+            return true;
+        }
+
+        for(int i = s1.size(); i < s2.size(); i++){
+             s2char[s2[i]]++;
+             s2char[s2[i - s1.size()]]--;
+             if(s2char[s2[i - s1.size()]] == 0){
+                s2char.erase(s2[i - s1.size()]);
+             }
+                     if(s1char == s2char){
+            return true;
+        }
+        }
+        return false;
+
+    }
+};
+```
+
+## Find k Closest Elements LC 658
+
+<!-- notecardId: 1780461360167 -->
+
+Given a sorted integer array arr, two integers k and x, return the k closest integers to x in the array. The result should also be sorted in ascending order.
+
+An integer a is closer to x than an integer b if:
+
+|a - x| < |b - x|, or
+|a - x| == |b - x| and a < b
+ 
+
+Example 1:
+
+Input: arr = [1,2,3,4,5], k = 4, x = 3
+
+Output: [1,2,3,4]
+
+Example 2:
+
+Input: arr = [1,1,2,3,4,5], k = 4, x = -1
+
+Output: [1,1,2,3]
+
+ 
+
+Constraints:
+
+1 <= k <= arr.length
+1 <= arr.length <= 104
+arr is sorted in ascending order.
+-104 <= arr[i], x <= 104
+
+**Link**: [text](https://leetcode.com/problems/find-k-closest-elements/)
+
+%
+
+**Pattern:** Two Pointers
+
+**Approach:** Use two pointers to maintain a window of size `k` in the sorted array. Start with the left pointer at the beginning of the array and the right pointer at the end of the array. Calculate the distance of the elements at both pointers from `x`. If the element at the left pointer is closer to `x` than the element at the right pointer, move the right pointer inward to shrink the window from the right. Otherwise, move the left pointer inward to shrink the window from the left. Continue this process until the window size is reduced to `k`. The remaining elements in the window will be the `k` closest elements to `x`.
+
+**Key Insight:** The key insight is that since the array is sorted, the closest elements to `x` will be clustered together. By using two pointers to compare the distances of the elements at the edges of the current window, you can efficiently narrow down to the `k` closest elements without needing to sort or calculate distances for all elements.
+
+**Gotchas:** Be careful to handle edge cases where `x` is smaller than all elements in the array or larger than all elements in the array. In these cases, the closest elements will simply be the first `k` or last `k` elements of the array, respectively. Additionally, ensure that you are comparing the absolute distances correctly and that you are moving the pointers in the right direction based on which element is closer to `x`.
+
+**Complexity:** Time: O(n - k) where n is the length of the input array (in the worst case, you may need to move both pointers across the entire array until only `k` elements remain) | Space: O(k) for the output list of closest elements
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| K Closest Points to Origin — LC #973 | Closest points in 2D space → heap or QuickSelect on distance | Partial — same k closest idea |
+| Find Closest Value in BST — LC #270 | Single closest value in BST → binary search on tree | Partial — same closest idea |
+| Search in Rotated Sorted Array — LC #33 | Binary search with rotation → same binary search different condition | Partial — same binary search family |
+| Kth Smallest Element in Sorted Matrix — LC #378 | Kth smallest across sorted matrix → binary search on value or heap | Partial — same k selection |
+| Median of Two Sorted Arrays — LC #4 | Median across two sorted arrays → binary search on partition | Partial — same sorted array idea |
+| Sliding Window Maximum — LC #239 | Maximum in fixed size window → monotonic deque not binary search | No — different pattern |
+| Top K Frequent Elements — LC #347 | K most frequent not closest → hash map + heap or bucket sort | No — different pattern |
+| Find K Pairs with Smallest Sums — LC #373 | K smallest pair sums from two arrays → min heap | Partial — same k selection |
+
+**How this pattern scales:**
+- **Binary search on left boundary** is the optimal O(log n) trick — instead of searching for x directly binary search for the left boundary of the k-element window. Compare `x - arr[mid]` vs `arr[mid + k] - x` to decide whether the window shifts left or right. Whichever side x is closer to wins
+- **Two pointer alternative** is O(n) — start with left at 0 and right at n-1, shrink from the farther side until window size equals k. Easier to derive under pressure but suboptimal for large arrays
+- **Comparison formula** `x - arr[mid] <= arr[mid + k] - x` is the key insight to memorize — left side is distance from x to left boundary candidate, right side is distance from x to element just outside window on the right. Less than or equal favors the left to handle ties correctly per problem specification
+- **Left boundary binary search generalizes** → any problem asking for a window of fixed size k in a sorted array that optimizes some distance metric uses this same binary search on the left boundary approach. The only thing that changes is the comparison formula
+- **Heap alternative** → find x with binary search then use a max heap of size k to collect the k closest elements by distance. O(n log k) time — worse than binary search but easier to adapt when the array is not sorted or distances are more complex
+
+```cpp
+class Solution {
+public:
+    vector<int> findClosestElements(vector<int>& arr, int k, int x) {
+        int start = 0;
+        int end = arr.size() - 1;
+        while (end - start + 1 > k){
+            if(x - arr[start] <= arr[end] - x){
+                end--;  // Left is closer or equal → remove right element
+            }
+            else{
+                start++; // Right is closer → remove left element
+            }
+        }
+        return std::vector<int>(arr.begin() + start, arr.begin() + start + k);
+    }
+};
+```
