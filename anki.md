@@ -6307,3 +6307,543 @@ public:
 
 <!-- notecardId: 1780505721532 -->
 
+You are given an m x n integer matrix matrix with the following two properties:
+
+Each row is sorted in non-decreasing order.
+The first integer of each row is greater than the last integer of the previous row.
+Given an integer target, return true if target is in matrix or false otherwise.
+
+You must write a solution in O(log(m * n)) time complexity.
+
+ 
+
+Example 1:
+
+
+Input: matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 3
+Output: true
+Example 2:
+
+
+Input: matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 13
+Output: false
+ 
+
+Constraints:
+
+m == matrix.length
+n == matrix[i].length
+1 <= m, n <= 100
+-104 <= matrix[i][j], target <= 104
+
+**Link**: [text](https://leetcode.com/problems/search-a-2d-matrix/)
+
+%
+
+**Pattern:** Binary Search, 2D Matrix
+
+**Approach:** Treat the 2D matrix as a flattened sorted array and use binary search to find the target. Calculate the midpoint index in the flattened array and convert it back to 2D indices to access the corresponding element in the matrix. Compare the element at the midpoint with the target and adjust the search range accordingly until you find the target or exhaust the search space.
+
+**Key Insight:** The key insight is that the given 2D matrix can be treated as a single sorted array due to the properties of the matrix. By using binary search on this conceptual flattened array, you can efficiently find the target in logarithmic time. The conversion between the 1D index and the 2D indices is crucial for accessing the correct elements in the matrix during the search. If you look at it from a 2D, find the row first, then do a binary search in that row, it is also O(log(m) + log(n)) = O(log(m*n)), but the flattened approach is cleaner and more elegant.
+
+**Gotchas:** Be careful to correctly convert between the 1D index and the 2D indices. The row index can be calculated as `mid / n` and the column index can be calculated as `mid % n`, where `n` is the number of columns in the matrix. Additionally, ensure that you are correctly updating the left and right pointers during the binary search to avoid infinite loops or incorrect results.
+
+**Complexity:** Time: O(log(m * n)) where m is the number of rows and n is the number of columns in the matrix (binary search is performed on the conceptual flattened array) | Space: O(1) for the variables used to store indices and target value
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Search a 2D Matrix II — LC #240 | Rows and columns sorted independently not row-chained → staircase search from top right | No — different approach |
+| Binary Search — LC #704 | Standard binary search on 1D array → same skeleton LC #74 reduces to this | Yes — foundation |
+| Search Insert Position — LC #35 | Lower bound binary search on 1D array → same convergence idea | Yes — same family |
+| Find Minimum in Rotated Sorted Array — LC #153 | Binary search on rotated 1D array → same mid calculation different condition | Partial — same family |
+| Koko Eating Bananas — LC #875 | Binary search on answer space → same skeleton different search space | Partial — same binary search family |
+| Set Matrix Zeroes — LC #73 | Modify matrix based on cell values → same 2D index math no binary search | No — different pattern |
+| Spiral Matrix — LC #54 | Traverse matrix in spiral order → index math no binary search | No — different pattern |
+| Range Sum Query 2D — LC #304 | Prefix sum on 2D matrix → same 2D index flattening idea | Partial — same index math |
+
+**How this pattern scales:**
+- **Flatten 2D index to 1D** is the core trick — treat the entire matrix as a virtual 1D sorted array of size `m * n`. Convert mid index to row and column using `row = mid / n` and `col = mid % n`. Standard binary search runs on `[0, m*n - 1]`. O(log mn) time O(1) space
+- **Row and column formula** `row = mid / n` and `col = mid % n` is the key to memorize cold — division gives the row, modulo gives the column. This is the same index flattening used in any problem that maps a 1D index onto a 2D grid
+- **LC #74 vs LC #240 distinction** is critical — LC #74 guarantees each row continues from the last making full 1D binary search valid. LC #240 only guarantees rows and columns are independently sorted making 1D binary search invalid. Staircase search (start top right move left on greater move down on smaller) is the correct approach for LC #240
+- **Two step binary search alternative** — first binary search on first column to find the correct row O(log m), then binary search within that row O(log n). Total O(log m + log n) = O(log mn) same asymptotic complexity but two passes instead of one
+- **Index flattening generalizes** → any problem mapping between 1D and 2D coordinates uses `row = i / cols` and `col = i % cols`. This appears in Spiral Matrix, Set Matrix Zeroes, and any grid problem where you iterate with a single counter
+
+```cpp
+class Solution {
+public:
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        //need two log searches, search once by finding exactly which row it is
+        //and then, look through the row do binary search to find it
+        int start = 0;
+        int targetRow = -1;
+        int end = matrix.size() - 1;
+        while(start <= end){
+            int mid = start + (end - start)/2;
+            if(target >= matrix[mid][0] && target <= matrix[mid][matrix[0].size() - 1]){ //if the target is between the first and last element of the row, target must be in this row
+                targetRow = mid;
+                break;
+            }
+            else if(matrix[mid][matrix[0].size() - 1] < target){ //need to compare the last element of the row, because if the target is greater than the last element of the row, must be in a row below
+                start = mid + 1;
+            }
+            else{
+                end = mid - 1;
+            }
+
+            }
+            if(targetRow < 0) return false; //couldnt be found, return false
+
+            int left = 0;
+            int right = matrix[0].size() - 1;
+            while(left <= right){
+            int mid = left + (right - left)/2;
+            if(target == matrix[targetRow][mid]){
+                return true;
+            }
+            else if(matrix[targetRow][mid] < target){
+                left = mid + 1;
+            }
+            else{
+                right = mid - 1;
+            }
+
+            }
+            return false;
+
+            
+    }
+};
+```
+
+## Search in Rotated Sorted Array II LC 81
+
+<!-- notecardId: 1780521072685 -->
+
+There is an integer array nums sorted in non-decreasing order (not necessarily with distinct values).
+
+Before being passed to your function, nums is rotated at an unknown pivot index k (0 <= k < nums.length) such that the resulting array is [nums[k], nums[k+1], ..., nums[n-1], nums[0], nums[1], ..., nums[k-1]] (0-indexed). For example, [0,1,2,4,4,4,5,6,6,7] might be rotated at pivot index 5 and become [4,5,6,6,7,0,1,2,4,4].
+
+Given the array nums after the rotation and an integer target, return true if target is in nums, or false if it is not in nums.
+
+You must decrease the overall operation steps as much as possible.
+
+ 
+
+Example 1:
+
+Input: nums = [2,5,6,0,0,1,2], target = 0
+Output: true
+Example 2:
+
+Input: nums = [2,5,6,0,0,1,2], target = 3
+Output: false
+ 
+
+Constraints:
+
+1 <= nums.length <= 5000
+-104 <= nums[i] <= 104
+nums is guaranteed to be rotated at some pivot.
+-104 <= target <= 104
+ 
+
+Follow up: This problem is similar to Search in Rotated Sorted Array, but nums may contain duplicates. Would this affect the runtime complexity? How and why?
+
+**Link**: [text](https://leetcode.com/problems/search-in-rotated-sorted-array-ii/)
+
+%
+
+**Pattern:** Binary Search with Duplicates
+
+**Approach:** Use binary search to find the target in the rotated sorted array that may contain duplicates. The presence of duplicates can make it difficult to determine which half of the array is sorted. To handle this, if the left, middle, and right elements are equal, you can skip the duplicates by incrementing the left pointer and decrementing the right pointer. This allows you to continue the binary search process while effectively ignoring the duplicate values.
+
+**Key Insight:** The key insight is that when duplicates are present, the standard binary search approach for a rotated sorted array can fail to identify the sorted half of the array. By checking if the left, middle, and right elements are equal, you can safely skip over the duplicates without missing the target. This ensures that you can still achieve logarithmic time complexity in most cases, although in the worst case (when all elements are duplicates) it can degrade to linear time.
+
+**Gotchas:** Be careful to handle edge cases where the target is not present in the array, or when the target is at the boundaries of the sorted halves. Additionally, ensure that you are correctly updating the left and right pointers during the binary search to avoid infinite loops or incorrect results. The presence of duplicates can lead to situations where the binary search does not effectively narrow down the search space, so it is crucial to implement the logic for skipping duplicates correctly.
+
+**Complexity:** Time: O(log n) on average, but can degrade to O(n) in the worst case when all elements are duplicates | Space: O(1) for the variables used to store indices and target value
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Search in Rotated Sorted Array — LC #33 | No duplicates → same sorted half identification always works | Yes — foundation |
+| Find Minimum in Rotated Sorted Array — LC #153 | Find minimum not target → same rotation detection different goal | Yes — same pattern |
+| Find Minimum in Rotated Sorted Array II — LC #154 | Duplicates allowed find minimum → same skip equal elements trick | Yes — direct variant |
+| Binary Search — LC #704 | Standard binary search no rotation → same skeleton simpler condition | Yes — foundation |
+| Search a 2D Matrix — LC #74 | Binary search on flattened 2D matrix → same binary search no rotation | Partial — same family |
+| Peak Index in Mountain Array — LC #852 | Find peak in bitonic array → same rotation style binary search | Partial — same binary search idea |
+| Count of Range Sum — LC #327 | Count ranges in sorted structure → merge sort not binary search | No — different pattern |
+| Find Duplicate Number — LC #287 | Find duplicate in unsorted array → Floyd's cycle or index marking | No — different pattern |
+
+**How this pattern scales:**
+- **Skip duplicates when ambiguous** is the core upgrade from LC #33 — when `nums[left] == nums[mid]` you cannot determine which half is sorted so increment left and decrement right by one. This degrades worst case to O(n) when all elements are equal but maintains O(log n) average
+- **Three cases instead of two** — (1) `nums[left] == nums[mid]`: ambiguous, shrink both boundaries by one. (2) `nums[left] < nums[mid]`: left half sorted, check if target in range. (3) `nums[left] > nums[mid]`: right half sorted, check if target in range. Drawing all three cases before coding eliminates boundary confusion
+- **Worst case O(n) is unavoidable** — for input like `[1,1,1,1,1,2,1,1,1]` you cannot determine which half contains the target without linear scanning. This is a fundamental limitation when duplicates are present and worth stating explicitly in interviews
+- **LC #154 connection** → Find Minimum in Rotated Sorted Array II applies the exact same `nums[left] == nums[mid]` skip trick but searches for the minimum inflection point instead of a target. Same fix, different goal
+- **Duplicates as the universal complication** → across binary search problems duplicates always introduce ambiguity in the comparison step. The fix is always some form of boundary shrinking or skipping — LC #81 does `left++ right--`, LC #154 does `right--`. Pattern: when duplicates make the condition ambiguous shrink conservatively
+
+```cpp
+class Solution {
+public:
+    bool search(vector<int>& nums, int target) {
+        int left = 0;
+        int right = nums.size() - 1;
+        while(left <= right){
+            int mid = left + (right - left) / 2;
+            if(nums[mid] == target){
+                return true;
+            }
+
+            //key point here, if there are duplicates, we can't determine which half of the array is sorted, so we can just move the left and right pointer until duplicates arent there
+            //key note: duplicates exist in this problem!
+            if(nums[mid] == nums[left] && nums[mid] == nums[right]){
+                left++;
+                right--;
+            }
+            else if(nums[mid] >= nums[left]){ //if mid is greater than or equal to left, then the left half of the array is sorted.
+                if(nums[mid] > target  && target >= nums[left]){ //if target is less than mid and greater than or equal to left, then the target must be in the left half of the array
+                    right = mid -1;
+                }
+                else{ //if the target is greater than mid or less than left, then the target must be in the right half of the array
+                    left = mid + 1;
+                }
+            }
+            else{ // if mid is less than left, then the right half of the array is sorted
+                if(nums[mid] < target && target <= nums[right]){ //if target is greater than mid and less than or equal to right, then the target must be in the right half of the array
+                    left = mid + 1;
+                }
+                else{
+                    right = mid - 1;
+                }
+            }
+        }
+        return false;
+    }
+};
+```
+
+## Find minumum in Rotated Sorted Array LC 153
+
+<!-- notecardId: 1780521760362 -->
+
+Suppose an array of length n sorted in ascending order is rotated between 1 and n times. For example, the array nums = [0,1,2,4,5,6,7] might become:
+
+[4,5,6,7,0,1,2] if it was rotated 4 times.
+[0,1,2,4,5,6,7] if it was rotated 7 times.
+Notice that rotating an array [a[0], a[1], a[2], ..., a[n-1]] 1 time results in the array [a[n-1], a[0], a[1], a[2], ..., a[n-2]].
+
+Given the sorted rotated array nums of unique elements, return the minimum element of this array.
+
+You must write an algorithm that runs in O(log n) time.
+
+ 
+
+Example 1:
+
+Input: nums = [3,4,5,1,2]
+Output: 1
+Explanation: The original array was [1,2,3,4,5] rotated 3 times.
+Example 2:
+
+Input: nums = [4,5,6,7,0,1,2]
+Output: 0
+Explanation: The original array was [0,1,2,4,5,6,7] and it was rotated 4 times.
+Example 3:
+
+Input: nums = [11,13,15,17]
+Output: 11
+Explanation: The original array was [11,13,15,17] and it was rotated 4 times. 
+ 
+
+Constraints:
+
+n == nums.length
+1 <= n <= 5000
+-5000 <= nums[i] <= 5000
+All the integers of nums are unique.
+nums is sorted and rotated between 1 and n times.
+
+**Link**: [text](https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/)
+
+%
+
+**Pattern:** Binary Search, Rotation Detection
+
+**Approach:** Use binary search to find the minimum element in the rotated sorted array. The key is to determine which half of the array is properly sorted at each step of the binary search. If the left half is sorted, then the minimum must be in the right half; if the right half is sorted, then the minimum must be in the left half. By comparing the middle element with the rightmost element, you can determine which half is sorted and narrow down the search space accordingly.
+
+**Key Insight:** The key insight is that in a rotated sorted array, the minimum element is the only element that is smaller than its previous element. By using binary search and comparing the middle element with the rightmost element, you can determine which half of the array is sorted and where the minimum element lies. This allows you to efficiently find the minimum element in logarithmic time.
+
+**Gotchas:** Be careful to handle edge cases where the minimum element is at the beginning or end of the array. Additionally, ensure that you are correctly updating the left and right pointers during the binary search to avoid infinite loops or incorrect results. The presence of duplicates can complicate the logic for determining which half is sorted, so make sure to account for that if it is a possibility in a related problem. The trick in the problem (what makes it different from other binary search questions) is to compare with the right element, and not the left. Because we are trying to find the minimum, we want to compare with the right element, because if the middle element is greater than the right element, then the minimum must be in the right half. If we compared with the left element, we would not be able to determine which half is sorted correctly.
+
+**Complexity:** Time: O(log n) where n is the length of the input array (binary search is performed on the entire array) | Space: O(1) for the variables used to store indices and target value
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Find Minimum in Rotated Sorted Array II — LC #154 | Duplicates allowed → same approach skip equal elements when ambiguous | Yes — direct upgrade |
+| Search in Rotated Sorted Array — LC #33 | Search for target not minimum → same rotation detection different goal | Yes — same pattern |
+| Search in Rotated Sorted Array II — LC #81 | Search with duplicates → same skip equal elements trick | Yes — same family |
+| Binary Search — LC #704 | Standard binary search no rotation → same skeleton simpler condition | Yes — foundation |
+| Find Peak Element — LC #162 | Find peak not minimum → same binary search on slope different direction | Partial — same binary search idea |
+| Peak Index in Mountain Array — LC #852 | Find peak in bitonic array → same slope based binary search | Partial — same family |
+| Rotate Array — LC #189 | Rotate array by k positions → reversal trick not binary search | No — different pattern |
+| Minimum in Sorted and Rotated using Binary Search | Classic rotation problem → direct application of LC #153 logic | Yes — same pattern |
+
+**How this pattern scales:**
+- **Compare mid to right boundary** is the core trick — if `nums[mid] > nums[right]` the minimum is in the right half (rotation point is right of mid). If `nums[mid] <= nums[right]` the minimum is in the left half including mid. Converge until `left == right`. O(log n) time O(1) space
+- **Why compare to right not left** — comparing `nums[mid]` to `nums[right]` cleanly identifies which half contains the inflection point. Comparing to `nums[left]` introduces ambiguity when the array is not rotated since `nums[left] <= nums[mid]` holds for both sorted and left-half-sorted cases
+- **Left converges to minimum** — when loop terminates `left == right` and both point to the minimum element. Same lower bound convergence as LC #35 but the condition drives convergence toward the rotation point instead of a target value
+- **Duplicates upgrade** → LC #154 adds `nums[mid] == nums[right]` as a third case where you cannot determine which half contains the minimum. Fix by decrementing right by one — same conservative boundary shrinking as LC #81
+- **Rotation point connection** → the minimum element IS the rotation point — it is the only element where `nums[i] < nums[i-1]`. LC #33 implicitly uses this same inflection point to identify sorted halves. Knowing where the rotation point is immediately tells you which half of any query target lies in
+
+```cpp
+class Solution {
+public:
+    int findMin(vector<int>& nums) {
+        int left = 0;
+        int right = nums.size() - 1;
+        while(left < right){
+            int mid = left + (right - left) / 2;
+
+            if(nums[mid] > nums[right]){ //have to compare with right and not left because if mid is greater than right, then we know that the minimum value must be in the right half of the array. 
+            //If we compared with left, we wouldn't be able to determine which half of the array contains the minimum value because the left half could still be sorted and contain the minimum value, or it could be rotated and contain the minimum value as well. 
+            //By comparing with right, we can determine that the minimum value must be in the right half of the array if mid is greater than right, and if mid is less than or equal to right, then the minimum value must be in the left half of the array.
+
+                left = mid + 1; //min is in the right half
+            }
+            else{
+                right = mid; //min is in the left half
+            }
+            /*
+            Your assumption that "if left half is sorted, minimum must be in right half" is FALSE when:
+
+            The array isn't rotated (minimum at left)
+            The rotation point is in the right half (left half is sorted but minimum is actually at the very left)
+            
+            */
+
+        }
+        return nums[left];
+    }
+};
+```
+
+## Guess Number Higher or Lower LC 374
+
+<!-- notecardId: 1780521760365 -->
+
+We are playing the Guess Game. The game is as follows:
+
+I pick a number from 1 to n. You have to guess which number I picked (the number I picked stays the same throughout the game).
+
+Every time you guess wrong, I will tell you whether the number I picked is higher or lower than your guess.
+
+You call a pre-defined API int guess(int num), which returns three possible results:
+
+-1: Your guess is higher than the number I picked (i.e. num > pick).
+1: Your guess is lower than the number I picked (i.e. num < pick).
+0: your guess is equal to the number I picked (i.e. num == pick).
+Return the number that I picked.
+
+ 
+
+Example 1:
+
+Input: n = 10, pick = 6
+Output: 6
+Example 2:
+
+Input: n = 1, pick = 1
+Output: 1
+Example 3:
+
+Input: n = 2, pick = 1
+Output: 1
+ 
+
+Constraints:
+
+1 <= n <= 231 - 1
+1 <= pick <= n
+
+**Link**: [text](https://leetcode.com/problems/guess-number-higher-or-lower/)
+
+%
+
+**Pattern:** Binary Search on Answer Space
+
+**Approach:** Use binary search to find the picked number by calling the `guess` API. Start with `left` at 1 and `right` at n. Calculate the midpoint `mid` and call `guess(mid)`. If the result is 0, return `mid` as the picked number. If the result is -1, it means the picked number is lower than `mid`, so move the `right` pointer to `mid - 1`. If the result is 1, it means the picked number is higher than `mid`, so move the `left` pointer to `mid + 1`. Continue this process until you find the picked number.
+
+**Key Insight:** The key insight is that the `guess` API provides feedback that allows you to effectively perform a binary search on the range of possible numbers. By adjusting the search range based on whether the guess is too high, too low, or correct, you can efficiently narrow down to the picked number in logarithmic time.
+
+**Gotchas:** Be careful to handle edge cases where the picked number is at the boundaries of the search range (1 or n). Additionally, ensure that you are correctly updating the left and right pointers during the binary search to avoid infinite loops or incorrect results. The use of `mid = left + (right - left) / 2` is important to prevent integer overflow when calculating the midpoint.
+
+**Complexity:** Time: O(log n) where n is the range of numbers (binary search is performed on the range from 1 to n) | Space: O(1) for the variables used to store indices and target value
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Binary Search — LC #704 | Direct array comparison no external API → same left/right/mid skeleton | Yes — foundation |
+| Search Insert Position — LC #35 | Lower bound binary search on array → same left convergence pattern | Yes — same family |
+| First Bad Version — LC #278 | First true in boolean predicate API → same binary search on external condition | Yes — direct variant |
+| Find Peak Element — LC #162 | Find peak using slope comparison → same binary search different condition | Partial — same family |
+| Koko Eating Bananas — LC #875 | Binary search on answer with feasibility check → same answer space search | Partial — same pattern |
+| Guess the Word — LC #843 | Guess word with limited attempts → minimax not binary search | No — different pattern |
+| Find K Closest Elements — LC #658 | Binary search on window boundary → same binary search different condition | Partial — same family |
+| Sqrt(x) — LC #69 | Binary search on answer space → same right convergence upper bound | Partial — same pattern |
+
+**How this pattern scales:**
+- **Binary search on external predicate** is the core trick — instead of comparing `nums[mid]` to a target directly call the `guess(mid)` API which returns -1 0 or 1. Same left/right/mid skeleton unchanged. O(log n) time O(1) space
+- **Three way comparison** — `guess(mid) == 0` found answer return mid. `guess(mid) == -1` target is lower move right boundary down. `guess(mid) == 1` target is higher move left boundary up. Mapping API return values to pointer movements before coding eliminates all direction confusion
+- **API abstraction pattern** → LC #374 and LC #278 (First Bad Version) both replace direct array access with an external API call. The binary search skeleton is identical — the only change is swapping `nums[mid] == target` for an API call. Any problem hiding its comparison behind a function call uses this same pattern
+- **Black box binary search** → when the search condition cannot be evaluated directly (external API, expensive computation, unknown function) binary search still applies as long as the condition is monotonic — false false false ... true true true or decreasing/increasing. LC #374 is the simplest example of this black box pattern
+- **Binary search on answer space** → LC #69 and LC #875 apply the same external condition idea but search on a value space instead of an index space. The predicate replaces direct comparison in both cases — same abstraction, different search domain
+
+```cpp
+/** 
+ * Forward declaration of guess API.
+ * @param  num   your guess
+ * @return 	     -1 if num is higher than the picked number
+ *			      1 if num is lower than the picked number
+ *               otherwise return 0
+ * int guess(int num);
+ */
+
+class Solution {
+public:
+    int guessNumber(int n) {
+        int left = 1;
+        int right = n;
+        while(left <= right){
+            int mid = left + (right - left)/2;
+        if(guess(mid) == 0){
+            return mid;
+        }
+        else if(guess(mid) == 1){
+            left = mid + 1;
+        }
+        else{
+            right = mid - 1;
+        }
+        }
+        return -1;
+    }
+};
+```
+
+## Split Array Largest Sum LC 410
+
+<!-- notecardId: 1780522524461 -->
+
+Given an integer array nums and an integer k, split nums into k non-empty subarrays such that the largest sum of any subarray is minimized.
+
+Return the minimized largest sum of the split.
+
+A subarray is a contiguous part of the array.
+
+ 
+
+Example 1:
+
+Input: nums = [7,2,5,10,8], k = 2
+Output: 18
+Explanation: There are four ways to split nums into two subarrays.
+The best way is to split it into [7,2,5] and [10,8], where the largest sum among the two subarrays is only 18.
+Example 2:
+
+Input: nums = [1,2,3,4,5], k = 2
+Output: 9
+Explanation: There are four ways to split nums into two subarrays.
+The best way is to split it into [1,2,3] and [4,5], where the largest sum among the two subarrays is only 9.
+ 
+
+Constraints:
+
+1 <= nums.length <= 1000
+0 <= nums[i] <= 106
+1 <= k <= min(50, nums.length)
+
+**Link**: [text](https://leetcode.com/problems/split-array-largest-sum/)
+
+%
+
+**Pattern:** Binary Search on Answer Space, Feasibility Check
+
+**Approach:** Use binary search to find the minimum largest sum of splitting the array into k subarrays. The search space for the largest sum is between the maximum element in the array (lower bound) and the sum of all elements in the array (upper bound). For each midpoint in this search space, perform a feasibility check to determine if it is possible to split the array into k or fewer subarrays without exceeding the midpoint as the largest sum. If it is feasible, move the upper bound down; if it is not feasible, move the lower bound up. Continue this process until the lower and upper bounds converge.
+
+**Key Insight:** The key insight is that the largest sum of any subarray must be at least the maximum element in the array and at most the sum of all elements in the array. By using binary search on this range, you can efficiently find the minimum largest sum. The feasibility check is crucial for determining whether a given largest sum can be achieved with k or fewer subarrays, which allows you to narrow down the search space effectively.
+
+**Gotchas:** Be careful to handle edge cases where k is equal to the length of the array (in which case the largest sum is simply the maximum element) or where k is 1 (in which case the largest sum is the sum of all elements). Additionally, ensure that your feasibility check correctly counts the number of subarrays needed to achieve a given largest sum and that you are correctly updating the left and right pointers during the binary search to avoid infinite loops or incorrect results.
+
+**Complexity:** Time: O(n log m) where n is the length of the input array and m is the range of possible largest sums (from max element to sum of all elements) | Space: O(1) for the variables used to store indices and target value
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Koko Eating Bananas — LC #875 | Minimize eating speed → same binary search on answer feasibility check | Yes — direct variant |
+| Capacity to Ship Packages — LC #1011 | Minimum ship capacity → same binary search on answer greedy validation | Yes — direct variant |
+| Divide Chocolate — LC #1231 | Maximize minimum sweetness → same binary search flip feasibility direction | Yes — direct variant |
+| Minimum Number of Days to Make Bouquets — LC #1482 | Binary search on days → same feasibility check pattern | Yes — same pattern |
+| Painter's Partition Problem | Minimize maximum painter time → exact restatement of LC #410 | Yes — direct variant |
+| Find K Closest Elements — LC #658 | Binary search on window boundary → same binary search different condition | Partial — same family |
+| Median of Two Sorted Arrays — LC #4 | Binary search on partition → same binary search on index space | Partial — same family |
+| Largest Rectangle in Histogram — LC #84 | Monotonic stack not binary search | No — different pattern |
+
+**How this pattern scales:**
+- **Binary search on answer space** is the core trick — search on `[max(nums), sum(nums)]` for the minimum largest subarray sum. For each candidate mid run a greedy feasibility check counting how many subarrays are needed. If count <= k mid is feasible move right boundary down. O(n log(sum - max)) time O(1) space
+- **Greedy feasibility check** — iterate through array accumulating sum, increment subarray count and reset when adding next element would exceed mid. If total subarrays needed <= k the capacity mid is feasible. This greedy is always optimal because splitting earlier never increases the maximum sum
+- **Minimize maximum vs maximize minimum** — LC #410 minimizes the maximum subarray sum. LC #1231 (Divide Chocolate) maximizes the minimum piece sweetness. Both use binary search on answer but the feasibility direction flips — minimize maximum moves right boundary down on feasible, maximize minimum moves left boundary up on feasible
+- **Binary search on answer template**:
+  1. Define answer space `[lo, hi]`
+  2. Write feasibility check `canDo(mid)` in O(n)
+  3. Binary search converging on tightest feasible value
+  4. Return `left` for minimize problems `right` for maximize problems
+- **Identifying binary search on answer problems** — signal words: "minimum maximum", "maximum minimum", "at most k groups", "within d days". Any time a problem asks to optimize a value subject to a count constraint or vice versa, binary search on answer + greedy feasibility is almost certainly the intended approach
+
+```cpp
+class Solution {
+public:
+    int splitArray(vector<int>& nums, int k) {
+    int left = *max_element(nums.begin(), nums.end());
+    int right = accumulate(nums.begin(), nums.end(), 0); //max capacity
+    int smallestSubarraySum = 0;
+    while(left < right){
+        int mid = left + (right - left)/2;
+        if(splitCheck(nums, k, mid)){
+            right = mid;
+        }
+        else{
+            left = mid + 1;
+        }
+    
+    }
+    return left;
+
+    }
+private:
+
+    bool splitCheck(vector<int>& nums, int k, int maxSum){
+        int subArrayCt =1;
+        int sum = 0;
+        for(int i = 0; i < nums.size(); i++){
+            if(sum + nums[i] > maxSum){
+                subArrayCt++;
+                sum = nums[i];
+                if(subArrayCt > k) return false;
+            }
+            else{
+                sum += nums[i];
+            }
+        }
+        return subArrayCt <= k;
+
+    }
+};
+```
+
