@@ -6847,3 +6847,546 @@ private:
 };
 ```
 
+## Binary Search LC 704
+
+<!-- notecardId: 1780528270682 -->
+
+Given an array of integers nums which is sorted in ascending order, and an integer target, write a function to search target in nums. If target exists, then return its index. Otherwise, return -1.
+
+You must write an algorithm with O(log n) runtime complexity.
+
+ 
+
+Example 1:
+
+Input: nums = [-1,0,3,5,9,12], target = 9
+Output: 4
+Explanation: 9 exists in nums and its index is 4
+Example 2:
+
+Input: nums = [-1,0,3,5,9,12], target = 2
+Output: -1
+Explanation: 2 does not exist in nums so return -1
+ 
+
+Constraints:
+
+1 <= nums.length <= 104
+-104 < nums[i], target < 104
+All the integers in nums are unique.
+nums is sorted in ascending order.
+
+**Link**: [text](https://leetcode.com/problems/binary-search/)
+
+%
+
+**Pattern:** Binary Search
+
+**Approach:** Use binary search to find the target in the sorted array. Start with `left` at 0 and `right` at the last index of the array. Calculate the midpoint `mid` and compare `nums[mid]` with the target. If they are equal, return `mid`. If `nums[mid]` is less than the target, move the `left` pointer to `mid + 1`. If `nums[mid]` is greater than the target, move the `right` pointer to `mid - 1`. Continue this process until the target is found or the pointers cross each other.
+
+**Key Insight:** The key insight is that binary search efficiently narrows down the search space by halving it at each step. By comparing the middle element with the target, you can determine which half of the array to continue searching in, leading to a logarithmic time complexity.
+
+**Gotchas:** Be careful to handle edge cases where the target is at the beginning or end of the array. Additionally, ensure that you are correctly updating the left and right pointers during the binary search to avoid infinite loops or incorrect results. The use of `mid = left + (right - left) / 2` is important to prevent integer overflow when calculating the midpoint.
+
+**Complexity:** Time: O(log n) where n is the length of the input array (binary search is performed on the entire array) | Space: O(1) for the variables used to store indices and target value
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Search Insert Position — LC #35 | Target may be missing → instead of returning -1, return the insertion index `left` where the element would logically sit | Yes — identical binary search structure |
+| Find First and Last Position of Element in Sorted Array — LC #34 | Array contains duplicates; find boundary bounds → use modified binary search conditions to continue searching left/right even after finding a match | Yes — binary search template with boundary clamping |
+| Search in Rotated Sorted Array — LC #33 | Array is rotated at an unknown pivot point → identify which half of the array is uniformly sorted before checking target boundaries | Partial — adds pre-conditional checks to standard binary search |
+| First Bad Version — LC #278 | API-driven boolean search space (`true`/`false`) instead of numerical values → minimize API calls by finding the first index where state changes | Yes — standard binary search on a monotonic boolean array |
+| Peak Index in a Mountain Array — LC #852 | Unsorted overall, but follows a strict increasing-then-decreasing structure → compare `nums[mid]` to `nums[mid + 1]` to determine peak direction | Partial — uses localized trend analysis instead of a target value |
+| Search a 2D Matrix — LC #74 | 2D matrix where rows are lined up end-to-end sorted → flatten the matrix indices mathematically (`row = mid / cols`, `col = mid % cols`) to perform standard 1D binary search | Yes — identical pattern via index mapping |
+
+**How this pattern scales:**
+- **Divide and conquer search space reduction O(log n)** is the core mechanic. By checking the exact midpoint (`mid = left + (right - left) / 2`), you exploit the sorted nature of the data to eliminate half of the remaining elements in $O(1)$ constant time. This reduces an $O(n)$ linear scan to logarithmic complexity, allowing you to search billions of items in roughly 30 operations.
+- **Overflow prevention in index calculations**. When scaling up to massive datasets or systems with fixed register sizes, computing the midpoint as `(left + right) / 2` can trigger an integer overflow if the sum exceeds the maximum limit of a 32-bit integer. The pattern standardizes to `left + (right - left) / 2` to safely guarantee all intermediate arithmetic stays within bounds.
+- **Loop termination and boundary conditions dictate variations**. The structure changes based on the search intent:
+  1. *Strict Search (`while (left <= right)`):* Used when hunting for an exact value. Halves are inclusive, and a missing element results in pointers crossing, terminating safely.
+  2. *Boundary Search (`while (left < right)`):* Used when seeking a threshold, pivot, or insertion index. The search space shrinks down until `left == right`, converging directly onto the target index without explicit midpoint matching.
+- **Monotonicity generalizes beyond explicit arrays** → Binary search scales seamlessly to abstract spaces where an explicit collection doesn't exist, known as **Binary Search on the Answer** (e.g., LC #1011, LC #875). As long as a problem domain exhibits a predictable, continuous monotonic property (e.g., "if velocity $v$ is sufficient to complete the journey, any velocity greater than $v$ is also guaranteed to complete it"), you can binary search for the optimal solution across a theoretical range of minimum and maximum possible values.
+
+```cpp
+class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        int left = 0;
+        int right = nums.size() - 1;
+    while(left <= right){
+        int currIndex = left + (right - left) / 2;
+        if(nums[currIndex] == target){
+            return currIndex;
+        }
+        else if(nums[currIndex] < target){
+            left = currIndex+ 1;
+        }
+        else{
+            right = currIndex - 1;
+        }
+}
+        return -1;
+    }
+};
+```
+
+## Koko Eating Bananas LC 875
+
+<!-- notecardId: 1780528510631 -->
+
+Koko loves to eat bananas. There are n piles of bananas, the ith pile has piles[i] bananas. The guards have gone and will come back in h hours.
+
+Koko can decide her bananas-per-hour eating speed of k. Each hour, she chooses some pile of bananas and eats k bananas from that pile. If the pile has less than k bananas, she eats all of them instead and will not eat any more bananas during this hour.
+
+Koko likes to eat slowly but still wants to finish eating all the bananas before the guards return.
+
+Return the minimum integer k such that she can eat all the bananas within h hours.
+
+ 
+
+Example 1:
+
+Input: piles = [3,6,7,11], h = 8
+Output: 4
+Example 2:
+
+Input: piles = [30,11,23,4,20], h = 5
+Output: 30
+Example 3:
+
+Input: piles = [30,11,23,4,20], h = 6
+Output: 23
+ 
+
+Constraints:
+
+1 <= piles.length <= 104
+piles.length <= h <= 109
+1 <= piles[i] <= 109
+
+**Link**: [text](https://leetcode.com/problems/koko-eating-bananas/)
+
+%
+
+**Pattern:** Binary Search on Answer Space, Feasibility Check
+
+**Approach:** Use binary search to find the minimum eating speed `k` that allows Koko to finish all the bananas within `h` hours. The search space for `k` is between 1 (the slowest speed) and the maximum number of bananas in any pile (the fastest speed). For each candidate `k`, perform a feasibility check to determine if Koko can eat all the bananas within `h` hours at that speed. If it is feasible, move the upper bound down; if it is not feasible, move the lower bound up. Continue this process until the lower and upper bounds converge.
+
+**Key Insight:** The key insight is that the eating speed `k` must be at least 1 and at most the maximum pile size. By using binary search on this range, you can efficiently find the minimum speed. The feasibility check is crucial for determining whether a given speed allows Koko to finish in time, which allows you to narrow down the search space effectively.
+
+**Gotchas:** Be careful to handle edge cases where `h` is equal to the length of `piles` (in which case the minimum speed is simply the maximum pile size) or where `h` is much larger than the total number of bananas (in which case the minimum speed is 1). Additionally, ensure that your feasibility check correctly calculates the total hours needed to eat all the bananas at a given speed and that you are correctly updating the left and right pointers during the binary search to avoid infinite loops or incorrect results.
+
+**Complexity:** Time: O(n log m) where n is the number of piles and m is the range of possible eating speeds (from 1 to max pile size) | Space: O(1) for the variables used to store indices and target value
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Capacity To Ship Packages Within D Days — LC #1011 | Must ship packages in strict linear order without reordering → calculate minimum ship capacity using an identical binary search range with a linear packing simulation | Yes — identical abstract boundary matching |
+| Split Array Largest Sum — LC #410 | Split contiguous array into $m$ subarrays to minimize the maximum sum → binary search the maximum subarray sum threshold, using a greedy checker to count partitions | Yes — same optimization setup over a continuous range |
+| Minimum Time to Complete Trips — LC #2226 | Find maximum time/speed allowed under a constraint → flip the binary search logic to maximize a valid answer rather than minimizing a threshold cost | Yes — same framework but optimizes for upper bound |
+| Find Minimum in Rotated Sorted Array — LC #153 | Finding an actual element in a modified physical array → binary search over concrete structural index boundaries rather than a conceptual answer range | No — structural binary search, not binary search on the answer |
+
+**How this pattern scales:**
+- **Binary Search on the Answer space O(n log m)** is the optimal strategy when you need to find a minimum or maximum optimization threshold, but the input data cannot be sorted or searched directly. Instead of searching the array, you identify a conceptual, continuous range of possible answers (from `minimum_possible_speed = 1` to `maximum_possible_speed = max(piles)`). You then binary search this speed range, reducing the search space logarithmically.
+- **The Monotonic Feasibility Function is the core engine**. For every midpoint candidate speed `mid` generated by the binary search, you run a secondary linear helper function ($O(n)$ time) to simulate Koko eating the piles. This function counts total hours spent: 
+  $$\text{hours} = \sum \lceil \text{pile} / \text{mid} \rceil$$
+  Because the relationship is perfectly monotonic—increasing the eating speed is guaranteed to either decrease or maintain the total hours spent—you can confidently discard half of your answer space based on whether the total hours fall within the deadline `h`.
+- **Handling integer division rounding constraints**. When simulating rates or distributions (like eating candies, shipping weights, or partitioning lines), standard integer truncation (`pile / mid`) can corrupt the feasibility check. The pattern scales by implementing ceiling division safely without floating-point inaccuracies using the integer formula: `(pile + mid - 1) / mid`.
+- **Abstract optimization problems generalize via monotonic properties** → This framework completely transforms how you approach complex optimization problems. Whenever a question asks for a minimum or maximum value to satisfy a condition, look for a monotonic rule: *"If an answer of size $X$ is valid, does that guarantee that every value greater than $X$ is also valid?"* If yes, you can bypass complex combinatorial logic entirely and use this template to wrap a simple greedy checking subroutine inside a powerful binary search wrapper.
+
+```cpp
+class Solution {
+public:
+    int minEatingSpeed(vector<int>& piles, int h) {
+        //the trick is that you are binary searching the eating speed, not the piles
+        int left = 1;
+        int right = *max_element(piles.begin(), piles.end()); //max element returns the pointer, dereference ptr to get the value
+        int answer = right;
+        while(left < right){
+            int mid = left + (right - left)/2; //eating speed can be between 1 and max of the piles, so we can binary search between those two values to find the minimum eating speed that allows Koko to finish eating all the bananas within h hours.
+            int hoursNeeded = 0;
+            for(int p:piles){
+                hoursNeeded += (p + mid - 1) / mid; //the (p + mid - 1) / mid is a common way to calculate the ceiling of p/mid without using floating point division. It works by adding mid - 1 to p before dividing by mid, which effectively rounds up the division result when p is not perfectly divisible by mid.
+            }
+            if(hoursNeeded <= h){
+                answer = mid; //not hoursneeded, we need to return the minimum eating speed, so if hours needed is less than or equal to h, we can try to find a smaller eating speed, so we set right to mid. If hours needed is greater than h, we need to increase the eating speed, so we set left to mid + 1.
+                right = mid;
+            }
+            else{
+                left = mid + 1;
+            }
+        }
+        return answer;
+    }
+};
+```
+
+## Time Based Key-Value Store LC 981
+
+<!-- notecardId: 1780530679230 -->
+
+Design a time-based key-value data structure that can store multiple values for the same key at different time stamps and retrieve the key's value at a certain timestamp.
+
+Implement the TimeMap class:
+
+TimeMap() Initializes the object of the data structure.
+void set(String key, String value, int timestamp) Stores the key key with the value value at the given time timestamp.
+String get(String key, int timestamp) Returns a value such that set was called previously, with timestamp_prev <= timestamp. If there are multiple such values, it returns the value associated with the largest timestamp_prev. If there are no values, it returns "".
+ 
+
+Example 1:
+
+Input
+["TimeMap", "set", "get", "get", "set", "get", "get"]
+[[], ["foo", "bar", 1], ["foo", 1], ["foo", 3], ["foo", "bar2", 4], ["foo", 4], ["foo", 5]]
+Output
+[null, null, "bar", "bar", null, "bar2", "bar2"]
+
+Explanation
+TimeMap timeMap = new TimeMap();
+timeMap.set("foo", "bar", 1);  // store the key "foo" and value "bar" along with timestamp = 1.
+timeMap.get("foo", 1);         // return "bar"
+timeMap.get("foo", 3);         // return "bar", since there is no value corresponding to foo at timestamp 3 and timestamp 2, then the only value is at timestamp 1 is "bar".
+timeMap.set("foo", "bar2", 4); // store the key "foo" and value "bar2" along with timestamp = 4.
+timeMap.get("foo", 4);         // return "bar2"
+timeMap.get("foo", 5);         // return "bar2"
+ 
+
+Constraints:
+
+1 <= key.length, value.length <= 100
+key and value consist of lowercase English letters and digits.
+1 <= timestamp <= 107
+All the timestamps timestamp of set are strictly increasing.
+At most 2 * 105 calls will be made to set and get.
+
+**Link**: [text](https://leetcode.com/problems/time-based-key-value-store/)
+
+%
+
+**Pattern:** Binary Search on Timestamp
+
+**Approach:** Use a hash map to store the key and a list of (timestamp, value) pairs. When setting a value, append the (timestamp, value) pair to the list for that key. When getting a value, perform a binary search on the list of (timestamp, value) pairs for the given key to find the largest timestamp that is less than or equal to the requested timestamp. Return the corresponding value for that timestamp.
+
+**Key Insight:** The key insight is that since the timestamps for each key are strictly increasing, you can use binary search to efficiently find the correct value for a given timestamp. By storing the (timestamp, value) pairs in a list for each key, you can quickly retrieve the value associated with the largest timestamp that is less than or equal to the requested timestamp.
+
+**Gotchas:** Be careful to handle edge cases where the requested timestamp is smaller than the smallest timestamp for that key (in which case you should return an empty string) or larger than the largest timestamp for that key (in which case you should return the value associated with the largest timestamp). Additionally, ensure that you are correctly implementing the binary search to find the appropriate timestamp and that you are correctly updating the hash map when setting values.
+
+**Complexity:** Time: O(log n) for the get operation where n is the number of (timestamp, value) pairs for the given key (due to binary search) | Space: O(m) where m is the total number of (timestamp, value) pairs stored across all keys
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Search Insert Position — LC #35 | Find insertion point in a standard flat array → exact same floor/ceiling binary search index search, but operates on a single array without a hash map wrapper | Yes — core index-finding engine |
+| Stock Price Fluctuation — LC #2034 | Values fluctuate out of order and require min/max tracking across all time → use a hash map for current prices combined with a balanced BST (`std::multiset`) or min/max heaps to dynamically sort values | No — requires tracking absolute global extremes rather than localized historical snapshots |
+| Design Hit Counter — LC #362 | Count hits in the last 5 minutes → use a queue or bucketed array of fixed size 300 to continuously roll over timestamp entries in $O(1)$ time | No — relies on a rolling chronological window rather than retrieval of random historical data |
+| Snapshot Array — LC #1146 | Track full array states at specific snapshot IDs → store a list of `(snapshot_id, value)` pairs for each individual index, then binary search the list during a read | Yes — structural twin, mapping unique state IDs to historical records |
+
+**How this pattern scales:**
+- **Nested Binary Search within a Hash Map O(log N) retrieval** is the optimal design pattern for managing time-series or versioned databases. The hash map handles structural isolation by mapping a unique identification string (`key`) to its dedicated historical timeline in $O(1)$ time. That timeline is stored as a monotonically increasing array of structures or pairs ordered by time `(timestamp, value)`, allowing you to binary search historical states with logarithmic efficiency.
+- **Floor Search logic extracts the most relevant historical snapshot**. When a database is queried for a historical state at a specific `timestamp`, an exact match is rarely guaranteed. The pattern scales by altering standard binary search into a **floor search** template:
+  1. If `timeline[mid].timestamp <= target_timestamp`, you record this value as a viable candidate and advance `left = mid + 1` to see if a newer, more relevant record exists before the deadline.
+  2. If `timeline[mid].timestamp > target_timestamp`, the record is from the future, so you discard it by moving `right = mid - 1`.
+- **Handling out-of-bounds initialization extremes**. When querying historical sequences, boundary conditions can cause errors if not handled safely. If the requested `timestamp` is older than the very first record in the key's history array (`target_timestamp < timeline[0].timestamp`), a valid historical state does not exist yet. The system must immediately abort the binary search and return an empty string `""` to prevent indexing errors.
+- **Log-Structured Merge-Trees and version control generalize from this template** → This data structure is the fundamental architecture powering production systems like Git commits, financial ledger auditing, and database isolation levels (MVCC - Multi-Version Concurrency Control). By decoupling structural entity tracking (the Hash Map) from chronological state mutations (the Binary Searched Array), you build an immutable tracking engine capable of restoring the exact state of any variable at any fraction of a second in the past.
+
+```cpp
+class TimeMap {
+public:
+    TimeMap() {
+        //dont need to do anything here
+    }
+    
+    void set(string key, string value, int timestamp) {
+        timeMap[key].push_back({timestamp, value});
+    }
+    
+    string get(string key, int timestamp) {
+        if(timeMap.find(key) == timeMap.end()){
+            return "";
+        }
+        int left = 0;
+        int right = timeMap[key].size() - 1;
+        while(left <= right){
+            int mid = left + (right - left) / 2;
+            if(timeMap[key].at(mid).first == timestamp){
+                return timeMap[key].at(mid).second;
+            }
+            else if(timeMap[key].at(mid).first < timestamp){
+                left = mid + 1;
+            }
+            else{
+                right = mid - 1;
+            }
+        }
+        return right >= 0 ? timeMap[key].at(right).second : "";
+    }
+private:
+    unordered_map<string, vector<pair<int, string>>> timeMap;
+};
+/**
+ * Your TimeMap object will be instantiated and called as such:
+ * TimeMap* obj = new TimeMap();
+ * obj->set(key,value,timestamp);
+ * string param_2 = obj->get(key,timestamp);
+ */
+```
+
+## Capacity To Ship Packages Within D Days LC 1011
+
+<!-- notecardId: 1780530998777 -->
+
+A conveyor belt has packages that must be shipped from one port to another within days days.
+
+The ith package on the conveyor belt has a weight of weights[i]. Each day, we load the ship with packages on the conveyor belt (in the order given by weights). We may not load more weight than the maximum weight capacity of the ship.
+
+Return the least weight capacity of the ship that will result in all the packages on the conveyor belt being shipped within days days.
+
+ 
+
+Example 1:
+
+Input: weights = [1,2,3,4,5,6,7,8,9,10], days = 5
+Output: 15
+Explanation: A ship capacity of 15 is the minimum to ship all the packages in 5 days like this:
+1st day: 1, 2, 3, 4, 5
+2nd day: 6, 7
+3rd day: 8
+4th day: 9
+5th day: 10
+
+Note that the cargo must be shipped in the order given, so using a ship of capacity 14 and splitting the packages into parts like (2, 3, 4, 5), (1, 6, 7), (8), (9), (10) is not allowed.
+Example 2:
+
+Input: weights = [3,2,2,4,1,4], days = 3
+Output: 6
+Explanation: A ship capacity of 6 is the minimum to ship all the packages in 3 days like this:
+1st day: 3, 2
+2nd day: 2, 4
+3rd day: 1, 4
+Example 3:
+
+Input: weights = [1,2,3,1,1], days = 4
+Output: 3
+Explanation:
+1st day: 1
+2nd day: 2
+3rd day: 3
+4th day: 1, 1
+ 
+
+Constraints:
+
+1 <= days <= weights.length <= 5 * 104
+1 <= weights[i] <= 500
+
+**Link**: [text](https://leetcode.com/problems/capacity-to-ship-packages-within-d-days/)
+
+%
+
+**Pattern:** Binary Search on Answer Space, Feasibility Check
+
+**Approach:** Use binary search to find the minimum ship capacity that allows all packages to be shipped within `days` days. The search space for the ship capacity is between the maximum weight of a single package (the lower bound) and the sum of all package weights (the upper bound). For each candidate capacity, perform a feasibility check to determine if it is possible to ship all packages within `days` days at that capacity. If it is feasible, move the upper bound down; if it is not feasible, move the lower bound up. Continue this process until the lower and upper bounds converge.
+
+**Key Insight:** The key insight is that the ship capacity must be at least the weight of the heaviest package and at most the total weight of all packages. By using binary search on this range, you can efficiently find the minimum capacity. The feasibility check is crucial for determining whether a given capacity allows all packages to be shipped within the specified number of days, which allows you to narrow down the search space effectively.
+
+**Gotchas:** Be careful to handle edge cases where `days` is equal to the length of `weights` (in which case the minimum capacity is simply the maximum weight) or where `days` is 1 (in which case the minimum capacity is the sum of all weights). Additionally, ensure that your feasibility check correctly calculates the total number of days needed to ship all packages at a given capacity and that you are correctly updating the left and right pointers during the binary search to avoid infinite loops or incorrect results.
+
+**Complexity:** Time: O(n log m) where n is the number of packages and m is the range of possible ship capacities (from max weight to sum of all weights) | Space: O(1) for the variables used to store indices and target value
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Koko Eating Bananas — LC #875 | Items (piles) can be partially consumed across hours → helper function calculates division rates rather than contiguous linear block grouping | Yes — identical abstract binary search framework |
+| Split Array Largest Sum — LC #410 | Split a contiguous array into $m$ subarrays to minimize the maximum sum → identical problem disguised under mathematical terminology instead of a shipping metaphor | Yes — exact structural twin |
+| Path With Minimum Effort — LC #1631 | Find a path from top-left to bottom-right of a 2D grid minimizing the maximum absolute difference between consecutive cells → binary search the threshold effort level, running a BFS/DFS to verify connectivity | Yes — applies the abstract binary search strategy to graph traversal |
+| Book Allocation Problem — (Common Interview Variation) | Allocate contiguous books to $M$ students minimizing the maximum pages read → exact same contiguous grouping logic and range evaluation | Yes — identical logic template |
+
+**How this pattern scales:**
+- **Binary Search on the Answer space O(n log m) with contiguous constraints** is the optimal strategy when you need to minimize a maximum load threshold, and the elements **cannot be reordered or sorted**. Sorting the input array is a trap; the sequential, contiguous nature of the dataset must be preserved. Instead, you binary search the *capacity itself* across a continuous search space ranging from `max_element(weights)` (minimum capacity to carry the single heaviest item) to `sum(weights)` (maximum capacity to carry all items in one trip).
+- **The Sequential Greedy Simulation acts as the validator**. For every candidate capacity `mid` generated by the binary search, an $O(n)$ greedy helper function scans the weights linearly. It accumulates weights into a single "day" or "bucket." The moment adding the next item exceeds `mid`, the simulation seals the current day, increments the `day_count`, and starts a fresh accumulator. 
+- **Monotonic pass/fail feedback loops drive the search**. The validity function produces a monotonic pattern over the capacity range (e.g., `[False, False, True, True, True]`). If a capacity of `mid` successfully ships the cargo within the `days` deadline (`day_count <= days`), it is proven viable. Because any capacity *larger* than `mid` is also guaranteed to succeed, you record `mid` as a candidate solution and aggressively discard the entire right upper half by shifting `right = mid - 1`.
+- **Optimization of contiguous resource partitioning generalizes** → This design framework adapts seamlessly to load balancing, network packet routing, worker schedule optimization, or assembly line partitioning. Whenever you are tasked with breaking down a fixed, sequential stream of tasks or payloads among a limited set of processors or time windows, wrapping a greedy linear packing simulator inside a logarithmic binary search engine bypasses the need for complex, expensive combinatorial allocation algorithms.
+
+```cpp
+class Solution {
+public:
+    int shipWithinDays(vector<int>& weights, int days) {
+        int right = accumulate(weights.begin(), weights.end(), 0); //max capacity that can be shipped in an entire day 
+        int left = *max_element(weights.begin(), weights.end()); //minimum capacity must be the max weight in the weights array, or else it cannot be shipped at all.
+        while(left < right){
+            int mid = left + (right - left)/2; //capacity trying to ship with
+            int daysNeeded = 1;
+            int currentLoad = 0;
+            for (int w : weights){ //go through the weights and see how many days it would take to ship with the current capacity (mid)
+                if(currentLoad + w> mid){
+                    daysNeeded++;
+                    currentLoad = w;
+                }
+                else{
+                    currentLoad += w;
+                }
+            }
+
+            if(daysNeeded <= days){
+                right = mid;
+
+            }
+            else{
+                left = mid + 1;
+            }
+
+        }
+        return left;
+    }
+};
+```
+
+## Find in Mountain Array LC 1095
+
+<!-- notecardId: 1780531195227 -->
+
+(This problem is an interactive problem.)
+
+You may recall that an array arr is a mountain array if and only if:
+
+arr.length >= 3
+There exists some i with 0 < i < arr.length - 1 such that:
+arr[0] < arr[1] < ... < arr[i - 1] < arr[i]
+arr[i] > arr[i + 1] > ... > arr[arr.length - 1]
+Given a mountain array mountainArr, return the minimum index such that mountainArr.get(index) == target. If such an index does not exist, return -1.
+
+You cannot access the mountain array directly. You may only access the array using a MountainArray interface:
+
+MountainArray.get(k) returns the element of the array at index k (0-indexed).
+MountainArray.length() returns the length of the array.
+Submissions making more than 100 calls to MountainArray.get will be judged Wrong Answer. Also, any solutions that attempt to circumvent the judge will result in disqualification.
+
+ 
+
+Example 1:
+
+Input: mountainArr = [1,2,3,4,5,3,1], target = 3
+Output: 2
+Explanation: 3 exists in the array, at index=2 and index=5. Return the minimum index, which is 2.
+Example 2:
+
+Input: mountainArr = [0,1,2,4,2,1], target = 3
+Output: -1
+Explanation: 3 does not exist in the array, so we return -1.
+ 
+
+Constraints:
+
+3 <= mountainArr.length() <= 104
+0 <= target <= 109
+0 <= mountainArr.get(index) <= 109
+
+**Link**: [text](https://leetcode.com/problems/find-in-mountain-array/)
+
+%
+
+**Pattern:** Binary Search on Unimodal Array
+
+**Approach:** First, find the peak index of the mountain array using binary search. Then, perform two separate binary searches: one on the increasing part of the array (from the start to the peak) and another on the decreasing part of the array (from the peak to the end). If the target is found in either part, return its index; otherwise, return -1.
+
+**Key Insight:** The key insight is that a mountain array has a unique peak, and the elements on either side of the peak are sorted in opposite orders (increasing on the left and decreasing on the right). By first finding the peak index, you can effectively split the problem into two binary search problems, each of which can be solved efficiently due to the sorted nature of the respective subarrays.
+
+**Gotchas:** Be careful to handle edge cases where the target is equal to the peak element or where the target is not present in either subarray. Additionally, ensure that you are correctly implementing the binary search for both the increasing and decreasing parts of the array, and that you are correctly updating the pointers during the search to avoid infinite loops or incorrect results.
+
+**Complexity:** Time: O(log n) for finding the peak and O(log n) for each of the two binary searches, resulting in O(log n) overall | Space: O(1) for the variables used to store indices and target value
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Peak Index in a Mountain Array — LC #852 | Only find the peak index, no target search → stop after the first phase of LC #1095 without running subsequent side searches | Yes — identical foundational phase |
+| Find in Mountain Array — LC #1095 | Find the *minimum index* matching a target inside a mountain structure → requires finding the peak first, then running two separate binary searches on opposite slopes | Yes — the complete multi-phase template |
+| Search in Rotated Sorted Array — LC #33 | Single-phase search where the sorted property drops off sharply at a single rotation point → evaluate localized sorted properties at `mid` directly | Partial — both handle non-monotonically sorted arrays, but LC #33 does not require isolating a global peak first |
+| Find Minimum in Rotated Sorted Array — LC #153 | Find the absolute lowest point in an inflected array → find the sharp single-drop boundary rather than an increasing-then-decreasing peak | Partial — localized boundary convergence without secondary target tracking |
+
+**How this pattern scales:**
+- **Multi-Phase Binary Search O(log n)** is the optimal strategy for structural arrays that exhibit multiple distinct, predictable, monotonic zones. When a collection is non-monotonic as a whole but can be cleanly split into independently monotonic sub-regions (like a mountain array with an ascending slope and a descending slope), you solve it by isolating the exact boundaries of those zones before searching for specific values.
+- **Peak isolation via directional tracking**. The first phase utilizes a modified binary search to locate the mountain peak (the transition point where the array switches from increasing to decreasing). By comparing `mountainArr.get(mid)` with `mountainArr.get(mid + 1)`, the algorithm calculates a localized slope direction. If it slopes upward, the peak lies strictly to the right (`left = mid + 1`). If it slopes downward, `mid` could be the peak or the peak lies to the left (`right = mid`). This isolates the maximum element index in $O(\log n)$ time.
+- **Direction-Aware Binary Search Subroutines**. Once the peak index is found, the array is partitioned into two distinct search spaces: a standard ascending array (index `0` to `peak`) and a reversed descending array (index `peak` to `length - 1`). The pattern scales by reusing a binary search template but adjusting the comparison logic:
+  1. *Ascending Side:* Standard logic applies (if `target > mid_val`, move right).
+  2. *Descending Side:* Inverted logic applies (if `target > mid_val`, move left, because values shrink as indices grow).
+- **Short-Circuiting for Minimum Index Constraints**. Because the problem explicitly requires returning the *minimum* index where the target appears, the order of operations matters. The algorithm runs its search on the ascending left slope first. If the target is found there, it immediately returns that index, short-circuiting and completely skipping the more expensive search on the right descending slope.
+
+```cpp
+/**
+ * // This is the MountainArray's API interface.
+ * // You should not implement it, or speculate about its implementation
+ * class MountainArray {
+ *   public:
+ *     int get(int index);
+ *     int length();
+ * };
+ */
+
+class Solution {
+public:
+    int findInMountainArray(int target, MountainArray &mountainArr) {
+        int left = 0;
+        int right = mountainArr.length() - 1;
+        int peak = -1;
+        int midHolder = -1;
+        bool foundInLeft = false;
+        while(left < right){
+            int mid = left + (right - left) / 2;
+            if(mountainArr.get(mid) < mountainArr.get(mid + 1)){
+                left = mid + 1;
+            }
+            else{
+                right = mid;
+            }
+        }
+        peak = left;
+
+        if(mountainArr.get(peak) == target){
+            return peak;
+        }
+        //do binary search here
+
+        int left1 = 0;
+        int right1 = peak - 1;
+        while (left1 <= right1){
+            int mid = left1 + (right1 - left1) / 2;
+            if(mountainArr.get(mid) == target){
+                foundInLeft = true;
+                return mid;
+            }
+            else if(mountainArr.get(mid) < target){
+                left1 = mid + 1;
+            }
+            else{
+                right1 = mid - 1;
+            }
+
+        }
+
+        if(!foundInLeft){
+             int right2 = mountainArr.length() -1;
+        int left2 = peak + 1;
+        while (left2 <= right2){
+            int mid = left2 + (right2 - left2) / 2;
+            if(mountainArr.get(mid) == target){
+                return mid;
+            }
+            else if(mountainArr.get(mid) < target){
+                right2 = mid - 1;
+            }
+            else{
+                left2 = mid + 1;
+            }
+        }
+    }
+    return -1;
+    }
+};
+```
