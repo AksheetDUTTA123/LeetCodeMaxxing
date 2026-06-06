@@ -7390,3 +7390,1723 @@ public:
     }
 };
 ```
+
+## Add Two Numbers LC 2
+
+<!-- notecardId: 1780698669318 -->
+
+You are given two non-empty linked lists representing two non-negative integers. The digits are stored in reverse order, and each of their nodes contains a single digit. Add the two numbers and return the sum as a linked list.
+
+You may assume the two numbers do not contain any leading zero, except the number 0 itself.
+
+ 
+
+Example 1:
+
+
+Input: l1 = [2,4,3], l2 = [5,6,4]
+Output: [7,0,8]
+Explanation: 342 + 465 = 807.
+Example 2:
+
+Input: l1 = [0], l2 = [0]
+Output: [0]
+Example 3:
+
+Input: l1 = [9,9,9,9,9,9,9], l2 = [9,9,9,9]
+Output: [8,9,9,9,0,0,0,1]
+ 
+
+Constraints:
+
+The number of nodes in each linked list is in the range [1, 100].
+0 <= Node.val <= 9
+It is guaranteed that the list represents a number that does not have leading zeros.
+
+**Link**: [text](https://leetcode.com/problems/add-two-numbers/)
+
+&
+
+**Pattern:** Linked List Addition with Carry
+
+**Approach:** Use two pointers to traverse both linked lists simultaneously, adding corresponding digits along with any carry from the previous addition. Create a new linked list to store the result. If one linked list is shorter than the other, treat missing nodes as 0. Continue this process until both linked lists are fully traversed and there is no carry left.
+
+**Key Insight:** The key insight is that you can treat the linked lists as representations of numbers in reverse order, allowing you to add them digit by digit while managing carries. By using a dummy head for the result linked list, you can simplify the logic for appending new nodes and avoid edge cases when initializing the result list.
+
+**Gotchas:** Be careful to handle edge cases where the linked lists have different lengths, and ensure that you correctly manage the carry when the sum of two digits exceeds 9. Additionally, make sure to check for any remaining carry after the main loop and append it to the result linked list if necessary.
+
+**Complexity:** Time: O(max(m, n)) where m and n are the lengths of the two linked lists | Space: O(max(m, n)) for the new linked list that stores the result
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Add Binary — LC #67 | Add binary strings not linked lists → same carry propagation string instead of nodes | Partial — same carry idea |
+| Multiply Strings — LC #43 | Multiply not add → digit by digit carry propagation more complex | Partial — same carry family |
+| Sum of Two Integers — LC #371 | Add without arithmetic operators → bit manipulation XOR and AND carry | No — different pattern |
+| Merge Two Sorted Lists — LC #21 | Merge not add → same two pointer linked list traversal different operation | Partial — same linked list structure |
+| Add Two Numbers II — LC #445 | Digits stored most significant first → reverse lists or use stacks first | Yes — direct upgrade |
+| Plus One — LC #66 | Add one to number stored as array → same carry propagation single pass | Partial — same carry idea |
+| Linked List Cycle — LC #141 | Detect cycle not add → Floyd's fast slow pointer | No — different pattern |
+| Reverse Linked List — LC #206 | Reverse not add → prev curr pointer swap | No — different pattern |
+
+**How this pattern scales:**
+- **Carry propagation** is the core trick — traverse both lists simultaneously maintaining a carry variable. At each step compute `sum = l1.val + l2.val + carry`, set `carry = sum / 10`, create new node with `sum % 10`. Continue until both lists exhausted and carry is zero. O(max(m,n)) time O(max(m,n)) space
+- **Three termination conditions** — loop must continue while `l1 != null OR l2 != null OR carry != 0`. Missing the carry condition causes the last digit to be dropped when a final carry propagates beyond both list lengths — the single most common bug on this problem
+- **Dummy head node pattern** — create a dummy head node and build the result list from it. Return `dummy.next` at the end. Eliminates special casing the first node and is the standard pattern for any linked list construction problem
+- **Most significant first upgrade** → LC #445 stores digits most significant first making direct carry propagation impossible since carry flows from least to most significant. Two approaches: reverse both lists and apply LC #2 directly, or push all digits onto stacks and pop to simulate reverse traversal
+- **Carry propagation generalizes** → Plus One (LC #66), Add Binary (LC #67), and Multiply Strings (LC #43) all use the same carry variable pattern on different data structures. The core arithmetic is identical — only the container (linked list, array, string) changes
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        //start by making a new linked list
+        ListNode* newLL = new ListNode(0); //this is now to create a new linked list, make a new node and this is the start
+        ListNode * curr = newLL;
+        int carry = 0;
+
+        while((l1 || l2) || carry != 0){ //if carry not 0 and l1 and l2 done, need to make a new node and add the carry over
+            int val1 = 0;
+            int val2 = 0;
+            if(l1 != nullptr){ //have to check if nullptr, if not then use val
+                val1 = l1->val;
+            }
+            else{
+                val1 = 0; //it is possible that list alr ended, so just set val1 as 0 so l2 numbers can be added
+            }
+            if(l2 != nullptr){
+                val2 = l2->val;
+            }
+            else{
+                val2 = 0;
+            }
+            curr -> next = new ListNode((val1+ val2 + carry) % 10); // 9 + 9 = 18, node will have 8 and carry will be 1
+            carry = (val1+ val2 + carry) / 10; 
+            curr = curr -> next; //move to next node of answer linked list
+            if(l1) l1 = l1->next;  //advnace linked list if not nullptr
+            if(l2) l2 = l2->next; //advnace linked list if not nullptr
+        }
+        return newLL->next; //return the linked list 
+    }
+};
+```
+## Remove nth Node From End of List LC 19
+
+<!-- notecardId: 1780699036518 -->
+
+Given the head of a linked list, remove the nth node from the end of the list and return its head.
+
+ 
+
+Example 1:
+
+
+Input: head = [1,2,3,4,5], n = 2
+Output: [1,2,3,5]
+Example 2:
+
+Input: head = [1], n = 1
+Output: []
+Example 3:
+
+Input: head = [1,2], n = 1
+Output: [1]
+ 
+
+Constraints:
+
+The number of nodes in the list is sz.
+1 <= sz <= 30
+0 <= Node.val <= 100
+1 <= n <= sz
+ 
+
+Follow up: Could you do this in one pass?
+
+**Link**: [text](https://leetcode.com/problems/remove-nth-node-from-end-of-list/)
+
+%
+
+**Pattern:** Two Pointer Technique (Fast and Slow Pointers)
+
+**Approach:** Use two pointers, `fast` and `slow`, to traverse the linked list. Move the `fast` pointer `n` steps ahead of the `slow` pointer. Then, move both pointers simultaneously until the `fast` pointer reaches the end of the list. At this point, the `slow` pointer will be at the node just before the one that needs to be removed. Adjust the `next` pointer of the `slow` node to skip the target node and return the head of the modified list.
+
+**Key Insight:** The key insight is that by maintaining a fixed distance of `n` between the `fast` and `slow` pointers, you can effectively identify the node that needs to be removed in a single pass through the list. When the `fast` pointer reaches the end, the `slow` pointer will be positioned just before the target node, allowing for easy removal.
+
+**Gotchas:** Be careful to handle edge cases where the node to be removed is the head of the list (when `n` is equal to the length of the list). In this case, you need to update the head pointer to point to the second node. Additionally, ensure that you are correctly updating the `next` pointers to avoid breaking the linked list structure.
+
+**Complexity:** Time: O(sz) where sz is the number of nodes in the linked list | Space: O(1) for the pointers used to traverse the list
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Remove Linked List Elements — LC #203 | Remove all nodes with given value not nth from end → same dummy head single pointer | Partial — same removal idea |
+| Delete Node in a Linked List — LC #237 | Delete node with only access to that node → copy next value no prev pointer needed | No — different pattern |
+| Middle of the Linked List — LC #876 | Find middle not nth from end → same fast slow pointer different gap | Yes — direct variant |
+| Linked List Cycle — LC #141 | Detect cycle → same fast slow pointer different speed | Partial — same two pointer family |
+| Reorder List — LC #143 | Find middle reverse second half merge → same fast slow pointer as subroutine | Partial — same pointer idea |
+| Swapping Nodes in a Linked List — LC #1721 | Swap kth from start and kth from end → same two pointer gap technique | Yes — direct variant |
+| Add Two Numbers — LC #2 | Traverse two lists simultaneously → same dummy head construction pattern | Partial — same dummy head idea |
+| Reverse Linked List II — LC #92 | Reverse sublist between positions → same gap pointer positioning idea | Partial — same positioning idea |
+
+**How this pattern scales:**
+- **Two pointer gap technique** is the core trick — advance fast pointer n+1 steps ahead of slow pointer. Move both at the same speed until fast reaches null. Slow now points to the node before the target. Set `slow.next = slow.next.next` to remove. O(n) time O(1) space single pass
+- **n+1 gap not n** — fast must be n+1 steps ahead not n so that slow lands on the node BEFORE the target enabling the removal. Landing on the target itself means you have no reference to the previous node making deletion impossible in a singly linked list
+- **Dummy head eliminates edge cases** — attach a dummy node before head and start slow at dummy. Handles removing the head node without special casing since slow always has a valid previous node to work from
+- **Fast slow pointer family** → Middle of Linked List (LC #876) uses gap of `n/2`. Linked List Cycle (LC #141) uses speed ratio 2:1. LC #19 uses fixed gap of n+1. All three are variations of the same two pointer separation idea applied to different goals
+- **Swapping upgrade** → LC #1721 uses the same gap technique twice — one pointer finds kth from start, another finds kth from end using the n+1 gap, then values are swapped. Direct application of LC #19's positioning logic
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* removeNthFromEnd(ListNode* head, int n) {
+        ListNode * first = head;
+        ListNode * second = head;
+        for(int i = 0; i < n; i++){
+            second = second -> next;
+        }
+        //this moves second to n past first ptr
+        if(second == nullptr){ //if nullptr, we need to remove the head 
+            return head -> next;
+        }
+        while(second->next != nullptr){
+            second = second -> next; //moving both pointers together until we reach the end
+            first = first -> next;
+        }
+        first-> next = first -> next -> next; //this is how to delete the node, next gets mapped to the one after the deleted node
+        return head;
+
+    }
+};
+```
+
+## Merge Two Sorted Lists LC 21
+
+<!-- notecardId: 1780699948865 -->
+
+You are given the heads of two sorted linked lists list1 and list2.
+
+Merge the two lists into one sorted list. The list should be made by splicing together the nodes of the first two lists.
+
+Return the head of the merged linked list.
+
+ 
+
+Example 1:
+
+
+Input: list1 = [1,2,4], list2 = [1,3,4]
+Output: [1,1,2,3,4,4]
+Example 2:
+
+Input: list1 = [], list2 = []
+Output: []
+Example 3:
+
+Input: list1 = [], list2 = [0]
+Output: [0]
+ 
+
+Constraints:
+
+The number of nodes in both lists is in the range [0, 50].
+-100 <= Node.val <= 100
+Both list1 and list2 are sorted in non-decreasing order.
+
+**Link**: [text](https://leetcode.com/problems/merge-two-sorted-lists/)
+
+%
+
+**Pattern:** Linked List Merge
+
+**Approach:** Use two pointers to traverse both linked lists simultaneously. Compare the current nodes of both lists and append the smaller one to the merged list. Move the pointer of the list from which you took the node forward. Continue this process until you reach the end of one of the lists, then append the remaining nodes of the other list to the merged list.
+
+**Key Insight:** The key insight is that since both linked lists are already sorted, you can efficiently merge them by always choosing the smaller current node from either list. This allows you to maintain the sorted order of the merged list without needing additional sorting steps.
+
+**Gotchas:** Be careful to handle edge cases where one or both linked lists are empty. In such cases, you should return the non-empty list or null if both are empty. Additionally, ensure that you are correctly updating the `next` pointers to maintain the structure of the merged linked list.
+
+**Complexity:** Time: O(m + n) where m and n are the lengths of the two linked lists | Space: O(1) for the pointers used to traverse and merge the lists (excluding the space for the new merged list)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Merge k Sorted Lists — LC #23 | Merge k lists not two → min heap or divide and conquer | Partial — direct upgrade |
+| Sort List — LC #148 | Sort unsorted linked list → merge sort using LC #21 as merge step | Yes — direct application |
+| Merge Sorted Array — LC #88 | Merge two sorted arrays not lists → same two pointer from back | Partial — same merge idea |
+| Add Two Numbers — LC #2 | Traverse two lists with carry → same dummy head two pointer traversal | Partial — same structure |
+| Remove Duplicates from Sorted List — LC #83 | Remove duplicates from single sorted list → same single pointer traversal | Partial — same sorted list idea |
+| Intersection of Two Linked Lists — LC #160 | Find common node not merge → same two pointer different goal | Partial — same two pointer family |
+| Palindrome Linked List — LC #234 | Find middle reverse half compare → same linked list traversal different goal | No — different pattern |
+| Reorder List — LC #143 | Find middle reverse second half merge → LC #21 merge as final subroutine | Yes — direct application |
+
+**How this pattern scales:**
+- **Dummy head + two pointer merge** is the core trick — create a dummy head, maintain a current pointer, compare l1 and l2 values at each step appending the smaller node and advancing that list's pointer. After either list exhausts append the remaining list directly. O(m+n) time O(1) space
+- **Append remaining directly** — when one list is exhausted do not loop through the remaining nodes one by one. Simply set `curr.next = l1 or l2` whichever is non null. The remaining list is already sorted so the entire tail can be attached in O(1)
+- **Recursive alternative** — base case returns the non null list when one is null. Recursive case sets the smaller node's next to the result of merging the rest. Elegant but uses O(m+n) stack space — always prefer iterative in interviews unless recursion is explicitly requested
+- **Merge sort application** → Sort List (LC #148) splits the list in half using fast/slow pointers then recursively sorts each half then merges using LC #21 as the merge step. This is the exact merge step of merge sort — mastering LC #21 means the hardest part of LC #148 is already solved
+- **k list upgrade** → LC #23 generalizes to k lists using a min heap of size k. Extract minimum node from heap append to result insert that node's next into heap. Same merge logic but heap replaces the two pointer comparison — O(n log k) time
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
+        if(!list1){
+            return list2;
+        }
+        if(!list2){
+            return list1;
+        }
+
+        if(list1-> val <= list2->val){
+            list1->next = mergeTwoLists(list1->next, list2);
+            return list1;
+        }
+        else{
+            list2->next = mergeTwoLists(list1, list2->next);
+            return list2;
+        }
+    }
+};
+```
+
+## Merge k Sorted Lists LC 23
+
+<!-- notecardId: 1780700213568 -->
+
+You are given an array of k linked-lists lists, each linked-list is sorted in ascending order.
+
+Merge all the linked-lists into one sorted linked-list and return it.
+
+ 
+
+Example 1:
+
+Input: lists = [[1,4,5],[1,3,4],[2,6]]
+Output: [1,1,2,3,4,4,5,6]
+Explanation: The linked-lists are:
+[
+  1->4->5,
+  1->3->4,
+  2->6
+]
+merging them into one sorted linked list:
+1->1->2->3->4->4->5->6
+Example 2:
+
+Input: lists = []
+Output: []
+Example 3:
+
+Input: lists = [[]]
+Output: []
+ 
+
+Constraints:
+
+k == lists.length
+0 <= k <= 104
+0 <= lists[i].length <= 500
+-104 <= lists[i][j] <= 104
+lists[i] is sorted in ascending order.
+The sum of lists[i].length will not exceed 104.
+
+**Link**: [text](https://leetcode.com/problems/merge-k-sorted-lists/)
+
+%
+
+**Pattern:** Linked List, Min Heap
+
+**Approach:** Use a min heap (priority queue) to keep track of the smallest current node among the k linked lists. Initially, insert the head of each non-empty linked list into the min heap. Then, repeatedly extract the minimum node from the heap, add it to the merged linked list, and if the extracted node has a next node, insert that next node into the min heap. Continue this process until the min heap is empty.
+
+**Key Insight:** The key insight is that by using a min heap, you can efficiently retrieve the smallest current node among the k linked lists at each step. This allows you to maintain the sorted order of the merged linked list without needing to compare all nodes at each step, which would be inefficient.
+
+**Gotchas:** Be careful to handle edge cases where the input array of linked lists is empty or contains only empty linked lists. In such cases, you should return null. Additionally, ensure that you are correctly managing the pointers for the merged linked list and that you are properly inserting nodes into the min heap.
+
+**Complexity:** Time: O(N log k) where N is the total number of nodes across all linked lists and k is the number of linked lists | Space: O(k) for the min heap that stores the current nodes of each linked list
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Merge Two Sorted Lists — LC #21 | Merge two lists not k → dummy head two pointer no heap needed | Yes — foundation |
+| Sort List — LC #148 | Sort unsorted list → merge sort using LC #21 as merge step | Partial — same merge idea |
+| Kth Smallest Element in Sorted Matrix — LC #378 | Kth smallest across sorted rows → same min heap extraction pattern | Yes — same pattern |
+| Find K Pairs with Smallest Sums — LC #373 | K smallest pair sums → same min heap lazy expansion | Yes — same pattern |
+| Ugly Number II — LC #264 | Next ugly number from k=3 sequences → same min heap k way merge | Yes — direct variant |
+| Task Scheduler — LC #621 | Schedule tasks with cooldown → max heap frequency not k way merge | No — different pattern |
+| Smallest Range Covering Elements from K Lists — LC #632 | Find smallest range containing one element from each list → same min heap k pointer | Yes — direct generalization |
+| Top K Frequent Elements — LC #347 | K most frequent elements → heap on frequency not k way merge | Partial — same heap family |
+
+**How this pattern scales:**
+- **Min heap k way merge** is the optimal O(n log k) approach — initialize heap with the head of each non null list. Extract minimum node append to result insert that node's next into heap if non null. Repeat until heap empty. O(n log k) time O(k) space where n is total nodes
+- **Divide and conquer alternative** is O(n log k) same complexity — pair up lists and merge repeatedly halving the number of lists each round. Uses LC #21 as the merge step. O(1) extra space ignoring recursion stack — cleaner to implement if you already have LC #21 memorized
+- **Heap initialization matters** — only insert non null list heads. Inserting null pointers causes null pointer exceptions that are hard to debug under pressure. Always check `if (node != null)` before heap insertion
+- **Custom comparator** — min heap needs a custom comparator sorting by node value not memory address. In C++ use a lambda or struct with `operator()`. In Java use `(a, b) -> a.val - b.val`. Forgetting the comparator compiles but produces garbage output
+- **k way merge generalizes** → Smallest Range Covering Elements from K Lists (LC #632) extends this exact heap structure by also tracking the current maximum across all heap entries to maintain the range. Same heap with one additional running max variable
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        struct compare{
+    bool operator()(ListNode* a, ListNode* b){
+        return a -> val > b -> val; //min heap
+    }
+};
+    priority_queue<ListNode*, vector<ListNode*>, compare> minHeap;
+    for(ListNode * list : lists){
+        if(list != nullptr){
+            minHeap.push(list); //we only want to add the head of each list to the heap, since we will be adding the next nodes as we pop from the heap
+        }
+    }
+    ListNode * dummyHead = new ListNode(-1);
+    ListNode * tail = dummyHead;
+    while(!minHeap.empty()){
+        ListNode * minNode = minHeap.top();
+        minHeap.pop();
+        tail->next = minNode;
+        tail = tail-> next;
+        if(minNode->next != nullptr){
+            minHeap.push(minNode->next); //if the minNode has a next node, we need to add it to the heap for consideration in the next iteration
+        }
+    }
+    return dummyHead->next;
+    }
+
+};
+```
+
+## Reverse Nodes in k-Group LC 25
+
+<!-- notecardId: 1780701530317 -->
+
+Given the head of a linked list, reverse the nodes of the list k at a time, and return the modified list.
+
+k is a positive integer and is less than or equal to the length of the linked list. If the number of nodes is not a multiple of k then left-out nodes, in the end, should remain as it is.
+
+You may not alter the values in the list's nodes, only nodes themselves may be changed.
+
+ 
+
+Example 1:
+
+
+Input: head = [1,2,3,4,5], k = 2
+Output: [2,1,4,3,5]
+Example 2:
+
+
+Input: head = [1,2,3,4,5], k = 3
+Output: [3,2,1,4,5]
+ 
+
+Constraints:
+
+The number of nodes in the list is n.
+1 <= k <= n <= 5000
+0 <= Node.val <= 1000
+ 
+
+Follow-up: Can you solve the problem in O(1) extra memory space?
+
+**Link**: [text](https://leetcode.com/problems/reverse-nodes-in-k-group/)
+
+%
+
+**Pattern:** Linked List Reversal
+
+**Approach:** Use a dummy head to simplify edge cases. Iterate through the linked list in groups of k nodes. For each group, reverse the nodes in place and connect the reversed group back to the main list. If the number of remaining nodes is less than k, leave them as is.
+
+**Key Insight:** The key insight is that you can reverse a portion of the linked list in place by manipulating the `next` pointers. By using a dummy head, you can easily handle cases where the head of the list changes due to reversal. The process involves identifying the start and end of each group of k nodes, reversing that group, and then connecting it back to the main list.
+
+**Gotchas:** Be careful to handle edge cases where the number of nodes is not a multiple of k, ensuring that the remaining nodes are left unchanged. Additionally, ensure that you are correctly updating the `next` pointers during the reversal process to maintain the integrity of the linked list.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the linked list | Space: O(1) for the pointers used to reverse the list in place
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Reverse Linked List — LC #206 | Reverse entire list not k groups → same reversal subroutine no grouping | Yes — foundation |
+| Reverse Linked List II — LC #92 | Reverse sublist between two positions → same reversal subroutine fixed window | Yes — direct variant |
+| Swap Nodes in Pairs — LC #24 | Reverse groups of exactly 2 → special case of LC #25 with k=2 | Yes — direct simplification |
+| Rotate List — LC #61 | Rotate list by k positions → find tail connect to head different from reversal | Partial — same linked list idea |
+| Reorder List — LC #143 | Find middle reverse second half merge → same reversal as subroutine | Partial — same reversal idea |
+| Split Linked List in Parts — LC #725 | Split list into k parts evenly → same group counting idea different operation | Partial — same grouping idea |
+| Palindrome Linked List — LC #234 | Reverse second half to compare → same reversal as subroutine | Partial — same reversal idea |
+| Merge k Sorted Lists — LC #23 | Merge k lists → heap or divide and conquer no reversal | No — different pattern |
+
+**How this pattern scales:**
+- **Check k nodes exist before reversing** is the core trick — before reversing each group walk k steps to verify k nodes remain. If fewer than k nodes remain leave them as is. This check prevents partial group reversal and is the key difference from LC #92
+- **Four pointer reversal** — maintain `prevGroupTail`, `groupHead`, `groupTail`, and `nextGroupHead`. After reversing k nodes reconnect `prevGroupTail.next` to new group head and `groupTail.next` to `nextGroupHead`. Getting all four connections right is the hardest implementation detail
+- **Reversal subroutine** — isolate the k node reversal into a helper function that reverses a sublist and returns the new head. Keeping reversal logic separate from group management makes the code cleaner and easier to debug under pressure
+- **Dummy head eliminates edge cases** — attach dummy before head so `prevGroupTail` always has a valid node to connect from. Without dummy the first group reversal requires special casing the head pointer
+- **Recursive alternative** — reverse first k nodes, recursively call on remaining list, connect results. Elegant but uses O(n/k) stack space. Iterative is always preferred in interviews for O(1) space
+- **k=2 simplification** → Swap Nodes in Pairs (LC #24) is LC #25 with k hardcoded to 2 — same four pointer logic but the check and reversal loop are trivially unrolled into a direct swap making the code much simpler
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* reverseKGroup(ListNode* head, int k) {
+        int length = 0;
+        ListNode * curr = head;
+        while(curr && length < k){
+            curr = curr -> next;
+            length++;
+        }
+        if(length < k){ //increment the length to see if there are k nodes, if not then just return head
+            return head;
+        }
+        ListNode * prev = nullptr;
+        ListNode * next = nullptr;
+        curr = head; //return back to the start of the linked list
+        while(length > 0){
+            next = curr -> next;
+            curr -> next = prev;
+            prev = curr;
+            curr = next;
+            length--;
+        }
+        head -> next = reverseKGroup(curr, k); //after reversing the first k nodes, head is now the last node of the reversed linked list, so we need to connect it to the next reversed linked list, which is the result of reverseKGroup(curr, k)
+        head = prev;
+        return head;
+    }
+};
+```
+
+## Reverse Linked List II LC 92
+
+<!-- notecardId: 1780702364864 -->
+
+Given the head of a singly linked list and two integers left and right where left <= right, reverse the nodes of the list from position left to position right, and return the reversed list.
+
+ 
+
+Example 1:
+
+
+Input: head = [1,2,3,4,5], left = 2, right = 4
+Output: [1,4,3,2,5]
+Example 2:
+
+Input: head = [5], left = 1, right = 1
+Output: [5]
+ 
+
+Constraints:
+
+The number of nodes in the list is n.
+1 <= n <= 500
+-500 <= Node.val <= 500
+1 <= left <= right <= n
+ 
+
+Follow up: Could you do it in one pass?
+
+**Link**: [text](https://leetcode.com/problems/reverse-linked-list-ii/)
+
+%
+
+**Pattern:** Linked List Reversal
+
+**Approach:** Use a dummy head to simplify edge cases. Traverse the linked list to find the node at position `left` and keep track of the node just before it. Then, reverse the nodes from position `left` to `right` in place by manipulating the `next` pointers. Finally, connect the reversed portion back to the main list and return the head of the modified list.
+
+**Key Insight:** The key insight is that you can reverse a portion of the linked list in place by manipulating the `next` pointers. By using a dummy head, you can easily handle cases where the head of the list changes due to reversal. The process involves identifying the start and end of the sublist to be reversed, performing the reversal, and then reconnecting it back to the main list.
+
+**Gotchas:** Be careful to handle edge cases where `left` is equal to `right`, which means no reversal is needed. Additionally, ensure that you are correctly updating the `next` pointers during the reversal process to maintain the integrity of the linked list. The challenge is connecting the rest of the list with the reversed portion correctly, especially when the reversal includes the head of the list. 
+
+**Complexity:** Time: O(n) where n is the number of nodes in the linked list | Space: O(1) for the pointers used to reverse the list in place
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Reverse Linked List — LC #206 | Reverse entire list not sublist → same reversal no boundary tracking needed | Yes — foundation |
+| Reverse Nodes in k-Group — LC #25 | Reverse in groups of k not fixed positions → same reversal subroutine repeated | Yes — direct upgrade |
+| Swap Nodes in Pairs — LC #24 | Swap adjacent pairs → same reversal with k=2 fixed window | Yes — same family |
+| Rotate List — LC #61 | Rotate by k positions → find tail reconnect to head different from sublist reversal | Partial — same linked list idea |
+| Palindrome Linked List — LC #234 | Reverse second half to compare → same reversal as subroutine different goal | Partial — same reversal idea |
+| Reorder List — LC #143 | Find middle reverse second half merge → same reversal as subroutine | Yes — direct application |
+| Remove Nth Node From End — LC #19 | Remove node at position → same position finding different operation | Partial — same positioning idea |
+| Reverse Words in a String — LC #151 | Reverse words not linked list nodes → same reversal idea different data structure | Partial — same reversal family |
+
+**How this pattern scales:**
+- **Four pointer setup** is the core trick — before reversing identify `prevLeft` (node before position left), `curr` (node at left), track `prev` and `next` during reversal. After reversing reconnect `prevLeft.next` to new sublist head and original `curr.next` to node after position right. O(n) time O(1) space
+- **Single pass reversal** — advance to position left tracking prevLeft, then reverse exactly `right - left + 1` nodes using standard three pointer reversal (prev curr next). No need to find right boundary first since you count steps during reversal
+- **Dummy head eliminates left=1 edge case** — without dummy when left=1 there is no prevLeft node making the head reconnection a special case. Dummy node gives prevLeft a valid node to work from regardless of left value
+- **Reconnection order matters** — connect `curr.next` to `node after right` BEFORE connecting `prevLeft.next` to new head. Reversing the order loses the reference to the remaining list. Always set the tail connection before the head connection
+- **Four step mental model**:
+  1. Advance prevLeft to node before left
+  2. Reverse right - left + 1 nodes
+  3. Connect original left node (now tail) to node after right
+  4. Connect prevLeft to original right node (now head)
+- **LC #25 generalization** → Reverse Nodes in k-Group repeats this exact sublist reversal for every k group across the entire list. LC #92 is the single group case — mastering the four pointer reconnection here makes LC #25 a straightforward extension
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* reverseBetween(ListNode* head, int left, int right) {
+        ListNode * dummy = new ListNode(0);
+        dummy -> next = head;
+        ListNode * pre = dummy;
+        for(int i = 0; i < left - 1; i++){
+            pre = pre -> next;
+        }
+        ListNode * start = pre -> next;
+        ListNode * tail = start;
+        for(int i = 0; i < (right - left); i++){
+            tail = tail -> next;
+        }
+        ListNode * after = tail -> next; //after is the node after the tail, we want to reverse from start to tail, and then connect pre to tail and start to after
+
+        ListNode * curr = start;
+        ListNode * prev = nullptr;
+        ListNode * next = nullptr;
+        //now we got to reverse the linked list
+
+        while(curr != after){
+            next = curr-> next;
+            curr -> next = prev;
+            prev = curr;
+            curr = next;
+        }
+        //now have to set pre and after next ptr
+
+        pre-> next = prev; //pre is the node before the start, so we want to connect it to the tail, which is now the head of the reversed linked list. at this point, prev is the tail, and curr is the node after the tail.
+        //prev is at the end of the reversed linked list. Prev will move up near the beginning of the linked list, and we connect it with pre, which is the node before the start.
+        start -> next = after; //start is the node at the beginning before the reverse, so after the reverse, this is the end. We then have to connect it to the node after the tail, which is after
+        return dummy -> next;
+    }
+};
+```
+
+## Copy List with random pointer LC 138
+
+<!-- notecardId: 1780703603717 -->
+
+A linked list of length n is given such that each node contains an additional random pointer, which could point to any node in the list, or null.
+
+Construct a deep copy of the list. The deep copy should consist of exactly n brand new nodes, where each new node has its value set to the value of its corresponding original node. Both the next and random pointer of the new nodes should point to new nodes in the copied list such that the pointers in the original list and copied list represent the same list state. None of the pointers in the new list should point to nodes in the original list.
+
+For example, if there are two nodes X and Y in the original list, where X.random --> Y, then for the corresponding two nodes x and y in the copied list, x.random --> y.
+
+Return the head of the copied linked list.
+
+The linked list is represented in the input/output as a list of n nodes. Each node is represented as a pair of [val, random_index] where:
+
+val: an integer representing Node.val
+random_index: the index of the node (range from 0 to n-1) that the random pointer points to, or null if it does not point to any node.
+Your code will only be given the head of the original linked list.
+
+ 
+
+Example 1:
+
+
+Input: head = [[7,null],[13,0],[11,4],[10,2],[1,0]]
+Output: [[7,null],[13,0],[11,4],[10,2],[1,0]]
+Example 2:
+
+
+Input: head = [[1,1],[2,1]]
+Output: [[1,1],[2,1]]
+Example 3:
+
+
+
+Input: head = [[3,null],[3,0],[3,null]]
+Output: [[3,null],[3,0],[3,null]]
+ 
+
+Constraints:
+
+0 <= n <= 1000
+-104 <= Node.val <= 104
+Node.random is null or is pointing to some node in the linked list.
+
+**Link**: [text](https://leetcode.com/problems/copy-list-with-random-pointer/)
+
+%
+
+**Pattern:** Linked List, Hash Map
+
+**Approach:** Use a hash map to store the mapping between original nodes and their corresponding copied nodes. First, iterate through the original linked list and create a copy of each node, storing the mapping in the hash map. Then, iterate through the original linked list again and set the `next` and `random` pointers for each copied node using the hash map to find the corresponding copied nodes.
+
+**Key Insight:** The key insight is that by using a hash map, you can easily keep track of the relationship between original nodes and their copies. This allows you to set the `next` and `random` pointers for the copied nodes correctly without needing to modify the original linked list or use additional data structures.
+
+**Gotchas:** Be careful to handle edge cases where the input linked list is empty (i.e., head is null). In such cases, you should return null. Additionally, ensure that you are correctly populating the hash map and that you are using it to set both the `next` and `random` pointers for the copied nodes.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the linked list | Space: O(n) for the hash map that stores the mapping between original and copied nodes
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Clone Graph — LC #133 | Deep copy graph not linked list → same hash map node mapping DFS/BFS traversal | Yes — direct generalization |
+| Copy Binary Tree with Random Pointer | Deep copy tree with random pointers → same hash map old to new node mapping | Yes — same pattern |
+| Reverse Linked List — LC #206 | Reverse not copy → same linked list traversal different operation | No — different pattern |
+| Flatten a Multilevel Doubly Linked List — LC #430 | Flatten nested list not copy → same pointer manipulation different goal | Partial — same linked list idea |
+| Deep Copy of Directed Graph | Deep copy with arbitrary edges → same hash map mapping DFS traversal | Yes — same pattern |
+| LRU Cache — LC #146 | Doubly linked list with hash map → same combined data structure idea | Partial — same hash map + list |
+| Serialize and Deserialize Binary Tree — LC #297 | Encode decode tree structure → same node recreation idea different structure | Partial — same reconstruction idea |
+| Find the Duplicate Number — LC #287 | Detect cycle in implicit graph → Floyd's algorithm no copying | No — different pattern |
+
+**How this pattern scales:**
+- **Hash map old to new node** is the core O(n) space approach — first pass creates all new nodes storing `original → copy` mapping in hash map. Second pass wires `next` and `random` pointers using the map to look up corresponding copy nodes. O(n) time O(n) space
+- **O(1) space interleaving trick** — three pass approach without hash map: (1) interleave copy nodes between originals `1 → 1' → 2 → 2'`. (2) set random pointers `node.next.random = node.random.next`. (3) separate the two lists restoring originals and extracting copies. O(n) time O(1) space — worth mentioning as follow-up
+- **Two pass is mandatory for hash map approach** — you cannot wire random pointers in a single pass because a random pointer may reference a node not yet created. The first pass ensures all copy nodes exist before any pointer wiring begins
+- **Clone graph generalization** → LC #133 applies the exact same hash map old to new node mapping but uses DFS/BFS to traverse edges instead of next pointers. The hash map serves the same dual purpose — memo to avoid revisiting nodes AND lookup table for wiring edges
+- **Interleaving insight** → `node.next.random = node.random.next` works because after interleaving every original node's copy sits immediately after it. So `node.random.next` is exactly the copy of `node.random` — eliminating the need for a hash map lookup entirely
+
+```cpp
+class Node {
+public:
+    int val;
+    Node* next;
+    Node* random;
+    
+    Node(int _val) {
+        val = _val;
+        next = NULL;
+        random = NULL;
+    }
+};
+*/
+
+class Solution {
+public:
+    Node* copyRandomList(Node* head) {
+        unordered_map<Node*, Node*> nodeMap; //this is a mapping of old nodes to new nodes, so we can easily assign the next and random pointers in the second pass
+        Node* curr = head;
+        while(curr){
+            Node * newNode = new Node(curr->val); //make a new node with the same value as the current node
+            nodeMap[curr] = newNode;// map the current node to the new node that we just made
+            curr = curr -> next; //move to the next node in the LL
+        }
+        curr = head; //reset current back to the beginning of the LL
+        while(curr){
+            nodeMap[curr]-> next = nodeMap[curr->next]; //assign the next pointer of the new node to the new node that corresponds to the next node of the current node
+            nodeMap[curr]->random = nodeMap[curr->random]; //assign the random pointer of the new node to the new node that corresponds to the random node of the current node
+            curr = curr -> next;
+        }
+        return nodeMap[head];
+    }
+};
+```
+
+## Linked List Cycle LC 141
+
+<!-- notecardId: 1780704267192 -->
+
+Given head, the head of a linked list, determine if the linked list has a cycle in it.
+
+There is a cycle in a linked list if there is some node in the list that can be reached again by continuously following the next pointer. Internally, pos is used to denote the index of the node that tail's next pointer is connected to. Note that pos is not passed as a parameter.
+
+Return true if there is a cycle in the linked list. Otherwise, return false.
+
+ 
+
+Example 1:
+
+
+Input: head = [3,2,0,-4], pos = 1
+Output: true
+Explanation: There is a cycle in the linked list, where the tail connects to the 1st node (0-indexed).
+Example 2:
+
+
+Input: head = [1,2], pos = 0
+Output: true
+Explanation: There is a cycle in the linked list, where the tail connects to the 0th node.
+Example 3:
+
+
+Input: head = [1], pos = -1
+Output: false
+Explanation: There is no cycle in the linked list.
+ 
+
+Constraints:
+
+The number of the nodes in the list is in the range [0, 104].
+-105 <= Node.val <= 105
+pos is -1 or a valid index in the linked-list.
+ 
+
+Follow up: Can you solve it using O(1) (i.e. constant) memory?
+
+**Link**: [text](https://leetcode.com/problems/linked-list-cycle/)
+
+%
+
+**Pattern:** Linked List, Two Pointers
+
+**Approach:** Use the Floyd’s Tortoise and Hare algorithm, which employs two pointers (slow and fast) to traverse the linked list. The slow pointer moves one step at a time, while the fast pointer moves two steps at a time. If there is a cycle in the linked list, the fast pointer will eventually meet the slow pointer. If there is no cycle, the fast pointer will reach the end of the list.
+
+**Key Insight:** The key insight is that if there is a cycle, the fast pointer will eventually lap the slow pointer, causing them to meet. If there is no cycle, the fast pointer will reach the end of the list (null) without ever meeting the slow pointer. This allows you to determine the presence of a cycle in O(n) time and O(1) space.
+
+**Gotchas:** Be careful to check for null pointers when advancing the fast pointer, as it moves two steps at a time. If the fast pointer reaches null, it means there is no cycle. Additionally, ensure that you are correctly initializing the slow and fast pointers to the head of the linked list.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the linked list | Space: O(1) for the two pointers used to traverse the list
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Linked List Cycle II — LC #142 | Find cycle entry point not just detect → same fast slow then reset slow to head | Yes — direct upgrade |
+| Find the Duplicate Number — LC #287 | Duplicate in array implicit linked list → same Floyd's algorithm different structure | Yes — direct application |
+| Happy Number — LC #202 | Detect cycle in number sequence → same fast slow pointer on implicit sequence | Yes — direct variant |
+| Middle of the Linked List — LC #876 | Find middle not cycle → same fast slow pointer different termination | Yes — same pointer family |
+| Remove Nth Node From End — LC #19 | Find nth from end not cycle → same two pointer gap technique | Partial — same two pointer family |
+| Palindrome Linked List — LC #234 | Find middle reverse second half → same fast slow as subroutine | Partial — same pointer idea |
+| Reorder List — LC #143 | Find middle reverse merge → same fast slow as subroutine | Partial — same pointer idea |
+| Detect Cycle in Directed Graph — LC #207 | Cycle in graph not linked list → DFS with visited and recursion stack | No — different pattern |
+
+**How this pattern scales:**
+- **Floyd's cycle detection** is the core trick — fast pointer moves two steps slow pointer moves one step. If they meet a cycle exists. If fast reaches null no cycle. O(n) time O(1) space
+- **Why they must meet** — if a cycle exists fast enters it and laps slow. The relative speed difference is one step per iteration so fast catches slow within at most cycle length iterations. Meeting is guaranteed because fast never skips over slow in a cycle — the gap closes by exactly one each step
+- **Hash set alternative** is O(n) space — store visited nodes, return true when a node is seen twice. Easier to derive but misses the O(1) space insight interviewers look for. Always mention Floyd's as the optimal approach
+- **Cycle entry point upgrade** → LC #142 adds a second phase after detection — reset slow to head keep fast at meeting point move both one step at a time. They meet at the cycle entry. Mathematical proof: distance from head to entry equals distance from meeting point to entry around the cycle
+- **Implicit linked list pattern** → Find Duplicate Number (LC #287) and Happy Number (LC #202) model their problem as an implicit linked list where each value points to the next. Floyd's algorithm applies identically even though there is no actual linked list structure — the key insight is recognizing the implicit cycle
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode(int x) : val(x), next(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    bool hasCycle(ListNode *head) {
+        if(!head || !head->next){
+            return false;
+        }
+
+        ListNode* slowPtr = head; //both start at the beginning
+        ListNode* fastPtr = head;
+
+        while(fastPtr && fastPtr->next){ //while fastPtr has something after it and is valid, not a nullptr
+            slowPtr = slowPtr -> next; //slow moves one at a time
+            fastPtr = fastPtr -> next -> next; //fast moves two at a time
+            if(slowPtr == fastPtr){
+                return true; //if slow and fast ever become equal, that means pastPtr must have entered a cycle to loop back to where slowPtr is
+            }
+        }
+        return false;
+
+    }
+};
+```
+## Reorder List LC 143
+
+<!-- notecardId: 1780705095810 -->
+
+You are given the head of a singly linked-list. The list can be represented as:
+
+L0 → L1 → … → Ln - 1 → Ln
+Reorder the list to be on the following form:
+
+L0 → Ln → L1 → Ln - 1 → L2 → Ln - 2 → …
+You may not modify the values in the list's nodes. Only nodes themselves may be changed.
+
+ 
+
+Example 1:
+
+
+Input: head = [1,2,3,4]
+Output: [1,4,2,3]
+Example 2:
+
+
+Input: head = [1,2,3,4,5]
+Output: [1,5,2,4,3]
+ 
+
+Constraints:
+
+The number of nodes in the list is in the range [1, 5 * 104].
+1 <= Node.val <= 1000
+
+**Link**: [text](https://leetcode.com/problems/reorder-list/)
+
+%
+
+**Pattern:** Linked List, Two Pointers
+
+**Approach:** Use the fast and slow pointer technique to find the middle of the linked list. Then, reverse the second half of the linked list. Finally, merge the two halves together by alternating nodes from each half.
+
+**Key Insight:** The key insight is that by using the fast and slow pointer technique, you can efficiently find the middle of the linked list in O(n) time. Reversing the second half of the list allows you to easily merge the two halves together in the required order. This approach ensures that you are only traversing the list a few times, resulting in an overall efficient solution.
+
+**Gotchas:** Be careful to handle edge cases where the linked list has an odd number of nodes, ensuring that the middle node is correctly identified and handled during the merge process. Additionally, ensure that you are correctly reversing the second half of the linked list and that you are properly merging the two halves together without losing any nodes.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the linked list | Space: O(1) for the pointers used to manipulate the list in place
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Reverse Linked List — LC #206 | Reverse entire list not second half → same reversal subroutine simpler | Yes — foundation |
+| Middle of the Linked List — LC #876 | Find middle only no reversal or merge → same fast slow pointer first step only | Yes — direct subroutine |
+| Palindrome Linked List — LC #234 | Find middle reverse second half compare → same three step structure different final operation | Yes — same pattern |
+| Merge Two Sorted Lists — LC #21 | Merge two sorted lists not interleave → same two pointer merge different condition | Partial — same merge idea |
+| Reverse Linked List II — LC #92 | Reverse sublist between positions → same reversal subroutine different scope | Partial — same reversal idea |
+| Reverse Nodes in k-Group — LC #25 | Reverse in k groups → same reversal subroutine repeated | Partial — same reversal family |
+| Split Linked List in Parts — LC #725 | Split into k parts evenly → same midpoint finding idea different operation | Partial — same splitting idea |
+| Flatten a Multilevel Doubly Linked List — LC #430 | Flatten nested list → same pointer rewiring different structure | No — different pattern |
+
+**How this pattern scales:**
+- **Three step decomposition** is the core trick — (1) find middle using fast/slow pointers (2) reverse second half in place (3) interleave first and second halves. Each step is a standalone problem making this one of the best examples of combining multiple linked list primitives. O(n) time O(1) space
+- **Fast slow middle finding** — advance fast two steps and slow one step until fast reaches null or fast.next reaches null. Slow lands at the middle. For even length lists slow lands at the first middle node — sever the list at `slow.next = null` before reversing to avoid cycles
+- **Sever before reversing** — set `slow.next = null` after finding the middle to disconnect the two halves. Failing to sever creates a cycle in the second half during reversal causing infinite loops that are extremely hard to debug
+- **Interleave not merge** — the final merge alternates nodes from first and second halves regardless of value. This is different from LC #21 which merges by value comparison. The interleave condition is always `take one from first then one from second` with no comparison needed
+- **Palindrome connection** → LC #234 uses the exact same three steps but replaces the interleave with a value comparison. If you can implement LC #143 you have already solved the hard part of LC #234 — both problems reduce to find middle + reverse second half with different final operations
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    void reorderList(ListNode* head) {
+      //key insight for this question 
+      //find the midpoint of the linked list, use slow/fast ptrs for this
+      //then, you need to reverse the second half of the linked list
+      //then merge the two lists together.
+      //lot of pointers  
+      ListNode* slow = head;
+      ListNode* fast = head;
+      
+      
+
+      while (fast && fast -> next){
+        slow = slow -> next;
+        fast = fast -> next -> next;
+      }
+
+      //now need to reverse everything from slow to the end
+      ListNode* next = nullptr;
+      ListNode* prev = nullptr;
+      ListNode * second = slow -> next; //this is the start of the second half of the linked list, we want to reverse this part
+    slow -> next = nullptr; //this is to break the linked list into two halves, now we have two separate linked lists, one from head to slow and one from second to the end
+      while(second){
+        next = second -> next; //standard reverse linked list steps
+        second -> next = prev;
+        prev = second;
+        second = next;
+      }
+      ListNode* left = head; //this is the start of the first half of the linked list, we want to merge this with the reversed second half which starts at prev
+      ListNode * right = prev; //this is the start of the reversed second half of the linked list, we want to merge this with the first half which starts at left 
+      while(right){ //while right is not null, we need to merge the two linked lists together, if right is shorter than left, then we know we are done merging because we are merging in the order of left, right, left, right, so if right is shorter than left, then we know we have merged all of right into left and we are done
+      ListNode* nextLeft = left -> next; 
+      ListNode* nextRight = right -> next; 
+        left -> next = right; //merge the two linked lists together, left points to right, then right points to left
+        right -> next = nextLeft; //right points to the next node in the left linked list
+        left = nextLeft;
+        right = nextRight;
+      }
+    }
+};
+```
+
+## LRU Cache LC 146
+
+<!-- notecardId: 1780705597567 -->
+
+Design a data structure that follows the constraints of a Least Recently Used (LRU) cache.
+
+Implement the LRUCache class:
+
+LRUCache(int capacity) Initialize the LRU cache with positive size capacity.
+int get(int key) Return the value of the key if the key exists, otherwise return -1.
+void put(int key, int value) Update the value of the key if the key exists. Otherwise, add the key-value pair to the cache. If the number of keys exceeds the capacity from this operation, evict the least recently used key.
+The functions get and put must each run in O(1) average time complexity.
+
+ 
+
+Example 1:
+
+Input
+["LRUCache", "put", "put", "get", "put", "get", "put", "get", "get", "get"]
+[[2], [1, 1], [2, 2], [1], [3, 3], [2], [4, 4], [1], [3], [4]]
+Output
+[null, null, null, 1, null, -1, null, -1, 3, 4]
+
+Explanation
+LRUCache lRUCache = new LRUCache(2);
+lRUCache.put(1, 1); // cache is {1=1}
+lRUCache.put(2, 2); // cache is {1=1, 2=2}
+lRUCache.get(1);    // return 1
+lRUCache.put(3, 3); // LRU key was 2, evicts key 2, cache is {1=1, 3=3}
+lRUCache.get(2);    // returns -1 (not found)
+lRUCache.put(4, 4); // LRU key was 1, evicts key 1, cache is {4=4, 3=3}
+lRUCache.get(1);    // return -1 (not found)
+lRUCache.get(3);    // return 3
+lRUCache.get(4);    // return 4
+ 
+
+Constraints:
+
+1 <= capacity <= 3000
+0 <= key <= 104
+0 <= value <= 105
+At most 2 * 105 calls will be made to get and put.
+
+**Link**: [text](https://leetcode.com/problems/lru-cache/)
+
+%
+
+**Pattern:** Hash Map, Doubly Linked List
+
+**Approach:** Use a hash map to store the key-value pairs for O(1) access, and a doubly linked list to keep track of the order of usage. The most recently used items will be moved to the front of the list, while the least recently used items will be at the back. When adding a new item, if the cache exceeds its capacity, remove the item at the back of the list (the least recently used item) and delete its entry from the hash map.
+
+**Key Insight:** The key insight is that a hash map provides O(1) access to the values based on keys, while a doubly linked list allows for efficient insertion and deletion of nodes to maintain the order of usage. By combining these two data structures, you can achieve the required O(1) time complexity for both `get` and `put` operations while also keeping track of the least recently used items.
+
+**Gotchas:** Be careful to handle edge cases where the cache is empty or when trying to access a key that does not exist. Additionally, ensure that you are correctly updating the order of usage in the doubly linked list whenever a key is accessed or updated. When evicting the least recently used item, make sure to remove it from both the linked list and the hash map to avoid memory leaks.
+
+**Complexity:** Time: O(1) for both `get` and `put` operations | Space: O(capacity) for the hash map and linked list storing the cache items
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| LFU Cache — LC #460 | Evict least frequently used not least recently used → hash map + frequency buckets + doubly linked list per frequency | Partial — harder upgrade |
+| Design HashMap — LC #706 | Hash map without eviction policy → same hash map foundation no linked list needed | Partial — same hash map idea |
+| Design Linked List — LC #707 | Implement doubly linked list operations → same doubly linked list foundation | Partial — same list structure |
+| Insert Delete GetRandom O(1) — LC #380 | O(1) random access with delete → hash map + array no linked list | Partial — same O(1) design goal |
+| All O(1) Data Structure — LC #432 | O(1) increment decrement get max min → doubly linked list + hash map same combined structure | Yes — direct generalization |
+| Time Based Key Value Store — LC #981 | Versioned values with timestamp → hash map + binary search no eviction | Partial — same key value design |
+| Design Twitter — LC #355 | Recent tweets per user → same recency tracking idea heap for feed | Partial — same recency idea |
+| Snake Game — LC #353 | Track snake body with eviction from tail → same deque as sliding window | Partial — same eviction idea |
+
+**How this pattern scales:**
+- **Hash map + doubly linked list** is the core trick — hash map gives O(1) key lookup, doubly linked list maintains recency order with O(1) insertion and deletion. Most recently used at head least recently used at tail. On get move accessed node to head. On put insert at head evict tail if over capacity. O(1) all operations
+- **Dummy head and tail sentinels** eliminate all edge cases — never check if head or tail is null. Insert always goes between dummy head and its current next. Remove always has valid prev and next pointers. This is non negotiable for clean implementation under pressure
+- **Four pointer remove then insert** — every access (get or put) removes the node from its current position then reinserts at head. Isolate `removeNode(node)` and `insertAtHead(node)` as helper functions. Trying to do both inline leads to pointer errors under pressure
+- **LFU upgrade** → LC #460 adds frequency tracking on top of the same structure. Each frequency bucket is its own doubly linked list of nodes with that frequency. A min frequency variable tracks which bucket to evict from. Same O(1) operations but three hash maps instead of one
+- **The combination is the insight** — neither hash map alone nor linked list alone achieves O(1) for all operations. Hash map gives O(1) lookup but cannot track order. Linked list tracks order but gives O(n) lookup. Combining them is what makes LRU Cache one of the most instructive design problems in all of LeetCode
+
+```cpp
+struct Node{
+    int key; //here we define a doubly linked list, needed for this problem
+    int val;
+    Node * prev;
+    Node * next;
+    Node(int _key, int _val){
+        key = _key;
+        val = _val;
+        prev = nullptr;
+        next = nullptr;
+    }
+};
+class LRUCache {
+public:
+    LRUCache(int capacity) {
+        this -> capacity = capacity;
+        head = new Node(-1, -1); //make a dummy head and tail node that point to each other, add real nodes in between them
+        tail = new Node(-1, -1);
+        head -> next = tail;
+        tail -> prev = head;
+    }
+    
+    int get(int key) {
+        //first use the map to access from cache
+        if(cache.find(key) == cache.end()){
+            return -1;
+        }
+        //need to now update that cache and move it to most recently used
+        cache[key] -> prev -> next = cache[key] -> next; //first we have to remove the node from its current position in the linked list, so we have to connect the prev and next node together
+        cache[key] -> next -> prev = cache[key] -> prev;
+
+        //move it to end of the linked list
+        cache[key] -> prev = head;
+        cache[key] -> next = head-> next;
+        head -> next -> prev = cache[key];
+        head -> next = cache[key];
+        return cache[key] -> val;
+    }
+    
+    void put(int key, int value) {
+    if(cache.find(key) != cache.end()){ //if the key already exists, we just need to update the value and move it to the most recently used position
+    //similar to the get function and just update the value
+            cache[key]-> val = value;
+        cache[key] -> prev -> next = cache[key] -> next;  //first we have to remove the node from its current position in the linked list, so we have to connect the prev and next node together
+        cache[key] -> next -> prev = cache[key] -> prev;
+
+        cache[key] -> prev = head;
+        cache[key] -> next = head-> next;
+        head -> next -> prev = cache[key];
+        head -> next = cache[key];
+        }
+    else{
+        Node* newNode = new Node(key, value); //need to make a new node with that key and value
+        cache[key] = newNode; //map the key to the node
+        newNode -> prev = head; //place node right after the head dummy node, which is the most recently used position
+        newNode -> next = head -> next;
+        head -> next -> prev = newNode; //update the next nodes prev and head next ptr
+        head -> next = newNode;        
+        if(cache.size() > capacity){ //if the cache.size() is more than capacity, we need to evict the LRU node, which is the node right before the tail dummy node
+            Node * tailPrev = tail -> prev; //tailPrev is what is getting evicted, so have to set tail prev to the prev of TailPrev
+            tail -> prev = tailPrev -> prev;
+            tailPrev -> prev -> next = tail; //and the next of the prev of tailPrev should point to tail, hence deleting tailPrev
+            cache.erase(tailPrev -> key);
+        }
+    }
+
+    }
+private:
+    int capacity;
+    unordered_map<int, Node*> cache; //unordered map that points the key to the Node in the linked list, so we can access in O(1)
+    Node* head; //head and tail of the linked list, head is most recently used, tail is least recently used
+    Node* tail;
+};
+
+/**
+ * Your LRUCache object will be instantiated and called as such:
+ * LRUCache* obj = new LRUCache(capacity);
+ * int param_1 = obj->get(key);
+ * obj->put(key,value);
+ */
+```
+
+## Reversed Linked List LC 206
+
+<!-- notecardId: 1780706758295 -->
+
+Given the head of a singly linked list, reverse the list, and return the reversed list.
+
+ 
+
+Example 1:
+
+
+Input: head = [1,2,3,4,5]
+Output: [5,4,3,2,1]
+Example 2:
+
+
+Input: head = [1,2]
+Output: [2,1]
+Example 3:
+
+Input: head = []
+Output: []
+ 
+
+Constraints:
+
+The number of nodes in the list is the range [0, 5000].
+-5000 <= Node.val <= 5000
+ 
+
+Follow up: A linked list can be reversed either iteratively or recursively. Could you implement both?
+
+**Link**: [text](https://leetcode.com/problems/reverse-linked-list/)
+
+%
+
+**Pattern:** Linked List, Two Pointers
+
+**Approach:** Use three pointers (prev, curr, next) to iteratively reverse the linked list. Initialize `prev` to null and `curr` to the head of the list. In each iteration, store the next node (`next = curr->next`), reverse the current node's pointer (`curr->next = prev`), then move `prev` and `curr` one step forward (`prev = curr`, `curr = next`). Continue this process until `curr` becomes null, at which point `prev` will be the new head of the reversed linked list.
+
+**Key Insight:** The key insight is that by maintaining three pointers, you can reverse the linked list in place without needing additional data structures. The `prev` pointer keeps track of the reversed portion of the list, while `curr` traverses the original list. By updating the pointers in the correct order, you can effectively reverse the direction of the linked list as you iterate through it.
+
+**Gotchas:** Be careful to handle edge cases where the linked list is empty (i.e., head is null) or has only one node. In such cases, the reversed linked list will be the same as the original linked list. Additionally, ensure that you are correctly updating the `next` pointer of each node to point to the previous node, and that you are moving the `prev` and `curr` pointers in the correct order to avoid losing access to the remaining nodes in the original list.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the linked list | Space: O(1) for the three pointers used to reverse the list in place
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Reverse Linked List II — LC #92 | Reverse sublist between positions → same three pointer reversal bounded by positions | Yes — direct upgrade |
+| Reverse Nodes in k-Group — LC #25 | Reverse in groups of k → same reversal subroutine repeated with group management | Yes — direct upgrade |
+| Swap Nodes in Pairs — LC #24 | Swap adjacent pairs → same reversal with k=2 | Yes — direct simplification |
+| Palindrome Linked List — LC #234 | Reverse second half then compare → same reversal as subroutine | Yes — direct application |
+| Reorder List — LC #143 | Find middle reverse second half interleave → same reversal as subroutine | Yes — direct application |
+| Rotate List — LC #61 | Rotate by k positions → find tail reconnect no reversal needed | Partial — same linked list family |
+| Reverse String — LC #344 | Reverse array not linked list → same two pointer swap different data structure | Partial — same reversal idea |
+| Flatten a Multilevel Doubly Linked List — LC #430 | Flatten nested list → same pointer rewiring different structure | No — different pattern |
+
+**How this pattern scales:**
+- **Three pointer iterative reversal** is the core trick — maintain `prev` (null initially) `curr` (head initially) `next` (temp storage). At each step save `curr.next` to `next`, point `curr.next` to `prev`, advance `prev` to `curr`, advance `curr` to `next`. Return `prev` when `curr` is null. O(n) time O(1) space
+- **Recursive alternative** — base case returns head when `head` or `head.next` is null. Recursive case reverses the rest then sets `head.next.next = head` and `head.next = null`. Elegant but O(n) stack space — always prefer iterative in interviews
+- **Return prev not curr** — when the loop terminates `curr` is null and `prev` is the new head. Returning `curr` is the single most common bug on this problem — always return `prev`
+- **Universal linked list subroutine** → LC #206 appears as a subroutine inside LC #92, LC #25, LC #143, LC #234, and LC #148. It is the single most reused linked list primitive in all of LeetCode. Implementing it from muscle memory in under 60 seconds is a baseline expectation in any linked list interview
+- **Three pointer visualization** — draw three adjacent nodes with arrows before coding. Label prev curr next and trace one iteration manually. This 30 second exercise eliminates all pointer confusion and is faster than debugging a wrong implementation
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* reverseList(ListNode* head) {
+       if(!head || !head->next){
+        return head;
+       }
+       ListNode* curr = head;
+       ListNode* next = nullptr;
+       ListNode* prev = nullptr;
+
+       while(curr){
+        next = curr->next; //have a pointer point to the node after current
+        curr -> next = prev; //reverse the currents next, now it points to prev
+        prev = curr; //move prev up to current
+        curr = next; //move current up to the next one, keep going
+       }
+       head = prev;
+       return head; //this is the new head
+    }
+};
+```
+
+## Find the Duplicate Number LC 287
+
+<!-- notecardId: 1780707283602 -->
+
+Given an array of integers nums containing n + 1 integers where each integer is in the range [1, n] inclusive.
+
+There is only one repeated number in nums, return this repeated number.
+
+You must solve the problem without modifying the array nums and using only constant extra space.
+
+ 
+
+Example 1:
+
+Input: nums = [1,3,4,2,2]
+Output: 2
+Example 2:
+
+Input: nums = [3,1,3,4,2]
+Output: 3
+Example 3:
+
+Input: nums = [3,3,3,3,3]
+Output: 3
+ 
+
+Constraints:
+
+1 <= n <= 105
+nums.length == n + 1
+1 <= nums[i] <= n
+All the integers in nums appear only once except for precisely one integer which appears two or more times.
+ 
+
+Follow up:
+
+How can we prove that at least one duplicate number must exist in nums?
+Can you solve the problem in linear runtime complexity?
+
+**Link**: [text](https://leetcode.com/problems/find-the-duplicate-number/)
+
+%
+
+**Pattern:** Linked List Cycle Detection (Floyd's Tortoise and Hare)
+
+**Approach:** Treat the array as a linked list where the value at each index points to the next index. Use Floyd's Tortoise and Hare algorithm to detect the cycle formed by the duplicate number. The duplicate number will be the entry point of the cycle.
+
+**Key Insight:** The key insight is that since there are n + 1 integers and each integer is in the range [1, n], there must be at least one duplicate. By treating the array as a linked list, we can use the cycle detection algorithm to find the duplicate without modifying the array and using only constant extra space.
+
+**Gotchas:** Be careful to handle edge cases where the duplicate number appears more than twice. The algorithm will still work as it relies on the presence of a cycle, but it's important to ensure that the implementation correctly identifies the entry point of the cycle. Additionally, make sure to initialize the slow and fast pointers correctly to avoid infinite loops.
+
+**Complexity:** Time: O(n) where n is the number of integers in the array | Space: O(1) for the two pointers used to detect the cycle
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Linked List Cycle II — LC #142 | Find cycle entry in explicit linked list → same Floyd's two phase algorithm | Yes — direct foundation |
+| Missing Number — LC #268 | Find missing not duplicate → XOR or math no cycle detection | Partial — same family |
+| Find All Duplicates in Array — LC #442 | Find all duplicates not just one → same index negation marking | Partial — same index idea |
+| First Missing Positive — LC #41 | Find missing positive → same index as hash map idea | Partial — same index family |
+| Linked List Cycle — LC #141 | Detect cycle existence not entry → same fast slow first phase only | Yes — same foundation |
+| Set Matrix Zeroes — LC #73 | Mark cells in place → same index marking idea different structure | Partial — same in place idea |
+| Find the Duplicate File — LC #609 | Group files by content hash → hash map grouping no cycle detection | No — different pattern |
+| Number of Subarrays with Bounded Maximum — LC #795 | Count subarrays within range → two pointer no cycle detection | No — different pattern |
+
+**How this pattern scales:**
+- **Floyd's cycle detection on implicit linked list** is the optimal O(n) time O(1) space trick — treat each value `nums[i]` as a pointer to index `nums[i]`. Since one value is duplicated two indices point to the same next node creating a cycle. Phase 1 finds meeting point with fast/slow. Phase 2 resets slow to index 0 advances both one step until they meet at the cycle entry which is the duplicate
+- **Why the implicit linked list works** — array indices 0 to n map to values 1 to n with one duplicate. Each element points to another valid index creating a functional linked list structure. The duplicate value creates two pointers into the same node — exactly the condition that produces a cycle entry point
+- **Three alternative approaches** worth knowing:
+  - **Binary search on value** O(n log n) — for each mid count elements ≤ mid, if count > mid the duplicate is in [lo, mid]
+  - **Index negation marking** O(n) time O(1) space — negate value at index nums[abs(v)], duplicate found when already negative. Modifies input
+  - **Hash set** O(n) time O(n) space — simplest to derive, return on first repeated element
+- **Cannot use sorting** — problem requires O(1) space and O(n) time, sorting is O(n log n). Cannot modify array makes index negation non compliant with strict constraints
+- **Constraint sensitivity** — the optimal solution changes dramatically based on constraints. O(1) space + cannot modify → Floyd's. O(1) space + can modify → index negation. O(n) space allowed → hash set. Always clarify constraints before choosing approach
+
+```cpp
+class Solution {
+public:
+    int findDuplicate(vector<int>& nums) {
+        //not a linked list problem, almost a two pointer problem, remember Floyd cycle dection algo tho
+        int slow = nums[0]; //start at the beginning
+        int fast = nums[0]; //start at the beginning
+        while(true){
+            slow = nums[slow]; //slow moves one step at a time, so we just follow the value of the current index to the next index
+            fast = nums[nums[fast]]; //fast moves two steps at a time, so we follow the value of the current index to the next index, and then follow that value to the next index again
+            if(slow == fast){
+                break; //if equal, we found a point in the cycle 
+            }
+        }
+        fast = nums[0]; //move fast back to the beginning, now we will move both slow and fast one step at a time until they meet, that is the start of the cycle, which is the duplicate number
+        while(slow != fast){
+            slow = nums[slow]; //move slow up by one, slow is alr at a point in the cycle
+            fast = nums[fast]; //fast is at the beginning, so we follow the value to move it up by one, if it is not the duplicate, it will eventually meet up with slow at the cycle at the start of the cycle
+        }
+        return slow; //this is the start of the cycle
+    }
+    /*
+    ListNode* slow = head;
+        ListNode* fast = head;
+        
+        while (fast && fast->next) {
+            slow = slow->next;          // Move 1 step
+            fast = fast->next->next;    // Move 2 steps
+            if (slow == fast) {
+                break;                  // Intersection point found
+            }
+        }
+        
+        // Edge case: If there is no cycle in the linked list
+        if (!fast || !fast->next) {
+            return nullptr; 
+        }
+
+        // Phase 2: Find the entrance of the cycle (the duplicate)
+        fast = head;                    // Reset fast to the beginning
+        while (slow != fast) {
+            slow = slow->next;          // Move both 1 step at a time
+            fast = fast->next;
+        }
+        
+        return slow;                    // This is the node where the duplicate occurs
+    }
+    */
+};
+```
+
+## LFU Cache LC 460
+
+<!-- notecardId: 1780708764510 -->
+
+Design and implement a data structure for a Least Frequently Used (LFU) cache.
+
+Implement the LFUCache class:
+
+LFUCache(int capacity) Initializes the object with the capacity of the data structure.
+int get(int key) Gets the value of the key if the key exists in the cache. Otherwise, returns -1.
+void put(int key, int value) Update the value of the key if present, or inserts the key if not already present. When the cache reaches its capacity, it should invalidate and remove the least frequently used key before inserting a new item. For this problem, when there is a tie (i.e., two or more keys with the same frequency), the least recently used key would be invalidated.
+To determine the least frequently used key, a use counter is maintained for each key in the cache. The key with the smallest use counter is the least frequently used key.
+
+When a key is first inserted into the cache, its use counter is set to 1 (due to the put operation). The use counter for a key in the cache is incremented either a get or put operation is called on it.
+
+The functions get and put must each run in O(1) average time complexity.
+
+ 
+
+Example 1:
+
+Input
+["LFUCache", "put", "put", "get", "put", "get", "get", "put", "get", "get", "get"]
+[[2], [1, 1], [2, 2], [1], [3, 3], [2], [3], [4, 4], [1], [3], [4]]
+Output
+[null, null, null, 1, null, -1, 3, null, -1, 3, 4]
+
+Explanation
+// cnt(x) = the use counter for key x
+// cache=[] will show the last used order for tiebreakers (leftmost element is  most recent)
+LFUCache lfu = new LFUCache(2);
+lfu.put(1, 1);   // cache=[1,_], cnt(1)=1
+lfu.put(2, 2);   // cache=[2,1], cnt(2)=1, cnt(1)=1
+lfu.get(1);      // return 1
+                 // cache=[1,2], cnt(2)=1, cnt(1)=2
+lfu.put(3, 3);   // 2 is the LFU key because cnt(2)=1 is the smallest, invalidate 2.
+                 // cache=[3,1], cnt(3)=1, cnt(1)=2
+lfu.get(2);      // return -1 (not found)
+lfu.get(3);      // return 3
+                 // cache=[3,1], cnt(3)=2, cnt(1)=2
+lfu.put(4, 4);   // Both 1 and 3 have the same cnt, but 1 is LRU, invalidate 1.
+                 // cache=[4,3], cnt(4)=1, cnt(3)=2
+lfu.get(1);      // return -1 (not found)
+lfu.get(3);      // return 3
+                 // cache=[3,4], cnt(4)=1, cnt(3)=3
+lfu.get(4);      // return 4
+                 // cache=[4,3], cnt(4)=2, cnt(3)=3
+ 
+
+Constraints:
+
+1 <= capacity <= 104
+0 <= key <= 105
+0 <= value <= 109
+At most 2 * 105 calls will be made to get and put.
+ 
+**Link**: [text](https://leetcode.com/problems/lfu-cache/)
+
+%
+
+**Pattern:** Hash Map, Doubly Linked List
+
+**Approach:** Use a hash map to store the key-value pairs and their corresponding frequencies. Use a doubly linked list to maintain the order of keys based on their frequencies. Each frequency will have its own linked list of keys. When a key is accessed or updated, move it to the appropriate frequency list. When evicting, remove the least frequently used key from the lowest frequency list.
+
+**Key Insight:** The key insight is that by maintaining a hash map for O(1) access to key-value pairs and a doubly linked list for each frequency, you can efficiently track the least frequently used keys. When a key's frequency changes, you can move it to the appropriate list in O(1) time. This structure allows you to meet the requirement of O(1) time complexity for both `get` and `put` operations while also keeping track of the least frequently used keys.
+
+**Gotchas:** Be careful to handle edge cases where multiple keys have the same frequency. In such cases, you need to ensure that you are evicting the least recently used key among those with the same frequency. Additionally, make sure to correctly update the frequency lists when a key's frequency changes, and to remove empty frequency lists when necessary. You also need a hash map storing the iterators for each key to its position in the frequency list to allow O(1) updates.
+
+**Complexity:** Time: O(1) for both `get` and `put` operations | Space: O(capacity) for the hash map and linked lists storing the cache items
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| LRU Cache — LC #146 | Evict least recently used not least frequently → hash map + single doubly linked list | Yes — foundation |
+| All O(1) Data Structure — LC #432 | O(1) increment decrement get max min → same doubly linked list + hash map structure | Yes — direct generalization |
+| Design HashMap — LC #706 | Hash map without eviction → same hash map foundation no frequency tracking | Partial — same hash map idea |
+| First Unique Character in a String — LC #387 | Find least frequent character → frequency map no eviction needed | Partial — same frequency idea |
+| Top K Frequent Elements — LC #347 | Find k most frequent → heap or bucket sort no eviction | Partial — same frequency tracking |
+| Design Twitter — LC #355 | Recent tweets per user → recency not frequency tracking | Partial — same design family |
+| Insert Delete GetRandom O(1) — LC #380 | O(1) random access with delete → hash map + array no frequency | Partial — same O(1) design goal |
+| Snake Game — LC #353 | Track body with tail eviction → deque not frequency map | No — different pattern |
+
+**How this pattern scales:**
+- **Three hash maps + doubly linked list per frequency** is the core structure — `keyToVal` maps key to value, `keyToFreq` maps key to its current frequency, `freqToList` maps each frequency to a doubly linked list of keys at that frequency (ordered by recency within frequency). `minFreq` tracks the current minimum frequency for O(1) eviction. All operations O(1)
+- **minFreq update rules** — on get: increment key's frequency update freqToList remove from old freq add to new freq update minFreq only if old freq list becomes empty AND old freq == minFreq. On put new key: always set minFreq = 1 since new keys start at frequency 1
+- **LRU within each frequency bucket** — within each frequency's doubly linked list nodes are ordered by recency most recent at head least recent at tail. When two keys have the same frequency the least recently used one is evicted — same LRU logic as LC #146 but scoped per frequency bucket
+- **LRU → LFU upgrade path** — LC #146 uses one doubly linked list for all keys ordered by recency. LC #460 replaces that with one doubly linked list PER frequency level. Everything else (dummy sentinels, removeNode, insertAtHead helpers, hash map lookup) is identical — the only structural addition is the frequency layer
+- **minFreq is the critical invariant** — always know the current minimum frequency so eviction is O(1). The only time minFreq increases is when a get or put increments the only key at minFreq — detected by checking if `freqToList[minFreq]` is empty after removal. On put of a new key minFreq always resets to 1
+
+```cpp
+struct Node {
+    int key;
+    int val;
+    int freq;
+    Node * prev;
+    Node * next;
+    Node(int _key, int _val){
+        key = _key;
+        val = _val;
+        prev = nullptr;
+        next = nullptr;
+        freq = 1;
+    }
+};
+
+
+class LFUCache {
+public:
+    LFUCache(int capacity) {
+        this -> capacity = capacity;
+        head = new Node(-1, -1);
+        tail = new Node(-1, -1);
+        head -> next = tail;
+        tail -> prev = head;
+    }
+    
+    int get(int key) {
+        if(cache.find(key) == cache.end()){
+            return -1;
+        }
+        int oldFreq = cache[key]-> freq;
+        freqMap[oldFreq].erase(iterMap[key]);
+        if(freqMap[oldFreq].empty()){
+            freqMap.erase(oldFreq);
+            if(minFreq == oldFreq){
+                minFreq++;
+            }
+        }
+        //need to update the frequency of the node and move it to the correct position in the linked list
+        cache[key] -> freq++;
+
+        //move it to the correct position in the linked list based on its frequency
+        freqMap[cache[key]->freq].push_back(cache[key]);
+        iterMap[key] = prev(freqMap[cache[key]->freq].end());
+        return cache[key]->val;
+    }
+    
+    void put(int key, int value) {
+        if(capacity == 0){
+            return;
+        }
+        if(cache.find(key) != cache.end()){
+        cache[key]->val = value; 
+        int oldFreq = cache[key] -> freq;
+        freqMap[oldFreq].erase(iterMap[key]);
+        if(freqMap[oldFreq].empty()){
+            freqMap.erase(oldFreq);
+            if(minFreq == oldFreq){
+                minFreq++;
+            }
+        }
+        cache[key] -> freq++;
+
+        //move it to the correct position in the linked list based on its frequency
+        freqMap[cache[key]->freq].push_back(cache[key]);
+        iterMap[key] = prev(freqMap[cache[key]->freq].end());
+    }
+    else{
+        if(cache.size() == capacity){
+            //evict the least frequently used node, which is the node with the lowest frequency in the linked list
+            Node * nodeToEvict = freqMap[minFreq].front();
+            freqMap[minFreq].pop_front();
+            cache.erase(nodeToEvict->key);
+            iterMap.erase(nodeToEvict->key);
+        }
+        Node* newNode = new Node(key, value);
+        cache[key] = newNode;
+        freqMap[1].push_back(cache[key]);
+        iterMap[key] = prev(freqMap[1].end());
+        minFreq = 1;
+    }
+    }
+private:
+ unordered_map<int, Node*> cache;
+  unordered_map<int, list<Node*>> freqMap;
+  unordered_map<int, list<Node*>::iterator> iterMap;
+  int minFreq = 0;
+  int capacity;
+  Node* head;
+  Node *tail;
+
+};
+/**
+ * Your LFUCache object will be instantiated and called as such:
+ * LFUCache* obj = new LFUCache(capacity);
+ * int param_1 = obj->get(key);
+ * obj->put(key,value);
+ */
+```
+
+## Design Circular Queue LC 622
+
+<!-- notecardId: 1780709617332 -->
+
+Design your implementation of the circular queue. The circular queue is a linear data structure in which the operations are performed based on FIFO (First In First Out) principle, and the last position is connected back to the first position to make a circle. It is also called "Ring Buffer".
+
+One of the benefits of the circular queue is that we can make use of the spaces in front of the queue. In a normal queue, once the queue becomes full, we cannot insert the next element even if there is a space in front of the queue. But using the circular queue, we can use the space to store new values.
+
+Implement the MyCircularQueue class:
+
+MyCircularQueue(k) Initializes the object with the size of the queue to be k.
+int Front() Gets the front item from the queue. If the queue is empty, return -1.
+int Rear() Gets the last item from the queue. If the queue is empty, return -1.
+boolean enQueue(int value) Inserts an element into the circular queue. Return true if the operation is successful.
+boolean deQueue() Deletes an element from the circular queue. Return true if the operation is successful.
+boolean isEmpty() Checks whether the circular queue is empty or not.
+boolean isFull() Checks whether the circular queue is full or not.
+You must solve the problem without using the built-in queue data structure in your programming language. 
+
+ 
+
+Example 1:
+
+Input
+["MyCircularQueue", "enQueue", "enQueue", "enQueue", "enQueue", "Rear", "isFull", "deQueue", "enQueue", "Rear"]
+[[3], [1], [2], [3], [4], [], [], [], [4], []]
+Output
+[null, true, true, true, false, 3, true, true, true, 4]
+
+Explanation
+MyCircularQueue myCircularQueue = new MyCircularQueue(3);
+myCircularQueue.enQueue(1); // return True
+myCircularQueue.enQueue(2); // return True
+myCircularQueue.enQueue(3); // return True
+myCircularQueue.enQueue(4); // return False
+myCircularQueue.Rear();     // return 3
+myCircularQueue.isFull();   // return True
+myCircularQueue.deQueue();  // return True
+myCircularQueue.enQueue(4); // return True
+myCircularQueue.Rear();     // return 4
+ 
+
+Constraints:
+
+1 <= k <= 1000
+0 <= value <= 1000
+At most 3000 calls will be made to enQueue, deQueue, Front, Rear, isEmpty, and isFull.
+
+**Link**: [text](https://leetcode.com/problems/design-circular-queue/)
+
+%
+
+**Pattern:** Array, Two Pointers
+
+**Approach:** Use a fixed-size array to store the elements of the circular queue. Maintain two pointers, `front` and `rear`, to track the positions of the front and rear elements in the queue. The `enQueue` operation adds an element at the rear pointer and moves it forward, while the `deQueue` operation removes an element from the front pointer and moves it forward. Use modulo arithmetic to wrap around the pointers when they reach the end of the array.
+
+**Key Insight:** The key insight is that by using a fixed-size array and two pointers, you can efficiently implement a circular queue without needing to shift elements as in a normal queue. The modulo operator allows the pointers to wrap around to the beginning of the array when they reach the end, creating a circular structure. This approach allows you to achieve O(1) time complexity for both `enQueue` and `deQueue` operations while maintaining a fixed capacity.
+
+**Gotchas:** Be careful to handle edge cases where the queue is empty or full. When the queue is full, the `enQueue` operation should return false and not add the new element. When the queue is empty, the `deQueue` operation should return false and not remove any element. Additionally, make sure to correctly update the `front` and `rear` pointers after each operation, and to use modulo arithmetic to wrap around the pointers when necessary.
+
+**Complexity:** Time: O(1) for both `enQueue` and `deQueue` operations | Space: O(k) for the fixed-size array used to store the elements of the circular queue
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Design Circular Deque — LC #641 | Double ended circular queue → same circular array add front/back remove front/back | Yes — direct upgrade |
+| Implement Queue Using Stacks — LC #232 | Simulate queue with stacks → amortized O(1) no circular array | Partial — same queue design |
+| Implement Stack Using Queues — LC #225 | Simulate stack with queues → rotation trick no circular array | Partial — same design family |
+| Moving Average from Data Stream — LC #346 | Sliding window average → same circular buffer fixed size | Yes — direct application |
+| Design Hit Counter — LC #362 | Count hits in last 300 seconds → same circular buffer time window | Yes — direct application |
+| Number of Recent Calls — LC #933 | Count calls in last 3000ms → queue as sliding window | Partial — same window idea |
+| Snake Game — LC #353 | Track snake body with head/tail → same circular queue eviction idea | Partial — same circular idea |
+| LRU Cache — LC #146 | Evict least recently used → doubly linked list not circular array | No — different pattern |
+
+**How this pattern scales:**
+- **Fixed size array + head/tail pointers + size counter** is the core trick — `head` points to front element `tail` points to next empty slot. Enqueue writes to `tail` then advances `tail = (tail + 1) % capacity`. Dequeue reads from `head` then advances `head = (head + 1) % capacity`. Size counter tracks current elements for isEmpty and isFull checks. O(1) all operations
+- **Modulo wrapping** is the key insight — `(index + 1) % capacity` wraps any index back to 0 when it reaches capacity. This is what makes the array circular without physically moving elements. All circular buffer problems reduce to this single modulo formula
+- **Size counter vs head == tail ambiguity** — without a size counter an empty queue and a full queue both have `head == tail` making them indistinguishable. Always maintain a separate size counter or use `capacity - 1` usable slots reserving one slot as a sentinel to distinguish the two states
+- **Circular buffer generalizes** → Moving Average (LC #346) and Design Hit Counter (LC #362) use the exact same fixed size circular array — new values overwrite the oldest at the tail position. Same modulo wrapping, same head/tail advancement, different semantic meaning of the stored values
+- **Deque upgrade** → LC #641 adds `enqueueFront` and `dequeueBack` operations. Front insertion uses `head = (head - 1 + capacity) % capacity` to wrap backwards — the `+ capacity` prevents negative modulo which behaves differently across languages
+
+```cpp
+class MyCircularQueue {
+public:
+    MyCircularQueue(int k) {
+        arr.resize(k);
+        start = 0;
+        end = 0;
+        count = 0;
+        capacity = k;
+    }
+    
+    bool enQueue(int value) {
+        if(count == capacity){
+            return false;
+        }
+        arr[end] = value;
+        end = (end + 1) % capacity;
+        count++;
+        return true;
+    }
+    
+    bool deQueue() {
+        if (count == 0) return false;
+        start = (start + 1) % capacity; //move the start pointer up, and if it goes past the end of the array, it wraps around to the beginning
+        //we modify start because queue is fifo, so beginning of the queue is what is popped out.
+        count --;
+        return true;
+    }
+    
+    int Front() {
+        if(isEmpty()){
+            return -1;
+        }
+        return arr[start];
+    }
+    
+    int Rear() {
+    if(isEmpty()){
+            return -1;
+        }
+        return arr[(end - 1 + capacity) % capacity]; //why this works, if end is at the beginning of the array, end - 1 will be -1, but we can add capacity to it, and then mod by capacity, it will wrap around to the end of the array, which is the rear of the queue.
+    }
+    
+    bool isEmpty() {
+        return (count == 0);
+    }
+    
+    bool isFull() {
+        return (count == capacity);
+    }
+    private:
+    vector<int> arr;
+    int start;
+    int end;
+    int count;
+    int capacity;
+};
+
+/**
+ * Your MyCircularQueue object will be instantiated and called as such:
+ * MyCircularQueue* obj = new MyCircularQueue(k);
+ * bool param_1 = obj->enQueue(value);
+ * bool param_2 = obj->deQueue();
+ * int param_3 = obj->Front();
+ * int param_4 = obj->Rear();
+ * bool param_5 = obj->isEmpty();
+ * bool param_6 = obj->isFull();
+ */
+```

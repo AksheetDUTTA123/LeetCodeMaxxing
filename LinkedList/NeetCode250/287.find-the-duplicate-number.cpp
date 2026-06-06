@@ -28,6 +28,33 @@ public:
         }
         return slow; //this is the start of the cycle
     }
+    /*
+    ListNode* slow = head;
+        ListNode* fast = head;
+        
+        while (fast && fast->next) {
+            slow = slow->next;          // Move 1 step
+            fast = fast->next->next;    // Move 2 steps
+            if (slow == fast) {
+                break;                  // Intersection point found
+            }
+        }
+        
+        // Edge case: If there is no cycle in the linked list
+        if (!fast || !fast->next) {
+            return nullptr; 
+        }
+
+        // Phase 2: Find the entrance of the cycle (the duplicate)
+        fast = head;                    // Reset fast to the beginning
+        while (slow != fast) {
+            slow = slow->next;          // Move both 1 step at a time
+            fast = fast->next;
+        }
+        
+        return slow;                    // This is the node where the duplicate occurs
+    }
+    */
 };
 // @lc code=end
 

@@ -27,12 +27,12 @@ public:
             curr = curr -> next;
             length++;
         }
-        if(length < k){
+        if(length < k){ //increment the length to see if there are k nodes, if not then just return head
             return head;
         }
         ListNode * prev = nullptr;
         ListNode * next = nullptr;
-        curr = head;
+        curr = head; //return back to the start of the linked list
         while(length > 0){
             next = curr -> next;
             curr -> next = prev;
@@ -40,7 +40,7 @@ public:
             curr = next;
             length--;
         }
-        head -> next = reverseKGroup(curr, k);
+        head -> next = reverseKGroup(curr, k); //after reversing the first k nodes, head is now the last node of the reversed linked list, so we need to connect it to the next reversed linked list, which is the result of reverseKGroup(curr, k)
         head = prev;
         return head;
     }
