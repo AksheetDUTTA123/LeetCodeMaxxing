@@ -9110,3 +9110,446 @@ public:
  * bool param_6 = obj->isFull();
  */
 ```
+
+## Binary Tree inorder traversal LC 94
+
+<!-- notecardId: 1780851444188 -->
+
+Given the root of a binary tree, return the inorder traversal of its nodes' values.
+
+ 
+
+Example 1:
+
+Input: root = [1,null,2,3]
+
+Output: [1,3,2]
+
+Explanation:
+
+
+
+Example 2:
+
+Input: root = [1,2,3,4,5,null,8,null,null,6,7,9]
+
+Output: [4,2,6,5,7,1,3,9,8]
+
+Explanation:
+
+
+
+Example 3:
+
+Input: root = []
+
+Output: []
+
+Example 4:
+
+Input: root = [1]
+
+Output: [1]
+
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [0, 100].
+-100 <= Node.val <= 100
+ 
+
+Follow up: Recursive solution is trivial, could you do it iteratively?
+
+**Link**: [text](https://leetcode.com/problems/binary-tree-inorder-traversal/)
+
+%
+
+**Pattern:** Tree Traversal, Stack
+
+**Approach:** Use a stack to iteratively traverse the binary tree in inorder (left, root, right). Start from the root and keep pushing left children onto the stack until you reach a null. Then pop from the stack, add the node's value to the result, and move to the right child. Repeat this process until both the stack is empty and the current node is null.
+
+**Key Insight:** The key insight is that the inorder traversal can be simulated using a stack to keep track of the nodes. By pushing all left children onto the stack, you can ensure that you visit the leftmost node first. When you pop from the stack, you are visiting the root of the current subtree, and then you can move to the right child to continue the traversal. This iterative approach allows you to achieve O(n) time complexity without using recursion.
+
+**Gotchas:** Be careful to handle edge cases where the tree is empty (i.e., root is null). In such cases, the result should be an empty list. Additionally, make sure to correctly manage the stack and the current node pointer to avoid infinite loops or null pointer exceptions. Always check if the current node is null before trying to access its value or children.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the binary tree | Space: O(h) where h is the height of the tree (worst case O(n) for skewed tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Binary Tree Preorder Traversal — LC #144 | Visit root before children → same iterative stack different push order | Yes — direct variant |
+| Binary Tree Postorder Traversal — LC #145 | Visit root after children → same iterative stack reversed preorder trick | Yes — direct variant |
+| Validate Binary Search Tree — LC #98 | Inorder must be strictly increasing → same inorder traversal with value check | Yes — direct application |
+| Kth Smallest Element in BST — LC #230 | Kth element in inorder sequence → same inorder traversal stop at kth | Yes — direct application |
+| Binary Search Tree Iterator — LC #173 | Inorder traversal on demand → same iterative inorder stack held between calls | Yes — direct application |
+| Flatten Binary Tree to Linked List — LC #114 | Preorder traversal rewiring nodes → same traversal different operation | Partial — same traversal family |
+| Recover Binary Search Tree — LC #99 | Find swapped nodes in inorder sequence → same inorder traversal track prev node | Yes — direct application |
+| Morris Traversal | Inorder with O(1) space no stack → thread right pointers to inorder successor | Yes — space optimized upgrade |
+
+**How this pattern scales:**
+- **Iterative stack inorder** is the core pattern — push all left children onto stack, pop and visit, move to right child, repeat. O(n) time O(h) space where h is tree height
+- **Three traversal order comparison**:
+  - **Preorder** (root left right) → push right then left so left is processed first
+  - **Inorder** (left root right) → push all lefts first pop visit move right
+  - **Postorder** (left right root) → reverse of modified preorder (root right left) → push left then right reverse result
+- **BST inorder is sorted** — inorder traversal of a BST always produces a strictly increasing sequence. This property unlocks LC #98, LC #230, LC #173, and LC #99 — all four reduce to inorder traversal with an additional condition check
+- **BST Iterator connection** → LC #173 is the most important application — it holds the iterative inorder stack as instance state between `next()` calls, producing one element at a time on demand. This is the exact stack from iterative inorder traversal paused mid-execution between calls
+- **Morris traversal** is the O(1) space upgrade — thread each node's rightmost left subtree node back to the node itself as an inorder successor pointer. Eliminates the stack entirely. Worth mentioning as a follow-up when interviewer asks for O(1) space solution
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<int> inorderTraversal(TreeNode* root) {
+    //     vector<int> result;
+    //     if (root == nullptr) return result; //base case for recursion, if the node is null, return empty vector
+    //    vector<int> leftSide = inorderTraversal(root->left); //recursively call the left side of the tree, this will return a vector of the left side of the tree in order
+    //    result.insert(result.end(), leftSide.begin(), leftSide.end()); //add the result of the left side to the result vector, remember inorder is left, root, right
+    // result.push_back(root->val); //push back the root value to the result vector
+    //     vector<int> rightSide = inorderTraversal(root->right); //recursively call the right side of the tree, this will return a vector of the right side of the tree in order
+    //     result.insert(result.end(), rightSide.begin(), rightSide.end());
+    //     return result;
+    //above was recursive solution
+
+    //below is iterative solution
+
+    vector<int> result;
+    stack<TreeNode*> treeNodes; //for the iterative design, you need a stack to keep track of the nodes you have visited, 
+    //this is because you need to go back up the tree after you have visited the left side, and then go to the right side, so you need to keep track of the nodes you have visited in order to go back up the tree
+    TreeNode* curr = root; //start at the root node
+
+    while(curr != NULL || !treeNodes.empty()){
+        while(curr != NULL){ //while not at the end of the left side, keep going left and pushing the nodes into the stack
+            treeNodes.push(curr);
+            curr = curr -> left;
+        }
+        curr = treeNodes.top(); //get the top of the stack, this is the node you need to visit, because you have already visited the left side, so now you need to visit the root node
+        treeNodes.pop();
+        result.push_back(curr->val);
+        curr = curr -> right; //after visiting the root node, you need to go to the right side, so you need to set the current node to the right child of the current node, 
+        //this will allow you to go to the right side of the tree and repeat the process of going left and visiting the nodes until you reach the end of the tree
+    }
+    return result;
+    }
+
+    //Morris Algorithm for O(1) space inorder traversal
+        vector<int> morrisInorderTraversal(TreeNode* root) {
+            vector<int> result;
+            TreeNode* curr = root;
+    
+            while (curr != nullptr) {
+                if (curr->left == nullptr) {
+                    result.push_back(curr->val); // Visit the node
+                    curr = curr->right; // Move to the right child
+                } else {
+                    // Find the inorder predecessor of curr
+                    TreeNode* pred = curr->left;
+                    while (pred->right != nullptr && pred->right != curr) {
+                        pred = pred->right;
+                    }
+    
+                    if (pred->right == nullptr) {
+                        // Make curr the right child of its inorder predecessor
+                        pred->right = curr;
+                        curr = curr->left; // Move to the left child
+                    } else {
+                        // Revert the changes made in the 'if' part to restore the original tree
+                        pred->right = nullptr;
+                        result.push_back(curr->val); // Visit the node
+                        curr = curr->right; // Move to the right child
+                    }
+                }
+            }
+    
+            return result;
+        }
+};
+```
+## Binary Tree Preorder Traversal LC 144
+
+<!-- notecardId: 1780853227032 -->
+
+Given the root of a binary tree, return the preorder traversal of its nodes' values.
+
+ 
+
+Example 1:
+
+Input: root = [1,null,2,3]
+
+Output: [1,2,3]
+
+Explanation:
+
+
+
+Example 2:
+
+Input: root = [1,2,3,4,5,null,8,null,null,6,7,9]
+
+Output: [1,2,4,5,6,7,3,8,9]
+
+Explanation:
+
+
+
+Example 3:
+
+Input: root = []
+
+Output: []
+
+Example 4:
+
+Input: root = [1]
+
+Output: [1]
+
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [0, 100].
+-100 <= Node.val <= 100
+ 
+
+Follow up: Recursive solution is trivial, could you do it iteratively?
+
+**Link**: [text](https://leetcode.com/problems/binary-tree-preorder-traversal/)
+
+%
+
+**Pattern:** Tree Traversal, Stack
+
+**Approach:** Use a stack to iteratively traverse the binary tree in preorder (root, left, right). Start from the root and push it onto the stack. Then, while the stack is not empty, pop the top node, add its value to the result, and push its right child followed by its left child onto the stack (if they exist). This ensures that the left child is processed before the right child.
+
+**Key Insight:** The key insight is that the preorder traversal can be simulated using a stack to keep track of the nodes. By pushing the right child before the left child, you ensure that the left child is processed first when popping from the stack. This iterative approach allows you to achieve O(n) time complexity without using recursion.
+
+**Gotchas:** Be careful to handle edge cases where the tree is empty (i.e., root is null). In such cases, the result should be an empty list. Additionally, make sure to correctly manage the stack and the current node pointer to avoid infinite loops or null pointer exceptions. Always check if the current node is null before trying to access its value or children.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the binary tree | Space: O(h) where h is the height of the tree (worst case O(n) for skewed tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Binary Tree Inorder Traversal — LC #94 | Visit root between children → same stack different push order | Yes — direct variant |
+| Binary Tree Postorder Traversal — LC #145 | Visit root after children → reversed modified preorder trick | Yes — direct variant |
+| Binary Tree Level Order Traversal — LC #102 | Visit level by level → BFS queue not DFS stack | Partial — same traversal family |
+| Flatten Binary Tree to Linked List — LC #114 | Rewire nodes in preorder → same preorder traversal different operation | Yes — direct application |
+| Serialize and Deserialize Binary Tree — LC #297 | Encode decode tree structure → preorder traversal as encoding order | Yes — direct application |
+| Path Sum — LC #112 | Check if root to leaf sum equals target → same preorder DFS different operation | Yes — same DFS family |
+| Construct Binary Tree from Preorder and Inorder — LC #105 | Rebuild tree from traversal orders → preorder gives root inorder gives split | Yes — direct application |
+| N-ary Tree Preorder Traversal — LC #589 | Preorder on tree with multiple children → same stack push children right to left | Yes — direct generalization |
+
+**How this pattern scales:**
+- **Iterative stack preorder** is the core pattern — push root visit it push right child then left child (so left is processed first). Pop visit push children repeat until stack empty. O(n) time O(h) space where h is tree height
+- **Push right before left** — stack is LIFO so push right child first so left child sits on top and is processed first. Reversing this order produces a right-first preorder — a common bug that produces wrong results on asymmetric trees
+- **Three traversal comparison**:
+  - **Preorder** (root left right) → push right then left visit on push
+  - **Inorder** (left root right) → push all lefts first pop visit move right
+  - **Postorder** (left right root) → modified preorder (root right left) then reverse result
+- **Serialize connection** → LC #297 uses preorder as the natural serialization order because the root always appears first making deserialization trivial — the first element is always the root, recurse left then right. Preorder is the only traversal where this root-first property holds
+- **Flatten connection** → LC #114 rewires nodes to follow preorder sequence in place. The preorder stack gives you nodes in exactly the order they should appear in the flattened list — same traversal, pointer rewiring instead of value collection
+- **N-ary generalization** → LC #589 pushes all children right to left instead of just two. Same LIFO logic — push rightmost child first so leftmost sits on top and is processed first. One line change from binary to n-ary
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<int> preorderTraversal(TreeNode* root) {
+        vector<int> ans;
+        // if(root == nullptr){
+        //     return ans;
+        // }
+        // ans.push_back(root->val);
+        // vector<int> leftside = preorderTraversal(root->left);
+        // ans.insert(ans.end(), leftside.begin(), leftside.end());
+        // vector<int> rightside = preorderTraversal(root->right);
+        // ans.insert(ans.end(), rightside.begin(), rightside.end());
+        // return ans;
+         stack<TreeNode*> treeNodes; //for the iterative design, you need a stack to keep track of the nodes you have visited, 
+        //this is because you need to go back up the tree after you have visited the left side, and then go to the right side, so you need to keep track of the nodes you have visited in order to go back up the tree
+        TreeNode* curr = root; //start at the root node
+
+     while(curr != NULL || !treeNodes.empty()){
+        while(curr != NULL){ //while not at the end of the left side, keep going left and pushing the nodes into the stack
+            ans.push_back(curr->val);
+            treeNodes.push(curr);
+            curr = curr -> left;
+        }
+        curr = treeNodes.top(); //get the top of the stack, this is the node you need to visit, because you have already visited the left side, so now you need to visit the root node
+        treeNodes.pop();
+        curr = curr -> right; //after visiting the root node, you need to go to the right side, so you need to set the current node to the right child of the current node, 
+        //this will allow you to go to the right side of the tree and repeat the process of going left and visiting the nodes until you reach the end of the tree
+    }
+    return ans;
+
+    }
+};
+```
+
+## Binary Tree Postorder Traversal LC 145
+
+<!-- notecardId: 1780859781543 -->
+
+Given the root of a binary tree, return the postorder traversal of its nodes' values.
+
+ 
+
+Example 1:
+
+Input: root = [1,null,2,3]
+
+Output: [3,2,1]
+
+Explanation:
+
+
+
+Example 2:
+
+Input: root = [1,2,3,4,5,null,8,null,null,6,7,9]
+
+Output: [4,6,7,5,2,9,8,3,1]
+
+Explanation:
+
+
+
+Example 3:
+
+Input: root = []
+
+Output: []
+
+Example 4:
+
+Input: root = [1]
+
+Output: [1]
+
+ 
+
+Constraints:
+
+The number of the nodes in the tree is in the range [0, 100].
+-100 <= Node.val <= 100
+ 
+
+Follow up: Recursive solution is trivial, could you do it iteratively?
+
+**Link**: [text](https://leetcode.com/problems/binary-tree-postorder-traversal/)
+
+%
+
+**Pattern:** Tree Traversal, Stack
+
+**Approach:** Use a stack to iteratively traverse the binary tree in postorder (left, right, root). Start from the root and push it onto the stack. Then, while the stack is not empty, pop the top node, add its value to the result, and push its left child followed by its right child onto the stack (if they exist). This ensures that the right child is processed before the left child. Finally, reverse the result list to get the correct postorder sequence. If doing it without reversing, you can modify the order of pushing children to achieve postorder directly.
+
+**Key Insight:** The key insight is that the postorder traversal can be simulated using a stack to keep track of the nodes. By pushing the left child before the right child, you ensure that the right child is processed first when popping from the stack. This iterative approach allows you to achieve O(n) time complexity without using recursion. The reversal at the end is necessary because we are effectively doing a modified preorder (root, right, left) which gives us the nodes in reverse postorder.
+
+**Gotchas:** Be careful to handle edge cases where the tree is empty (i.e., root is null). In such cases, the result should be an empty list. Additionally, make sure to correctly manage the stack and the current node pointer to avoid infinite loops or null pointer exceptions. Always check if the current node is null before trying to access its value or children. If you choose to do it without reversing at the end, be careful with the order of pushing children onto the stack.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the binary tree | Space: O(h) where h is the height of the tree (worst case O(n) for skewed tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Binary Tree Preorder Traversal — LC #144 | Visit root before children → same stack push right then left visit on push | Yes — direct variant |
+| Binary Tree Inorder Traversal — LC #94 | Visit root between children → push all lefts pop visit move right | Yes — direct variant |
+| Binary Tree Level Order Traversal — LC #102 | Visit level by level → BFS queue not DFS stack | Partial — same traversal family |
+| Delete Nodes and Return Forest — LC #1110 | Postorder to process children before parent → same bottom up traversal | Yes — direct application |
+| Binary Tree Maximum Path Sum — LC #124 | Compute max path bottom up → same postorder children before parent | Yes — direct application |
+| Lowest Common Ancestor — LC #236 | Find LCA bottom up → same postorder return values up the tree | Yes — direct application |
+| Serialize and Deserialize Binary Tree — LC #297 | Preorder encoding easier than postorder → same traversal family different encoding order | Partial — same traversal family |
+| Construct Binary Tree from Inorder and Postorder — LC #106 | Rebuild tree using postorder and inorder → postorder gives root from right end | Yes — direct application |
+
+**How this pattern scales:**
+- **Reverse modified preorder** is the cleanest iterative trick — run modified preorder visiting root then RIGHT then left, collect results, reverse at end. Produces left right root which is postorder. O(n) time O(n) space for result storage
+- **Three traversal comparison**:
+  - **Preorder** (root left right) → push right then left visit on pop
+  - **Inorder** (left root right) → push all lefts pop visit move right
+  - **Postorder** (left right root) → modified preorder (root right left) reversed
+- **Bottom up property** is the key insight — postorder processes children before parents making it the natural traversal for problems where a node's answer depends on its children's answers. Any problem asking "compute something at each node using its subtree" uses postorder
+- **Delete Nodes connection** → LC #1110 must process children before deciding whether to delete a parent — postorder guarantees children are handled first. Same bottom up dependency pattern
+- **Construct from postorder** → LC #106 uses the fact that the last element of postorder is always the root — mirror of preorder where the first element is the root. Postorder gives root from the right end, inorder gives the left/right split
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<int> postorderTraversal(TreeNode* root) {
+        vector<int> ans;
+        // if(root == nullptr){
+        //     return ans;
+        // }
+        // vector<int> leftside = postorderTraversal(root->left);
+        // ans.insert(ans.end(), leftside.begin(), leftside.end());
+        // vector<int> rightside = postorderTraversal(root->right);
+        // ans.insert(ans.end(), rightside.begin(), rightside.end());
+        // ans.push_back(root->val);
+        // return ans;
+         stack<TreeNode*> treeNodes; //for the iterative design, you need a stack to keep track of the nodes you have visited, 
+        //this is because you need to go back up the tree after you have visited the left side, and then go to the right side, so you need to keep track of the nodes you have visited in order to go back up the tree
+        TreeNode* curr = root; //start at the root node
+        TreeNode* lastVisited = nullptr; //keep track of the last visited node, this is important because you need to know when you have visited the right side of the tree, so you can visit the root node after you have visited the right side, you can visit the root node,
+        // but if you have not visited the right side, you cannot visit the root node, because you need to visit the right side before you can visit the root node in postorder traversal
+
+     while(curr != NULL || !treeNodes.empty()){
+        while(curr != NULL){ //while not at the end of the left side, keep going left and pushing the nodes into the stack
+            treeNodes.push(curr);
+            curr = curr -> left;
+        }
+        
+        curr = treeNodes.top(); //get the top of the stack, this is the node you need to visit, because you have already visited the left side, so now you need to visit the root node
+        if(curr -> right == NULL || curr -> right == lastVisited) {
+            //if the right child is null or the right child is the last visited node, then you can visit the root node
+        ans.push_back(curr->val);
+        lastVisited = curr; //update the last visited node to the current node, because you have just visited the current node, so you need to update the last visited node to the current node, this will allow you to keep track of the last visited node, so you can know when you have visited the right side of the tree
+        treeNodes.pop();
+        curr = nullptr; //after visiting the root node, you need to set the current node to null, because you have already visited the current node, so you need to set the current node to null, this will allow you to go back up the tree and visit the next node in the stack, which is the parent node of the current node, this will allow you to visit the parent node after you have visited the left and right side of the tree
+    }
+    else{
+        curr = curr -> right; //if the right child is not null and the right child is not the last visited node, then you need to go to the right side of the tree, so you need to set the current node to the right child of the current node,
+    }
+    }
+    
+        return ans;
+            }
+
+};
+```
