@@ -9553,3 +9553,517 @@ public:
 
 };
 ```
+
+## Binary Tree Level Order Traversal LC 102
+
+<!-- notecardId: 1780980394512 -->
+
+Given the root of a binary tree, return the level order traversal of its nodes' values. (i.e., from left to right, level by level).
+
+ 
+
+Example 1:
+
+
+Input: root = [3,9,20,null,null,15,7]
+Output: [[3],[9,20],[15,7]]
+Example 2:
+
+Input: root = [1]
+Output: [[1]]
+Example 3:
+
+Input: root = []
+Output: []
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [0, 2000].
+-1000 <= Node.val <= 1000
+
+**Link**: [text](https://leetcode.com/problems/binary-tree-level-order-traversal/)
+
+%
+
+**Pattern:** Tree Traversal, Breadth-First Search (BFS), Queue
+
+**Approach:** Use a queue to perform a breadth-first search (BFS) on the binary tree. Start by enqueueing the root node. Then, while the queue is not empty, process each level of the tree by dequeuing all nodes at the current level, adding their values to a list, and enqueueing their non-null left and right children. Repeat this process until all levels have been processed.
+
+**Key Insight:** The key insight is that level order traversal can be efficiently achieved using a queue to keep track of the nodes at each level. By processing all nodes at the current level before moving on to the next level, you can easily group the values by level. This approach allows you to achieve O(n) time complexity, where n is the number of nodes in the tree.
+
+**Gotchas:** Be careful to handle edge cases where the tree is empty (i.e., root is null). In such cases, the result should be an empty list. Additionally, make sure to correctly manage the queue and the current level's node count to avoid infinite loops or null pointer exceptions. Always check if the current node is null before trying to access its value or children.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the binary tree | Space: O(m) where m is the maximum number of nodes at any level (worst case O(n/2) for a complete binary tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Binary Tree Zigzag Level Order — LC #103 | Alternate direction each level → same BFS flip insert direction per level | Yes — direct variant |
+| Binary Tree Level Order Traversal II — LC #107 | Bottom up level order → same BFS reverse result at end | Yes — direct variant |
+| Average of Levels in Binary Tree — LC #637 | Average not collect nodes per level → same BFS sum divide by level size | Yes — direct variant |
+| Minimum Depth of Binary Tree — LC #111 | First leaf level → same BFS return level count on first leaf | Yes — direct application |
+| Maximum Depth of Binary Tree — LC #104 | Deepest level → same BFS count total levels | Yes — direct variant |
+| Populating Next Right Pointers — LC #116 | Wire next pointers within each level → same BFS process level by level | Yes — direct application |
+| Word Ladder — LC #127 | Shortest path in word graph → same BFS level by level different structure | Partial — same BFS family |
+| Binary Tree Right Side View — LC #199 | Last node of each level → same BFS collect last node per level | Yes — direct variant |
+
+**How this pattern scales:**
+- **BFS with level size snapshot** is the core trick — use a queue initialized with root. At the start of each level snapshot `levelSize = queue.size()`. Process exactly `levelSize` nodes collecting their values and enqueuing their children. Append level to result. O(n) time O(w) space where w is maximum width
+- **Level size snapshot is critical** — snapshotting queue size at the start of each level is what separates nodes by level. Without the snapshot all nodes blur into one continuous BFS stream with no level boundaries
+- **Queue vs deque for zigzag** → LC #103 alternates insertion direction each level. Use a deque and append to front or back depending on current level parity. Same BFS skeleton, deque replaces queue, one direction flag added
+- **BFS is the natural level tool** — DFS can compute level order but requires carrying depth as a parameter and sorting by depth at the end. BFS processes nodes level by level naturally making it always preferable for level based problems
+- **Right side view** → LC #199 is the most elegant BFS variant — collect only the last node of each level. Same level size snapshot loop, replace level collection with single last node capture. One line change from full level order
+- **Word Ladder connection** → LC #127 applies BFS level counting to a graph instead of a tree. Level number equals shortest path length. Same queue initialization snapshot processing structure — the data structure changes but the BFS skeleton is identical
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<vector<int>> levelOrder(TreeNode* root) {
+        vector<vector<int>> result;
+        if(root == nullptr) return result; //empty tree, return empty result, needed
+        std::queue<TreeNode*> q1; //make a queue that stores for each level, we need first in first out.
+        q1.push(root); //start with root
+        while(!q1.empty()){
+            int nodesInLevel = q1.size(); //at this moment, we know what nodes are in this level, needed for loop
+            vector<int> levelNodes; //vector container that holds every node in this level
+            for(int i = 0; i < nodesInLevel; i++){
+                TreeNode* top = q1.front(); //pop the top and add to nodes in this level
+                q1.pop();
+                levelNodes.push_back(top -> val);
+                if (top->left != nullptr) q1.push(top->left); //add the next levels nodes to the end of the queue, these will then get added for the next level once this level
+                //has been added
+                if (top->right != nullptr) q1.push(top->right);
+            }
+            result.push_back(levelNodes); //at the end of the loop, all nodes in that level has been add it, add vector to the ans vector 
+            //that holds a vector for each level
+        }
+        return result;
+
+    }
+};
+```
+
+## Maximum Depth of Binary Tree LC 104
+
+<!-- notecardId: 1780981329229 -->
+
+Given the root of a binary tree, return its maximum depth.
+
+A binary tree's maximum depth is the number of nodes along the longest path from the root node down to the farthest leaf node.
+
+ 
+
+Example 1:
+
+
+Input: root = [3,9,20,null,null,15,7]
+Output: 3
+Example 2:
+
+Input: root = [1,null,2]
+Output: 2
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [0, 104].
+-100 <= Node.val <= 100
+
+**Link**: [text](https://leetcode.com/problems/maximum-depth-of-binary-tree/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS)
+
+**Approach:** Use a depth-first search (DFS) approach to traverse the binary tree. Start from the root and recursively compute the maximum depth of the left and right subtrees. The maximum depth of the current node is 1 (for itself) plus the maximum of the depths of its left and right children. If the node is null, return 0.
+
+**Key Insight:** The key insight is that the maximum depth of a binary tree can be computed by recursively determining the depth of its left and right subtrees. The depth of a node is defined as 1 plus the maximum depth of its children. This recursive approach allows you to explore all paths from the root to the leaf nodes and find the longest one.
+
+**Gotchas:** Be careful to handle edge cases where the tree is empty (i.e., root is null). In such cases, the maximum depth should be 0. Additionally, make sure to correctly manage the recursive calls to avoid stack overflow for very deep trees. Always check if the current node is null before trying to access its value or children.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the binary tree | Space: O(h) where h is the height of the tree (worst case O(n) for skewed tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Minimum Depth of Binary Tree — LC #111 | Depth of first leaf not deepest leaf → same DFS but return on first leaf reached | Yes — direct variant |
+| Diameter of Binary Tree — LC #543 | Longest path between any two nodes → same postorder DFS return height combine at each node | Yes — direct application |
+| Balanced Binary Tree — LC #110 | Check if height difference ≤ 1 at every node → same postorder height computation with validity check | Yes — direct application |
+| Maximum Depth of N-ary Tree — LC #559 | Multiple children not just two → same DFS max over all children instead of two | Yes — direct generalization |
+| Binary Tree Level Order Traversal — LC #102 | Level by level BFS → count total levels instead of max recursive depth | Partial — same answer different approach |
+| Binary Tree Maximum Path Sum — LC #124 | Maximum sum path not maximum depth → same postorder DFS different value tracked | Partial — same DFS structure |
+| Longest Univalue Path — LC #687 | Longest path with same value → same postorder height idea with value constraint | Partial — same DFS family |
+| Count Good Nodes in Binary Tree — LC #1448 | Count nodes where value ≥ all ancestors → same preorder DFS carry max down | Partial — same DFS family |
+
+**How this pattern scales:**
+- **Recursive postorder DFS** is the core trick — `return 1 + max(maxDepth(left), maxDepth(right))`. Base case returns 0 for null node. O(n) time O(h) space where h is tree height
+- **BFS alternative** — count levels using level order traversal. Increment depth counter after processing each level. Returns same answer in O(n) time O(w) space where w is max width. Prefer BFS when asked for minimum depth since it short circuits on first leaf
+- **Minimum depth gotcha** → LC #111 is NOT simply swapping max for min. A node with one null child is not a leaf — minimum depth must reach an actual leaf node with both children null. Using `min` naively returns 0 for any node with a null child producing wrong answers on skewed trees
+- **Postorder height pattern** → LC #543 (Diameter) and LC #110 (Balanced) both compute subtree heights in postorder then combine results at each node. LC #104 is the simplest form — diameter adds left height + right height, balanced checks their difference. All three use identical DFS structure with different combination logic
+- **Carry value down vs return value up** → maximum depth returns height up the tree (postorder). Count Good Nodes (LC #1448) carries the running maximum down the tree (preorder). These are the two fundamental DFS information flow directions — knowing which direction a problem needs determines the traversal order immediately
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int maxDepth(TreeNode* root) {
+        int max = 0;
+        if (root == nullptr){
+            return 0;
+        }
+        int left = maxDepth(root -> left);
+        int right = maxDepth(root -> right);
+        return std::max(left, right) + 1;
+    }
+};
+```
+
+## Balanced Binary Tree LC 110
+
+<!-- notecardId: 1780981581479 -->
+
+Given a binary tree, determine if it is height-balanced.
+
+ 
+
+Example 1:
+
+
+Input: root = [3,9,20,null,null,15,7]
+Output: true
+Example 2:
+
+
+Input: root = [1,2,2,3,3,null,null,4,4]
+Output: false
+Example 3:
+
+Input: root = []
+Output: true
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [0, 5000].
+-104 <= Node.val <= 104
+
+**Link**: [text](https://leetcode.com/problems/balanced-binary-tree/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS)
+
+**Approach:** Use a depth-first search (DFS) approach to determine if the binary tree is height-balanced. Define a recursive function that returns the height of the subtree if it is balanced, and -1 if it is not. For each node, recursively check the left and right subtrees. If either subtree is unbalanced (returns -1), propagate that value up. If both subtrees are balanced, return the maximum of their heights plus one for the current node.
+
+**Key Insight:** The key insight is that a binary tree is height-balanced if for every node, the difference in height between its left and right subtrees is at most 1. By using a recursive function that returns the height of the subtree or -1 if it is unbalanced, you can efficiently determine if the entire tree is balanced in a single pass.
+
+**Gotchas:** Be careful to handle edge cases where the tree is empty (i.e., root is null). In such cases, the tree is considered balanced, so return true. Additionally, make sure to correctly manage the recursive calls to avoid stack overflow for very deep trees. Always check if the current node is null before trying to access its value or children.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the binary tree | Space: O(h) where h is the height of the tree (worst case O(n) for skewed tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Maximum Depth of Binary Tree — LC #104 | Compute height only no balance check → same postorder DFS simpler return | Yes — foundation |
+| Diameter of Binary Tree — LC #543 | Longest path between nodes → same postorder height combination different metric | Yes — same pattern |
+| Binary Tree Maximum Path Sum — LC #124 | Maximum sum path → same postorder return value up combine at node | Yes — same DFS structure |
+| Count Complete Tree Nodes — LC #222 | Count nodes in complete tree → same height computation per subtree | Partial — same height idea |
+| Find Leaves of Binary Tree — LC #366 | Group nodes by height from bottom → same postorder height return | Yes — direct application |
+| Symmetric Tree — LC #101 | Check mirror symmetry not balance → same recursive pair comparison | Partial — same tree validation |
+| Minimum Depth of Binary Tree — LC #111 | Depth of first leaf → same DFS different termination condition | Partial — same DFS family |
+| N-ary Tree Level Order Traversal — LC #429 | Level order on multiple children tree → BFS not postorder DFS | No — different pattern |
+
+**How this pattern scales:**
+- **Early termination postorder** is the core trick — compute height in postorder but return -1 as a sentinel value the moment any subtree is unbalanced. Propagate -1 up the tree skipping all further computation. If final result is not -1 tree is balanced. O(n) time O(h) space
+- **Naive two pass is O(n²)** — calling `height()` and `isBalanced()` separately recomputes heights redundantly. Every node recomputes the height of its entire subtree. The single pass sentinel trick fuses both computations eliminating all redundant work
+- **Sentinel value pattern** — returning -1 to signal invalid state through recursion is a general technique. Whenever a recursive computation can fail early encode failure as a special return value that propagates up automatically. Same pattern appears in LC #543 and LC #124
+- **Postorder height family** → LC #104 returns raw height. LC #110 returns height or -1. LC #543 uses height to compute diameter at each node. LC #124 uses gain to compute max path at each node. All four share identical DFS skeleton — only the combination logic and return value differ
+- **Balance condition** — `abs(leftHeight - rightHeight) <= 1` must hold at EVERY node not just the root. A common wrong answer checks only the root or only one level deep. The postorder approach naturally checks every node since it builds from leaves up
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+private:
+    int getHeight(TreeNode* root){
+        //this is where postorder traversal comes in, because you need to calculate the height of the left and right child of the root node before you can calculate the height of the root node, because the height of the root node is the maximum height of the left and right child of the root node plus one,
+        // so you need to calculate the height of the left and right child of the root node before you can calculate the height of the root node
+
+        if (root == nullptr){
+            return 0;
+        }
+        int left = getHeight(root -> left); //recursively call the left side of the tree, this will return the height of the left child of the root node
+        if (left == -1) return -1; //call this like an early exit, if the left child of the root node is not balanced, then whole tree is not balanced, just return -1 and this will go through the entire recursive stack and return -1 for all the nodes, this will allow you to easily check if the tree is balanced or not, because if the getHeight function returns -1, 
+        //then it means that the tree is not balanced, so you can return false in the isBalanced function, otherwise you can return true in the isBalanced function
+        int right = getHeight(root -> right);
+        if (right == -1) return -1;
+        if(abs(left - right) > 1){
+            return -1; //at this moment, this is the detection of the first unbalanced node, if the height difference between the left and right child of the root node is greater than one, then it means that the tree is not balanced, so you can return -1 to indicate that the tree is not balanced.
+        }
+        return 1 + max(left,right);
+    }
+
+public:
+    bool isBalanced(TreeNode* root) {
+        if (root == nullptr){
+            return true;
+        }
+        int height = getHeight(root); //call it on the root node, and if -1 returned, not balanced, if any other number returned, then it is balanced and we get the height of the tree
+        if(height == -1){
+            return false;
+        }
+        return true;
+    }
+};
+```
+
+## Binary Tree Right Side View LC 199
+
+<!-- notecardId: 1780981968600 -->
+
+Given the root of a binary tree, imagine yourself standing on the right side of it, return the values of the nodes you can see ordered from top to bottom.
+
+ 
+
+Example 1:
+
+Input: root = [1,2,3,null,5,null,4]
+
+Output: [1,3,4]
+
+Explanation:
+
+
+
+Example 2:
+
+Input: root = [1,2,3,4,null,null,null,5]
+
+Output: [1,3,4,5]
+
+Explanation:
+
+
+
+Example 3:
+
+Input: root = [1,null,3]
+
+Output: [1,3]
+
+Example 4:
+
+Input: root = []
+
+Output: []
+
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [0, 100].
+-100 <= Node.val <= 100
+
+**Link**: [text](https://leetcode.com/problems/binary-tree-right-side-view/)
+
+%
+
+**Pattern:** Tree Traversal, Breadth-First Search (BFS)
+
+**Approach:** Use a breadth-first search (BFS) approach to traverse the binary tree level by level. For each level, capture the last node's value, which represents the rightmost node visible from that level. Enqueue the left and right children of each node as you process them to ensure you are traversing the tree in the correct order.
+
+**Key Insight:** The key insight is that the right side view of a binary tree can be obtained by performing a level order traversal (BFS) and recording the last node's value at each level. This approach allows you to efficiently capture the visible nodes from the right side without needing to perform a more complex depth-first search.
+
+**Gotchas:** Be careful to handle edge cases where the tree is empty (i.e., root is null). In such cases, the result should be an empty list. Additionally, make sure to correctly manage the queue and the current level's node count to avoid infinite loops or null pointer exceptions. Always check if the current node is null before trying to access its value or children.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the binary tree | Space: O(m) where m is the maximum number of nodes at any level (worst case O(n/2) for a complete binary tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Binary Tree Level Order Traversal — LC #102 | Collect all nodes per level → same BFS collect last node only | Yes — foundation |
+| Binary Tree Zigzag Level Order — LC #103 | Alternate direction each level → same BFS flip collection direction | Yes — same pattern |
+| Binary Tree Left Side View — variant | Collect first node per level → same BFS collect first not last | Yes — direct variant |
+| Average of Levels in Binary Tree — LC #637 | Average per level not rightmost → same BFS different aggregation | Yes — same pattern |
+| Maximum Width of Binary Tree — LC #662 | Width between leftmost and rightmost → same BFS track indices per level | Partial — same level idea |
+| Populating Next Right Pointers — LC #116 | Wire next pointers within level → same BFS process level by level | Partial — same level structure |
+| Find Bottom Left Tree Value — LC #513 | Leftmost value of last level → same BFS collect first node of last level | Yes — direct variant |
+| Vertical Order Traversal — LC #987 | Group nodes by column not level → same BFS with column index tracking | Partial — same BFS family |
+
+**How this pattern scales:**
+- **BFS collect last node per level** is the core trick — same level size snapshot as LC #102 but only append `node.val` when `i == levelSize - 1` inside the inner loop. O(n) time O(w) space where w is maximum width
+- **DFS alternative** — preorder DFS carrying depth as parameter. Maintain result list, when `depth == result.size()` append current node (first visit at this depth is rightmost in right-first preorder). Visit right child before left. O(n) time O(h) space — better space than BFS for skewed trees
+- **Right first preorder DFS** — visiting right before left in DFS means the first node encountered at each depth is always the rightmost visible node. Append to result only on first visit at each depth using `depth == result.size()` as the condition
+- **Left side view** is a one line change — BFS collect first node instead of last (`i == 0`). DFS visit left before right and same first visit condition. Knowing both variants cold shows complete understanding of the pattern
+- **Find Bottom Left (LC #513)** is the most elegant variant — BFS naturally processes left before right so the first node of the last level is automatically the bottom left. Collect first node of last level instead of last node of every level
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<int> rightSideView(TreeNode* root) {
+        vector<int> ans;
+        vector<vector<int>> BFS;
+        std::queue<TreeNode*> q1;
+        if (root == nullptr) return ans;
+        q1.push(root);
+        while(!q1.empty()){
+            vector<int> currNodes;
+            int currLevel = q1.size();
+            for(int i = 0; i < currLevel; i++){
+                TreeNode* currNode = q1.front();
+                q1.pop();
+                currNodes.push_back(currNode->val);
+                if(currNode ->left) q1.push(currNode->left);
+                if(currNode ->right) q1.push(currNode->right);
+            }
+            BFS.push_back(currNodes);
+        } //up till here, literally just BFS
+        for(auto vec : BFS){
+            ans.push_back(vec[vec.size()- 1]); //take the last element, this will be the rightmost element at each level and hence what we can see from the right side
+        }
+        return ans; //return answer vector
+    }
+};
+```
+
+## Invert Binary Tree LC 226
+
+<!-- notecardId: 1780982463073 -->
+
+Given the root of a binary tree, invert the tree, and return its root.
+
+ 
+
+Example 1:
+
+
+Input: root = [4,2,7,1,3,6,9]
+Output: [4,7,2,9,6,3,1]
+Example 2:
+
+
+Input: root = [2,1,3]
+Output: [2,3,1]
+Example 3:
+
+Input: root = []
+Output: []
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [0, 100].
+-100 <= Node.val <= 100
+
+**Link**: [text](https://leetcode.com/problems/invert-binary-tree/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS)
+
+**Approach:** Use a depth-first search (DFS) approach to traverse the binary tree and swap the left and right children of each node. This can be done recursively by first inverting the left and right subtrees and then swapping them at the current node.
+
+**Key Insight:** The key insight is that inverting a binary tree can be achieved by recursively swapping the left and right children of each node. By performing a postorder traversal (processing children before the parent), you can ensure that the entire subtree is inverted before swapping at the current node.
+
+**Gotchas:** Be careful to handle edge cases where the tree is empty (i.e., root is null). In such cases, simply return null. Additionally, make sure to correctly manage the recursive calls to avoid stack overflow for very deep trees. Always check if the current node is null before trying to access its value or children.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the binary tree | Space: O(h) where h is the height of the tree (worst case O(n) for skewed tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Binary Tree Level Order Traversal — LC #102 | Collect all nodes per level → same BFS collect last node only | Yes — foundation |
+| Binary Tree Zigzag Level Order — LC #103 | Alternate direction each level → same BFS flip collection direction | Yes — same pattern |
+| Binary Tree Left Side View — variant | Collect first node per level → same BFS collect first not last | Yes — direct variant |
+| Average of Levels in Binary Tree — LC #637 | Average per level not rightmost → same BFS different aggregation | Yes — same pattern |
+| Maximum Width of Binary Tree — LC #662 | Width between leftmost and rightmost → same BFS track indices per level | Partial — same level idea |
+| Populating Next Right Pointers — LC #116 | Wire next pointers within level → same BFS process level by level | Partial — same level structure |
+| Find Bottom Left Tree Value — LC #513 | Leftmost value of last level → same BFS collect first node of last level | Yes — direct variant |
+| Vertical Order Traversal — LC #987 | Group nodes by column not level → same BFS with column index tracking | Partial — same BFS family |
+
+**How this pattern scales:**
+- **BFS collect last node per level** is the core trick — same level size snapshot as LC #102 but only append `node.val` when `i == levelSize - 1` inside the inner loop. O(n) time O(w) space where w is maximum width
+- **DFS alternative** — preorder DFS carrying depth as parameter. Maintain result list, when `depth == result.size()` append current node (first visit at this depth is rightmost in right-first preorder). Visit right child before left. O(n) time O(h) space — better space than BFS for skewed trees
+- **Right first preorder DFS** — visiting right before left in DFS means the first node encountered at each depth is always the rightmost visible node. Append to result only on first visit at each depth using `depth == result.size()` as the condition
+- **Left side view** is a one line change — BFS collect first node instead of last (`i == 0`). DFS visit left before right and same first visit condition. Knowing both variants cold shows complete understanding of the pattern
+- **Find Bottom Left (LC #513)** is the most elegant variant — BFS naturally processes left before right so the first node of the last level is automatically the bottom left. Collect first node of last level instead of last node of every level
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* invertTree(TreeNode* root) {
+        if (root == nullptr){
+            return root;
+        }
+        TreeNode* temp = root -> right; //need to store temporary variable to store the right child of the root node,
+        // because you need to swap the left and right child of the root node, so you need to store the right child in a temporary variable, so you can assign it to the left child after you have assigned the left child to the right child
+        root -> right = root -> left;
+        root -> left = temp;
+        invertTree(root->left); //after you have swapped the left and right child of the root node, 
+        //you need to recursively call the function on the left and right child of the root node, because you need to 
+        //invert the left and right child of the root node, so you need to recursively call the function on the left and right child of the root node, 
+        //this will allow you to invert the left and right child of the root node, 
+        //and then return the root node after you have inverted the left and right child of the root node
+        invertTree(root->right);
+        return root;
+    }
+};
+```

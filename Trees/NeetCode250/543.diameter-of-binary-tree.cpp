@@ -39,6 +39,9 @@ int maxDepth(TreeNode* root){
 public:
     int diameterOfBinaryTree(TreeNode* root) {
         maxDiameter = 0;
+        //this is a postorder traversal question, because you need to calculate the maximum depth of the left and right child of the root node before you can calculate the diameter of the tree, 
+        //because the diameter of the tree is the maximum depth of the left side of the tree plus the maximum depth of the right side of the tree, so you need to calculate the maximum depth of the left and right child of the root node before 
+        //you can calculate the diameter of the tree, so this is a postorder traversal question, because you need to calculate the maximum depth of the left and right child of the root node before you can calculate the diameter of the tree
         maxDepth(root); //call the maxDepth function to calculate the maximum depth of the tree, this will also update the maxDiameter variable with the maximum diameter of the tree,
         // because the diameter of the tree is the maximum depth of the left side of the tree plus the maximum depth of the right side of the tree, so you need to call the maxDepth function to calculate the maximum depth of the tree, and then return the maxDiameter variable after you have calculated the maximum depth of the tree
         return maxDiameter;

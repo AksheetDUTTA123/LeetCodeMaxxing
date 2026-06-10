@@ -21,7 +21,8 @@ using namespace std;
 class Solution {
 public:
     TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
-        if (!root) return nullptr;
+        if (!root) return nullptr; //in terms of traversal, this is a inorder traversal question, because you need to check the left and right child of the current node before you check the value of the current node, because if the value of the current node 
+        //is between the values of p and q, then you can return the current node as the ancestor, but if you check the value of the current node before you check the left and right child, then you might miss the ancestor if it is not between the values of p and q, so this is an inorder traversal question, because you need to check the left and right child of the current node before you check the value of the current node
         TreeNode* curr = root;
         while(curr != nullptr){ //keep traversing until condition met, this is the iterative solution, you can also do this recursively by checking the same conditions in the recursive calls
         if(p->val > curr->val && q->val > curr -> val){ //if both p and q are greater than what we are checking
