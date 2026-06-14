@@ -9853,6 +9853,8 @@ public:
 
 ## Binary Tree Right Side View LC 199
 
+<!-- notecardId: 1781469255895 -->
+
 <!-- notecardId: 1780981968600 -->
 
 Given the root of a binary tree, imagine yourself standing on the right side of it, return the values of the nodes you can see ordered from top to bottom.
@@ -10067,3 +10069,444 @@ public:
     }
 };
 ```
+
+## Validate Binary Search Tree LC 98
+
+<!-- notecardId: 1781466524393 -->
+
+Given the root of a binary tree, determine if it is a valid binary search tree (BST).
+
+A valid BST is defined as follows:
+
+The left subtree of a node contains only nodes with keys strictly less than the node's key.
+The right subtree of a node contains only nodes with keys strictly greater than the node's key.
+Both the left and right subtrees must also be binary search trees.
+ 
+
+Example 1:
+
+
+Input: root = [2,1,3]
+Output: true
+Example 2:
+
+
+Input: root = [5,1,4,null,null,3,6]
+Output: false
+Explanation: The root node's value is 5 but its right child's value is 4.
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [1, 104].
+-231 <= Node.val <= 231 - 1
+
+**Link**: [text](https://leetcode.com/problems/validate-binary-search-tree/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS), Inorder Traversal
+
+**Approach:** Use an inorder traversal to check if the values of the nodes are in strictly increasing order. During the traversal, keep track of the previously visited node's value. If at any point the current node's value is not greater than the previous node's value, then the tree is not a valid binary search tree (BST).
+
+**Key Insight:** The key insight is that an inorder traversal of a binary search tree (BST) will yield the node values in sorted order. Therefore, by performing an inorder traversal and comparing each node's value to the previously visited node's value, you can determine if the tree satisfies the BST properties.
+
+**Gotchas:** Be careful to handle edge cases where the tree is empty (i.e., root is null). In such cases, the tree is considered a valid BST, so return true. Additionally, make sure to correctly manage the recursive calls to avoid stack overflow for very deep trees. Always check if the current node is null before trying to access its value or children. A bit dumb but keep note of the constraints, use long long for previous value to avoid overflow issues when comparing with node values at the extreme ends of the integer range.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the binary tree | Space: O(h) where h is the height of the tree (worst case O(n) for skewed tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Binary Tree Inorder Traversal — LC #94 | Inorder traversal without validation → same inorder DFS without range check | Yes — foundation |
+| Kth Smallest Element in BST — LC #230 | Kth element in inorder sequence → same inorder traversal stop at kth | Yes — direct application |
+| Binary Search Tree Iterator — LC #173 | Inorder on demand → same iterative inorder stack held between calls | Yes — direct application |
+| Recover Binary Search Tree — LC #99 | Find and fix swapped nodes → same inorder traversal track prev node detect violation | Yes — direct upgrade |
+| Insert into BST — LC #701 | Insert node maintaining BST property → same range based navigation | Partial — same BST property |
+| Delete Node in BST — LC #450 | Delete node maintaining BST property → same range navigation plus restructuring | Partial — same BST property |
+| Lowest Common Ancestor of BST — LC #235 | LCA using BST ordering property → same range comparison different goal | Partial — same BST property |
+| Convert Sorted Array to BST — LC #108 | Build BST from sorted array → same BST property different direction | Partial — same BST family |
+
+**How this pattern scales:**
+- **Range propagation** is the core trick — pass valid range `(min, max)` down the tree. At each node check `min < node.val < max`. Recurse left with `(min, node.val)` and right with `(node.val, max)`. Initialize with `(-infinity, +infinity)`. O(n) time O(h) space
+- **Inorder strictly increasing alternative** — inorder traversal tracking previous node value. Each new value must be strictly greater than previous. Elegant but same O(n) complexity — range propagation is more explicit and easier to explain under pressure
+- **Common wrong answer** — checking only `left.val < root.val < right.val` at each node fails on cases like `[5, 4, 6, null, null, 3, 7]` where 3 is in the right subtree of 5 but left subtree of 6. The range must propagate from all ancestors not just the immediate parent
+- **Strict inequality matters** — BST requires strictly less than not less than or equal. Duplicates make a tree invalid. Missing the strict inequality produces wrong answers on inputs with duplicate values
+- **Recover BST upgrade** → LC #99 finds exactly two swapped nodes using the same inorder traversal. First violation `prev.val > curr.val` marks the first swapped node. Second violation marks the second. Swap their values to fix. Same inorder traversal with two additional tracking variables
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+private:
+    long long prev = LLONG_MIN;
+public:
+    bool isValidBST(TreeNode* root) {
+        if (!root) return true;
+
+        if(!isValidBST(root->left)) return false;
+
+        if(root->val <= prev)   return false;
+        prev = root -> val;
+
+        if(!isValidBST(root->right)) return false;
+
+        return true;
+    }
+     
+};
+```
+
+## Same Tree LC 100
+
+<!-- notecardId: 1781466999788 -->
+
+Given the roots of two binary trees p and q, write a function to check if they are the same or not.
+
+Two binary trees are considered the same if they are structurally identical, and the nodes have the same value.
+
+ 
+
+Example 1:
+
+
+Input: p = [1,2,3], q = [1,2,3]
+Output: true
+Example 2:
+
+
+Input: p = [1,2], q = [1,null,2]
+Output: false
+Example 3:
+
+
+Input: p = [1,2,1], q = [1,1,2]
+Output: false
+ 
+
+Constraints:
+
+The number of nodes in both trees is in the range [0, 100].
+-104 <= Node.val <= 104
+
+**Link**: [text](https://leetcode.com/problems/same-tree/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS),  Preorder Traversal
+
+**Approach:** Use a depth-first search (DFS) approach to traverse both trees simultaneously. At each step, compare the current nodes of both trees. If the values are different or if one node is null while the other is not, then the trees are not the same. If both nodes are null, continue checking the next nodes. If all corresponding nodes are identical, then the trees are the same. This is a classic example of preorder traversal as you check the node and then you check the corresponding children.
+
+**Key Insight:** The key insight is that two binary trees are the same if they have the same structure and the same node values. By performing a simultaneous traversal of both trees, you can directly compare corresponding nodes to determine if the trees are identical.
+
+**Gotchas:** Be careful to handle edge cases where one or both trees are empty (i.e., root is null). In such cases, if both are null, they are the same, so return true. If one is null and the other is not, they are not the same, so return false. Additionally, make sure to correctly manage the recursive calls to avoid stack overflow for very deep trees. Always check if the current nodes are null before trying to access their values or children.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the smaller tree | Space: O(h) where h is the height of the tree (worst case O(n) for skewed tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Symmetric Tree — LC #101 | Check if tree mirrors itself → same recursive pair comparison different pairing | Yes — direct variant |
+| Subtree of Another Tree — LC #572 | Check if one tree is subtree of another → same LC #100 as subroutine at every node | Yes — direct application |
+| Invert Binary Tree — LC #226 | Mirror tree not compare → same recursive traversal different operation | Partial — same recursive structure |
+| Merge Two Binary Trees — LC #617 | Merge not compare → same simultaneous two tree traversal different operation | Yes — same traversal pattern |
+| Leaf Similar Trees — LC #872 | Compare leaf sequences not full structure → same DFS collect leaves compare | Partial — same comparison idea |
+| Find Duplicate Subtrees — LC #652 | Find all duplicate subtrees → same structure comparison serialize subtrees | Partial — same equality idea |
+| Flip Equivalent Binary Trees — LC #951 | Trees equivalent under flips → same recursive comparison allow swapped children | Yes — direct upgrade |
+| Count Univalue Subtrees — LC #250 | Count subtrees where all nodes equal → same postorder validation different goal | Partial — same recursive structure |
+
+**How this pattern scales:**
+- **Simultaneous recursive traversal** is the core trick — recurse on both trees together checking three conditions at each node: both null (return true), one null (return false), values differ (return false). Otherwise recurse on both left and right pairs. O(n) time O(h) space
+- **Three base cases before recursion** — null/null, null/non-null, value mismatch must all be handled before recursing. Missing any one produces null pointer exceptions or wrong answers on edge cases
+- **Subtree connection** → LC #572 calls LC #100 as a subroutine at every node of the larger tree. O(m*n) time where m and n are tree sizes. KMP or tree hashing reduces to O(m+n) but the naive LC #100 subroutine approach is always acceptable in interviews
+- **Symmetric tree variant** → LC #101 pairs `(left.left, right.right)` and `(left.right, right.left)` instead of `(left.left, right.left)` and `(left.right, right.right)`. Same three base cases same recursive structure — one line change in the pairing
+- **Serialization alternative** → serialize both trees to strings using preorder with null markers, compare strings. O(n) time O(n) space. Less elegant but shows awareness of alternative approaches — worth mentioning as a follow-up
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+//this is a preorder traversal question, the way you could tell here is that you need to check the value of the current node before you check the left and right child, because if the value of the current node is not the same,
+// then you can return false immediately without checking the left and right child, so this is a preorder traversal question, because you need to check the value of the current node before you check the left and right child, if it was a postorder traversal question, 
+//then you would need to check the left and right child before you check the value of the current node, and if it was an inorder traversal question, then you would need to check the left child before you check the value of the current node, and then check the right child after you check the value of the current node
+    bool isSameTree(TreeNode* p, TreeNode* q) {
+        if(p == nullptr && q == nullptr) return true; //empty tree
+
+        if((p == nullptr || q == nullptr) || p->val != q->val) return false;
+
+        return isSameTree(p->left, q->left) && isSameTree(p->right, q->right);
+    }
+};
+```
+
+## Construct Binary Tree from Preorder and Inorder Traversal LC 105
+
+<!-- notecardId: 1781467210698 -->
+
+Given two integer arrays preorder and inorder where preorder is the preorder traversal of a binary tree and inorder is the inorder traversal of the same tree, construct and return the binary tree.
+
+ 
+
+Example 1:
+
+
+Input: preorder = [3,9,20,15,7], inorder = [9,3,15,20,7]
+Output: [3,9,20,null,null,15,7]
+Example 2:
+
+Input: preorder = [-1], inorder = [-1]
+Output: [-1]
+ 
+
+Constraints:
+
+1 <= preorder.length <= 3000
+inorder.length == preorder.length
+-3000 <= preorder[i], inorder[i] <= 3000
+preorder and inorder consist of unique values.
+Each value of inorder also appears in preorder.
+preorder is guaranteed to be the preorder traversal of the tree.
+inorder is guaranteed to be the inorder traversal of the tree.
+
+**Link**: [text](https://leetcode.com/problems/construct-binary-tree-from-preorder-and-inorder-traversal/)
+
+%
+
+**Pattern:** Tree Construction, Depth-First Search (DFS)
+
+**Approach:** Use the properties of preorder and inorder traversals to construct the binary tree. The first element of the preorder array is the root of the tree. Find this root value in the inorder array to determine the left and right subtrees. Recursively apply this process to construct the left and right subtrees.
+
+**Key Insight:** The key insight is that the preorder traversal gives you the root node first, while the inorder traversal allows you to determine the boundary between the left and right subtrees. By recursively applying this logic, you can reconstruct the entire binary tree. You gave to go through and store all of the inorder elements in a hash map to get O(1) look up time for the index of the root in the inorder array, otherwise you would have to do a linear search for the root in the inorder array at each step which would lead to O(n^2) time complexity. 
+
+**Gotchas:** Be careful to handle edge cases where the input arrays are empty. In such cases, return null. Additionally, make sure to correctly manage the recursive calls to avoid stack overflow for very deep trees. Always check if the current indices are within bounds before trying to access elements in the arrays.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the binary tree | Space: O(n) for the hash map and O(h) for the recursion stack (worst case O(n) for skewed tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Construct Binary Tree from Inorder and Postorder — LC #106 | Root is last element of postorder not first → same split logic mirror approach | Yes — direct variant |
+| Construct Binary Tree from Preorder and Postorder — LC #889 | No inorder given → multiple valid trees possible same recursive split | Partial — same construction idea |
+| Serialize and Deserialize Binary Tree — LC #297 | Encode decode with null markers → preorder traversal same root first property | Partial — same preorder idea |
+| Verify Preorder Sequence in BST — LC #255 | Validate not construct → same preorder root identification different goal | Partial — same preorder property |
+| Binary Tree Inorder Traversal — LC #94 | Traverse not construct → same inorder left root right property | Yes — foundation |
+| Binary Tree Preorder Traversal — LC #144 | Traverse not construct → same preorder root left right property | Yes — foundation |
+| Recover Binary Search Tree — LC #99 | Fix swapped nodes using inorder → same inorder property different goal | Partial — same inorder idea |
+| Maximum Binary Tree — LC #654 | Build tree from array using maximum as root → same recursive split different root selection | Partial — same construction family |
+
+**How this pattern scales:**
+- **Root identification + inorder split** is the core trick — first element of preorder is always root. Find root in inorder array — everything left is left subtree everything right is right subtree. Recurse with corresponding preorder and inorder slices. O(n²) naive O(n) with hash map
+- **Hash map optimization is mandatory** — naive linear search for root in inorder is O(n) per call producing O(n²) total. Precompute `inorderIndex = {val: index}` hash map before recursion. Root lookup becomes O(1) reducing total to O(n)
+- **Left subtree size is the key** — `leftSize = inorderRootIndex - inorderLeft`. This single value determines exactly how many elements belong to the left subtree in both preorder and inorder arrays. Getting this calculation wrong produces incorrect splits
+- **LC #106 mirror** → postorder gives root as LAST element not first. Everything else is identical — find root in inorder compute left size split both arrays recurse. The only code change is `root = postorder[postRight]` instead of `postorder[postLeft]`
+- **Recursive index passing** — pass `preLeft preRight inorderLeft inorderRight` as indices instead of slicing arrays. Slicing creates O(n) copies at each level blowing space to O(n²). Index passing keeps space at O(n) for the hash map plus O(h) for the call stack
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+private:
+    int preorderIndex = 0;
+    unordered_map<int, int> inorderIndexMap; //this will allow us to quickly find the index of the root node in the inorder traversal, this is important because we need to know where to split the inorder traversal into left and right subtrees, this will allow us to quickly find the index of the root node in the inorder traversal, this is important because we need to know where to split the inorder traversal into left and right subtrees
+
+    TreeNode * buildTreeHelper(vector<int>& preorder, int left, int right){
+        if(left > right) return nullptr; //base case for recursion, if the left index is greater than the right index, then it means that there are no nodes in this subtree, so we can return null
+
+        int rootValue = preorder[preorderIndex++]; //get the value of the root node from the preorder traversal, this is important because the first value in the preorder traversal is always the root node, so we can get the value of the root node from the preorder traversal, and then we can use this value to find the index of the root node in the inorder traversal, this will allow us to split the inorder traversal into left and right subtrees
+
+        TreeNode* root = new TreeNode(rootValue); //create a new tree node with the value of the root node
+
+        int inorderIndex = inorderIndexMap[rootValue]; //get the index of the root node in the inorder traversal, this is important because we need to know where to split the inorder traversal into left and right subtrees, this will allow us to quickly find the index of the root node in the inorder traversal, this is important because we need to know where to split the inorder traversal into left and right subtrees
+
+        root -> left = buildTreeHelper(preorder, left, inorderIndex - 1); //recursively build the left subtree, this will allow us to build the left subtree of the current root node, this will allow us to build the left subtree of the current root node
+        root -> right = buildTreeHelper(preorder, inorderIndex + 1, right); //recursively build the right subtree, this will allow us to build the right subtree of the current root node, this will allow us to build the right subtree of the current root node
+
+        return root; //return the current root node
+    }
+
+public:
+    TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
+        preorderIndex = 0; //reset the preorder index to 0, this is important because we need to start from the first value in the preorder traversal, this is important because the first value in the preorder traversal is always the root node, so we can get the value of the root node from the preorder traversal, and then we can use this value to find the index of the root node in the inorder traversal, this will allow us to split the inorder traversal into left and right subtrees
+        for(int i = 0; i < inorder.size(); i++){
+            inorderIndexMap[inorder[i]] = i; //build the index map for the inorder traversal, this will allow us to quickly find the index of the root node in the inorder traversal, this is important because we need to know where to split the inorder traversal into left and right subtrees, this will allow us to quickly find the index of the root node in the inorder traversal, this is important because we need to know where to split the inorder traversal into left and right subtrees
+        }
+        
+        return buildTreeHelper(preorder, 0, inorder.size() - 1); //call the helper function to build the tree, this will allow us to build the tree from the preorder and inorder traversals, this will allow us to build the tree from the preorder and inorder traversals
+    }
+};
+
+```
+
+## Binary Tree Maximum Path Sum LC 124
+
+<!-- notecardId: 1781468879721 -->
+
+A path in a binary tree is a sequence of nodes where each pair of adjacent nodes in the sequence has an edge connecting them. A node can only appear in the sequence at most once. Note that the path does not need to pass through the root.
+
+The path sum of a path is the sum of the node's values in the path.
+
+Given the root of a binary tree, return the maximum path sum of any non-empty path.
+
+ 
+
+Example 1:
+
+
+Input: root = [1,2,3]
+Output: 6
+Explanation: The optimal path is 2 -> 1 -> 3 with a path sum of 2 + 1 + 3 = 6.
+Example 2:
+
+
+Input: root = [-10,9,20,null,null,15,7]
+Output: 42
+Explanation: The optimal path is 15 -> 20 -> 7 with a path sum of 15 + 20 + 7 = 42.
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [1, 3 * 104].
+-1000 <= Node.val <= 1000
+
+**Link**: [text](https://leetcode.com/problems/binary-tree-maximum-path-sum/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS), Postorder Traversal
+
+**Approach:** Use a depth-first search (DFS) approach to traverse the binary tree and calculate the maximum path sum. At each node, compute the maximum path sum that can be obtained by including the current node and possibly extending to one of its children. Update a global variable to keep track of the maximum path sum found so far. This is a postorder traversal because you need to compute the values from the children before you can compute the value for the current node.
+
+**Key Insight:** The key insight is that the maximum path sum at any node can be calculated by considering the maximum path sums from its left and right children. The path can either include the current node alone, or it can extend to one of its children, or it can form a path that goes through the current node connecting both children. By keeping track of the maximum path sum at each node and updating a global maximum, you can find the overall maximum path sum in the tree.
+
+**Gotchas:** Be careful to handle edge cases where the tree has only one node or where all node values are negative. In such cases, the maximum path sum would be the value of the single node or the least negative value, respectively. Additionally, make sure to correctly manage the recursive calls to avoid stack overflow for very deep trees. Always check if the current node is null before trying to access its value or children.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the binary tree | Space: O(h) where h is the height of the tree (worst case O(n) for skewed tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Maximum Depth of Binary Tree — LC #104 | Return height not max path sum → same postorder DFS simpler return | Yes — foundation |
+| Diameter of Binary Tree — LC #543 | Longest path in node count not sum → same postorder combine left right different metric | Yes — direct variant |
+| Balanced Binary Tree — LC #110 | Check height difference not max sum → same postorder height return sentinel on fail | Partial — same DFS structure |
+| Path Sum — LC #112 | Check if root to leaf sum equals target → same DFS different path constraint | Partial — same path idea |
+| Path Sum II — LC #113 | Collect all root to leaf paths → same DFS carry running sum backtrack | Partial — same path family |
+| Maximum Sum BST in Binary Tree — LC #1373 | Maximum sum BST subtree → same postorder return multiple values up tree | Yes — same pattern |
+| Binary Tree Maximum Path Sum II | Max path from root to any node → simpler no left right combination needed | Partial — same path idea |
+| Longest Univalue Path — LC #687 | Longest path with same value → same postorder extension logic value constraint | Partial — same DFS family |
+
+**How this pattern scales:**
+- **Global max + local return split** is the core trick — maintain a global `maxSum` variable. At each node compute `leftGain = max(0, dfs(left))` and `rightGain = max(0, dfs(right))`. Update `maxSum = max(maxSum, node.val + leftGain + rightGain)`. Return `node.val + max(leftGain, rightGain)` to parent — only one branch can extend upward. O(n) time O(h) space
+- **Two separate computations at each node** — the path through the current node (used to update global max, can use both branches) vs the path extended to parent (can only use one branch since a path cannot fork). Conflating these two is the single most common conceptual mistake on this problem
+- **Max with zero trick** — `max(0, dfs(child))` treats negative subtrees as dead weight by clamping their contribution to zero. Any path that would decrease the sum is simply not taken. This elegantly handles all negative value cases without special casing
+- **Diameter connection** → LC #543 is structurally identical — `leftGain + rightGain` becomes `leftHeight + rightHeight` and the global max tracks longest path instead of maximum sum. Same global max + local return split, same two computation insight, different metric
+- **Multiple return values pattern** → LC #1373 (Maximum Sum BST) needs to return sum, min, max, and validity up the tree simultaneously. Use a tuple or array return instead of a single int. Same postorder structure, richer return type
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+
+private: //this question is a postorder traversal question, we need to deal with the left and right subtrees 
+//before dealing with the root node, because we need to calculate the maximum path sum of the left and right subtrees before we can calculate 
+//the maximum path sum of the root node
+int globalMax = INT_MIN;
+    int pathFromSubTree(TreeNode* root){
+        if(root == nullptr) return 0;
+
+        int leftSum = max(0, pathFromSubTree(root->left)); //get the leftSum of the leftSubtree, ignore if negative
+        int rightSum = max(0, pathFromSubTree(root->right));
+        int bridgeSum = root->val + leftSum + rightSum; //calculate the path sum of the path that goes through the root node, which is the value of the root node plus the leftSum and rightSum
+        //the bridge tells us the maximum path sum of the path that goes through the root node, which is the value of the root node plus the leftSum and rightSum, we need to compare this with the globalMax,
+        // because this could be the maximum path sum of the entire tree
+
+        //bridgeSum is if this is where we are allowing the path to split, we can only split once, we can only split at one node, which is the root node in this case, we cannot split at any other node in the left or right subtrees, 
+        //because that would violate the definition of a path, which is a sequence of nodes where each pair of adjacent nodes in the sequence has an edge connecting them, and a path can only split at one node, which is the root node in this case
+        globalMax = max(globalMax, bridgeSum);
+        return root->val + max(leftSum, rightSum); //we return this because this is the maximum path sum of the path that goes from the root node to any leaf node in the subtree, 
+        //we return this to the node above, because we assume that the node above will have the option to split, if the node above decides to split, then it will use the leftSum and rightSum that we calculated here, if the node above decides not to split, then it will just use the maximum path sum of the path that goes from the root node to any leaf node in the subtree, which is what we are returning here
+
+    }
+public:
+    int maxPathSum(TreeNode* root) {
+        pathFromSubTree(root); //kick off recursion
+        return globalMax; //this is the stored answer
+    }
+};
+```
+
+## Kth smallest element in a BST LC 230
+
+<!-- notecardId: 1781469255895 -->
+
+Given the root of a binary search tree, and an integer k, return the kth smallest value (1-indexed) of all the values of the nodes in the tree.
+
+ 
+
+Example 1:
+
+
+Input: root = [3,1,4,null,2], k = 1
+Output: 1
+Example 2:
+
+
+Input: root = [5,3,6,2,4,null,null,1], k = 3
+Output: 3
+ 
+
+Constraints:
+
+The number of nodes in the tree is n.
+1 <= k <= n <= 104
+0 <= Node.val <= 104
+ 
+
+Follow up: If the BST is modified often (i.e., we can do insert and delete operations) and you need to find the kth smallest frequently, how would you optimize?
+
+**Link**: [text](https://leetcode.com/problems/kth-smallest-element-in-a-bst/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS), Inorder Traversal
+
