@@ -10510,3 +10510,1267 @@ Follow up: If the BST is modified often (i.e., we can do insert and delete opera
 
 **Pattern:** Tree Traversal, Depth-First Search (DFS), Inorder Traversal
 
+**Approach:** Use an inorder traversal to visit the nodes of the binary search tree (BST) in sorted order. Keep a count of the nodes visited and return the value of the kth node visited. This is an inorder traversal because in a BST, the inorder traversal visits nodes in ascending order.
+
+**Key Insight:** The key insight is that an inorder traversal of a binary search tree (BST) will yield the node values in sorted order. Therefore, by performing an inorder traversal and counting the nodes visited, you can directly access the kth smallest element when the count reaches k. You first have to keep traversing to the left most element, and then go inorder until you reach the kth element.
+
+**Gotchas:** Be careful to handle edge cases where k is out of bounds (e.g., k is less than 1 or greater than the number of nodes in the tree). In such cases, you may want to return an error value or throw an exception. Additionally, make sure to correctly manage the recursive calls to avoid stack overflow for very deep trees. Always check if the current node is null before trying to access its value or children.
+
+**Complexity:** Time: O(n) in the worst case where n is the number of nodes in the binary tree (if k is equal to n) | Space: O(h) where h is the height of the tree (worst case O(n) for skewed tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Binary Tree Inorder Traversal — LC #94 | Full inorder traversal no early stop → same iterative stack different termination | Yes — foundation |
+| Binary Search Tree Iterator — LC #173 | Inorder on demand → same iterative inorder stack held between next() calls | Yes — direct variant |
+| Validate Binary Search Tree — LC #98 | Inorder must be strictly increasing → same inorder traversal different check | Yes — same pattern |
+| Kth Largest Element in Array — LC #215 | Kth largest in unsorted array → QuickSelect or heap no BST property | No — different pattern |
+| Kth Largest Element in BST — variant | Kth largest not smallest → same inorder but right first or reverse inorder | Yes — direct variant |
+| Count of Smaller Numbers After Self — LC #315 | Count smaller elements → modified merge sort or BIT no BST traversal | No — different pattern |
+| Find Mode in BST — LC #501 | Most frequent element → same inorder traversal track frequency | Yes — same pattern |
+| Balance a BST — LC #1382 | Rebalance BST → same inorder collect nodes rebuild | Yes — same inorder application |
+
+**How this pattern scales:**
+- **Iterative inorder with early termination** is the core trick — same iterative inorder stack as LC #94 but decrement k on each pop and return immediately when k reaches zero. No need to traverse the entire tree. O(k + h) time O(h) space where h is tree height
+- **BST inorder is sorted** — inorder traversal of BST always produces ascending sequence. Kth element popped from iterative inorder is exactly the kth smallest. This single property collapses the problem to a traversal with a counter
+- **Augmented BST follow-up** — if the tree is frequently modified and kth smallest queried often augment each node with `leftSize` (count of nodes in left subtree). Binary search using leftSize to find kth in O(h) without full traversal. Worth mentioning as a system design follow-up
+- **BST Iterator connection** → LC #173 is this exact iterative inorder stack exposed as an API. `next()` pops one element from the stack exactly as the early termination does here. If you implement LC #173 first LC #230 is just calling `next()` k times
+- **Kth largest variant** — swap left and right in the traversal (right first preorder gives descending order) or collect full inorder and index from the end. Same stack logic, mirrored traversal direction
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+    //to optimize, store the size of the left subtree in each node, then you can just compare k with the size of the left subtree to know whether to go left, right, or return the current node, this will allow you to find the kth smallest element in O(log n) time, because you will only need to go down the tree once, and you will not need to do an inorder traversal of the entire tree, this is a very clever optimization that can be done if you are allowed to modify the tree structure, but since we are not allowed to modify the tree structure in this question, we will just do an inorder traversal of the tree and keep track of how many nodes we have visited until we reach the kth smallest node, this will allow us to find the kth smallest node in O(n) time, because we may need to visit all the nodes in the tree in the worst case
+    //use of binary search tree properties, we know that the left side of the tree will have smaller values than the root node, and the right side of the tree will have larger values than the root node, so we can use this property to our advantage when doing the inorder traversal, because we want to start from the smallest element and work our way up by then traversing in increasing order, so we can do an inorder traversal of the tree and keep track of how many nodes we have visited until we reach the kth smallest node, this will allow us to find the kth smallest node in O(n) time, because we may need to visit all the nodes in the tree in the worst case
+private:
+    int result = -1;
+    void inorder(TreeNode* root, int &k){
+        if (root == nullptr || k == 0) return;
+
+        if(root->left) inorder(root->left, k); //do inorder traversal, go to the leftmost first, we want to start from the smallest element and work our way up by then traversing in increasing order
+        k--; //decrement k, because we have visited one more node, so we need to decrement k by 1, this will allow us to keep track of how many nodes we have visited, and when k reaches 0, it means that we have visited the kth smallest node, so we can set the result to the value of the current node and return
+
+        if(k == 0){ //if k is 0, it means that we have visited the kth smallest node, so we can set the result to the value of the current node and return, this will allow us to return the value of the kth smallest node after we have visited it
+            result = root -> val;
+            return;
+        }
+        
+        inorder(root->right, k); //after we have visited the current node, we need to go to the right side of the tree, because the right side of the tree will have the larger values, so we need to go to the right side of the tree and continue the inorder traversal until we have visited the kth smallest node
+    }
+
+public:
+    int kthSmallest(TreeNode* root, int k) {
+        inorder(root, k);
+        return result;
+    }
+};
+```
+
+## Lowest Common Ancestor of a Binary Search Tree LC 235
+
+<!-- notecardId: 1781471313427 -->
+
+Given a binary search tree (BST), find the lowest common ancestor (LCA) node of two given nodes in the BST.
+
+According to the definition of LCA on Wikipedia: “The lowest common ancestor is defined between two nodes p and q as the lowest node in T that has both p and q as descendants (where we allow a node to be a descendant of itself).”
+
+ 
+
+Example 1:
+
+
+Input: root = [6,2,8,0,4,7,9,null,null,3,5], p = 2, q = 8
+Output: 6
+Explanation: The LCA of nodes 2 and 8 is 6.
+Example 2:
+
+
+Input: root = [6,2,8,0,4,7,9,null,null,3,5], p = 2, q = 4
+Output: 2
+Explanation: The LCA of nodes 2 and 4 is 2, since a node can be a descendant of itself according to the LCA definition.
+Example 3:
+
+Input: root = [2,1], p = 2, q = 1
+Output: 2
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [2, 105].
+-109 <= Node.val <= 109
+All Node.val are unique.
+p != q
+p and q will exist in the BST.
+
+**Link**: [text](https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS), Inorder Traversal
+
+**Approach:** Use the properties of a binary search tree (BST) to find the lowest common ancestor (LCA) of two given nodes. Start from the root and compare the values of the current node with the values of the two target nodes. If both target nodes are smaller than the current node, move to the left child. If both are larger, move to the right child. If one is smaller and the other is larger, then the current node is the LCA.
+
+**Key Insight:** The key insight is that in a binary search tree (BST), the values of the nodes are ordered such that for any given node, all values in the left subtree are smaller and all values in the right subtree are larger. This property allows you to efficiently navigate the tree to find the LCA by comparing the target node values with the current node value. When you find a node where one target is on one side and the other target is on the other side, that node must be the lowest common ancestor.
+
+**Gotchas:** Be careful to handle edge cases where one of the target nodes is the ancestor of the other. In such cases, the LCA would be the ancestor node itself. Additionally, make sure to correctly manage the recursive calls to avoid stack overflow for very deep trees. Always check if the current node is null before trying to access its value or children.
+
+**Complexity:** Time: O(h) where h is the height of the tree (worst case O(n) for skewed tree) | Space: O(h) for the recursion stack (worst case O(n) for skewed tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Lowest Common Ancestor of Binary Tree — LC #236 | General tree not BST → cannot use ordering must search both subtrees postorder | Partial — harder upgrade |
+| Lowest Common Ancestor of BST II — LC #1644 | Nodes may not exist → same navigation add existence flags before returning | Partial — direct upgrade |
+| Lowest Common Ancestor of Deepest Leaves — LC #1123 | LCA of deepest leaves not given nodes → same postorder depth tracking | Partial — same LCA idea |
+| Insert into BST — LC #701 | Insert maintaining BST property → same left right navigation different goal | Yes — same BST navigation |
+| Delete Node in BST — LC #450 | Delete maintaining BST property → same navigation plus restructuring | Partial — same BST property |
+| Validate Binary Search Tree — LC #98 | Validate ordering not find LCA → same range propagation different goal | Partial — same BST property |
+| Search in BST — LC #700 | Find single node not LCA → same left right navigation simpler termination | Yes — direct foundation |
+| Kth Smallest Element in BST — LC #230 | Kth inorder element → inorder traversal not ordering navigation | No — different pattern |
+
+**How this pattern scales:**
+- **BST ordering navigation** is the core trick — if both p and q less than root go left. If both greater go right. Otherwise current node is LCA — it is the first node where p and q diverge. O(h) time O(1) iterative space
+- **Iterative is preferred** — unlike LC #236 which requires recursion to check both subtrees LC #235 deterministically goes left or right at each step. O(h) time O(1) space no call stack overhead. Always use iterative here
+- **Three cases to handle explicitly** — (1) both p and q less than root → go left (2) both greater → go right (3) they straddle root OR one equals root → root is LCA. The straddle/equal condition identifies the split point which is the LCA
+- **Why BST LCA is O(h) not O(n)** — BST ordering eliminates the need to search both subtrees at every node. Each comparison deterministically discards one entire subtree. For balanced BST this is O(log n) — fundamentally more efficient than LC #236's mandatory O(n)
+- **LC #236 upgrade** → general binary tree LCA must use postorder — search both subtrees, if left finds p and right finds q current node is LCA, otherwise bubble up whichever side found something. No ordering means both sides always searched making O(n) unavoidable
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        if (!root) return nullptr; //in terms of traversal, this is a inorder traversal question, because you need to check the left and right child of the current node before you check the value of the current node, because if the value of the current node 
+        //is between the values of p and q, then you can return the current node as the ancestor, but if you check the value of the current node before you check the left and right child, then you might miss the ancestor if it is not between the values of p and q, so this is an inorder traversal question, because you need to check the left and right child of the current node before you check the value of the current node
+        TreeNode* curr = root;
+        while(curr != nullptr){ //keep traversing until condition met, this is the iterative solution, you can also do this recursively by checking the same conditions in the recursive calls
+        if(p->val > curr->val && q->val > curr -> val){ //if both p and q are greater than what we are checking
+        //we know that the ancestor will be on the right side of the tree, so we need to move to the right child of the current node, because the ancestor will be on the right side of the tree, 
+        //so we need to move to the right child of the current node, this will allow us to keep traversing down the tree until we find the ancestor
+            curr = curr -> right;
+        }
+        else if(p->val < curr -> val && q -> val < curr -> val){
+            curr = curr -> left;
+        }
+        else{
+            return curr; //if we reach here, it means that we have found the ancestor, because if p and q are on different sides of the current node, then the current node is the ancestor, because it is the lowest node that has both p and q as descendants,
+            // so we can return the current node as the ancestor
+        }
+        }
+        return curr;
+    }
+};
+```
+
+## Serialize and Deserialize Binary Tree LC 297
+
+<!-- notecardId: 1781475094536 -->
+
+Serialization is the process of converting a data structure or object into a sequence of bits so that it can be stored in a file or memory buffer, or transmitted across a network connection link to be reconstructed later in the same or another computer environment.
+
+Design an algorithm to serialize and deserialize a binary tree. There is no restriction on how your serialization/deserialization algorithm should work. You just need to ensure that a binary tree can be serialized to a string and this string can be deserialized to the original tree structure.
+
+Clarification: The input/output format is the same as how LeetCode serializes a binary tree. You do not necessarily need to follow this format, so please be creative and come up with different approaches yourself.
+
+ 
+
+Example 1:
+
+
+Input: root = [1,2,3,null,null,4,5]
+Output: [1,2,3,null,null,4,5]
+Example 2:
+
+Input: root = []
+Output: []
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [0, 104].
+-1000 <= Node.val <= 1000
+
+**Link**: [text](https://leetcode.com/problems/serialize-and-deserialize-binary-tree/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS), Preorder Traversal, Breadth-First Search (BFS)
+
+**Approach:** Use a breadth-first search (BFS) approach to serialize the binary tree level by level, using a queue to keep track of the nodes at each level. For deserialization, use the same BFS approach to reconstruct the tree from the serialized string. Alternatively, you can use a depth-first search (DFS) approach with preorder traversal for serialization and deserialization.
+
+**Key Insight:** The key insight is that you can represent the structure of the binary tree in a string format by using a specific traversal method (BFS or DFS) and including markers for null nodes. This allows you to capture both the values of the nodes and the structure of the tree. During deserialization, you can use the same traversal method to read the string and reconstruct the original tree structure.
+
+**Gotchas:** Be careful to handle edge cases where the tree is empty (i.e., the root is null). In such cases, you should return an appropriate representation for an empty tree during serialization and handle it correctly during deserialization. Additionally, make sure to correctly manage the queue or stack used for traversal to avoid memory leaks or infinite loops.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the binary tree | Space: O(n) for the serialized string and the queue/stack used during traversal
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Serialize and Deserialize BST — LC #449 | BST properties allow more compact encoding → preorder only no null markers needed | Partial — direct variant |
+| Encode and Decode Strings — LC #271 | Encode decode flat string list not tree → length prefix no tree structure | Partial — same encoding idea |
+| Construct Binary Tree from Preorder and Inorder — LC #105 | Rebuild from two traversals not serialized string → same root first preorder property | Partial — same preorder idea |
+| Binary Tree Level Order Traversal — LC #102 | BFS traversal not serialization → same level by level structure different goal | Partial — same BFS idea |
+| Find Duplicate Subtrees — LC #652 | Serialize subtrees to detect duplicates → same preorder serialization as subroutine | Yes — direct application |
+| Flatten Binary Tree to Linked List — LC #114 | Flatten to linked list not string → same preorder traversal different output | Partial — same preorder family |
+| Verify Preorder Serialization — LC #331 | Validate not reconstruct → same null marker counting different goal | Yes — same serialization idea |
+| Clone Binary Tree with Random Pointer | Deep copy with extra pointers → same node recreation idea different structure | Partial — same reconstruction idea |
+
+**How this pattern scales:**
+- **Preorder with null markers** is the core trick — serialize by preorder DFS appending node values and `#` for null children separated by commas. Deserialize by consuming tokens from a queue reconstructing root then left then right recursively. O(n) time O(n) space both directions
+- **Queue for deserialization** — convert serialized string to a queue of tokens. Each recursive call pops exactly one token. Queue naturally tracks position across recursive calls without index passing — cleaner and less error prone than maintaining a global index
+- **Why preorder not inorder** — preorder places root first making deserialization trivial. The first token is always the root. Inorder serialization with null markers cannot be uniquely deserialized since the root position is ambiguous without additional information
+- **BST compact encoding** → LC #449 exploits BST ordering to skip null markers entirely. Preorder of a BST can be uniquely deserialized using value ranges to reconstruct left and right subtrees. Saves space but only valid when BST property is guaranteed
+- **BFS alternative** — serialize level by level using BFS appending null markers for missing children. Deserialize by reconstructing level by level using a queue of parent nodes. Same O(n) complexity but BFS encoding is wider and less cache friendly than DFS preorder
+- **Find Duplicate Subtrees connection** → LC #652 serializes every subtree using the same preorder null marker approach storing results in a hash map. If any serialization appears twice that subtree is a duplicate — LC #297's serialization used as a structural fingerprint
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Codec {
+public:
+//This was solved with BFS, also can be done with DFS, but BFS is more intuitive for this question, 
+//we are basically doing a level order traversal of the tree and encoding the values of the nodes in a string, we also need to encode the null nodes, because we need to be able to reconstruct the tree from the string, if we don't encode the null nodes, then we won't be able to reconstruct the tree correctly
+    // Encodes a tree to a single string.
+    string serialize(TreeNode* root) {
+        if (root == nullptr) return "null,"; //represet null node
+        string result = "";
+        queue<TreeNode*> q;
+        q.push(root);
+        while(q.size() > 0){
+            TreeNode* node = q.front();
+            q.pop(); //we are doing a level order traversal of the tree, we are processing the nodes in the order they were added to the queue, 
+            //which is the order they were visited in the level order traversal
+            if(node == nullptr){
+                result += "null,"; //if the node is null, encode it as null
+            }
+            else{
+                result += to_string(node->val) + ","; //if node not null, encode by value, and then add left and right child to queue, will be processed in BFS format
+                q.push(node->left);
+                q.push(node->right);
+            }
+        }
+        return result;
+    }
+
+    // Decodes your encoded data to tree.
+    TreeNode* deserialize(string data) {
+        if(data == "null,") return nullptr;
+        stringstream ss(data); //use stringstream to parse the string, we will use getline to get the values of the nodes,
+        // we will use a queue to keep track of the nodes that we need to process, we will process the nodes in the order they were added to the queue, which is the order they were visited in the level order traversal
+        string item;
+        getline(ss, item, ','); //get the value of the root node, this will be the first value in the string, we can assume that the first value will always be the root node, because we are doing a level order traversal and we are encoding the values of the nodes in the order they were visited in the level order traversal
+        TreeNode* root = new TreeNode(stoi(item));
+        queue<TreeNode*> q;
+        q.push(root); //add the root node to the queue, we will process the root node first, then we will process the left and right child of the root node, then we will process the left and right child of the left child of the root node, and so on, we are basically doing a level order traversal of the tree, but in reverse, we are reconstructing the tree from the string in the order it was encoded, which is the order it was visited in the level order traversal
+        while(q.size() > 0){
+            TreeNode* node=q.front(); //get the next node to process, this will be the next node in the level order traversal, we will process the left and right child of this node, then we will process the left and right child of the left child of this node,
+            // and so on, we are basically doing a level order traversal of the tree, but in reverse, we are reconstructing the tree from the string in the order it was encoded, which is the order it was visited in the level order traversal
+            q.pop();
+            getline(ss, item, ','); //get the left child value
+            if(item == "null"){
+                node->left = nullptr;
+            }
+            else{
+                node->left = new TreeNode(stoi(item));
+                q.push(node->left);
+            }
+            getline(ss, item, ','); //get the right child value
+            if(item == "null"){
+                node->right = nullptr;
+            }
+            else{
+                node->right = new TreeNode(stoi(item));
+                q.push(node->right);
+            }
+        }
+        return root;
+    }
+};
+
+// Your Codec object will be instantiated and called as such:
+// Codec ser, deser;
+// TreeNode* ans = deser.deserialize(ser.serialize(root));
+```
+
+## House Robber III LC 337
+
+<!-- notecardId: 1781475765868 -->
+
+The thief has found himself a new place for his thievery again. There is only one entrance to this area, called root.
+
+Besides the root, each house has one and only one parent house. After a tour, the smart thief realized that all houses in this place form a binary tree. It will automatically contact the police if two directly-linked houses were broken into on the same night.
+
+Given the root of the binary tree, return the maximum amount of money the thief can rob without alerting the police.
+
+ 
+
+Example 1:
+
+
+Input: root = [3,2,3,null,3,null,1]
+Output: 7
+Explanation: Maximum amount of money the thief can rob = 3 + 3 + 1 = 7.
+Example 2:
+
+
+Input: root = [3,4,5,1,3,null,1]
+Output: 9
+Explanation: Maximum amount of money the thief can rob = 4 + 5 = 9.
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [1, 104].
+0 <= Node.val <= 104
+
+**Link**: [text](https://leetcode.com/problems/house-robber-iii/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS), Postorder Traversal
+
+**Approach:** Use a depth-first search (DFS) approach to traverse the binary tree and calculate the maximum amount of money that can be robbed. At each node, compute two values: the maximum amount that can be robbed if the current node is robbed (which means its children cannot be robbed) and the maximum amount that can be robbed if the current node is not robbed (which means its children can be robbed). Use a postorder traversal to ensure that you compute the values for the children before computing the values for the current node.
+
+**Key Insight:** The key insight is that at each node, you have two choices: either rob the current node and skip its children, or skip the current node and rob its children. By using a postorder traversal, you can compute the maximum amount for the children first, which allows you to make an informed decision for the current node. This approach effectively uses dynamic programming on trees, where you store the results of subproblems (the maximum amounts for the children) to solve larger problems (the maximum amount for the current node).
+
+**Gotchas:** Be careful to handle edge cases where the tree has only one node or where all node values are zero. In such cases, the maximum amount would be the value of the single node or zero, respectively. Additionally, make sure to correctly manage the recursive calls to avoid stack overflow for very deep trees. Always check if the current node is null before trying to access its value or children. Always draw out this question if given this problem, because you have to realize the format of the pair being (robCurrent, notRobCurrent), and then you have to realize that the robCurrent is the value of the current node plus the notRobCurrent of the left and right child, and the notRobCurrent is the max of the robCurrent and notRobCurrent of the left child plus the max of the robCurrent and notRobCurrent of the right child. This is a very tricky question, so you have to draw it out to understand it.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the binary tree | Space: O(h) where h is the height of the tree (worst case O(n) for skewed tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| House Robber — LC #198 | Linear array not tree → same rob or skip DP on 1D array | Partial — foundation |
+| House Robber II — LC #213 | Circular array not tree → same DP run twice exclude first or last | Partial — same family |
+| Maximum Independent Set on Tree | Select max weight nodes no two adjacent → exact restatement of LC #337 | Yes — direct application |
+| Binary Tree Maximum Path Sum — LC #124 | Combine values from both subtrees → same postorder return multiple values up | Partial — same DFS structure |
+| Diameter of Binary Tree — LC #543 | Return height combine at each node → same postorder tuple return pattern | Partial — same DFS structure |
+| Maximum Sum BST in Binary Tree — LC #1373 | Find max sum BST subtree → same postorder return multiple values up tree | Yes — same pattern |
+| Paint House — LC #256 | Color houses no adjacent same color → same DP state carry down | Partial — same constraint idea |
+| Distribute Coins in Binary Tree — LC #979 | Move coins to balance tree → same postorder return value up different metric | Partial — same DFS family |
+
+**How this pattern scales:**
+- **Return pair (rob, skip) postorder** is the core trick — at each node return two values: `rob` = value gained by robbing this node (cannot rob children), `skip` = value gained by skipping this node (children can be robbed or skipped). Parent combines children's pairs optimally. O(n) time O(h) space
+- **Combination at each node** — `rob = node.val + leftSkip + rightSkip`. `skip = max(leftRob, leftSkip) + max(rightRob, rightSkip)`. Parent takes the best of both child states independently for skip since left and right subtrees are independent
+- **Naive memoization alternative** — recursive `rob(node)` returning max profit with hash map caching results per node. Cleaner to derive under pressure but requires two passes (rob root, skip root) and memo map. O(n) time O(n) space — worse than pair return approach
+- **House Robber ladder** → LC #198 (linear) → LC #213 (circular) → LC #337 (tree). Each adds structural complexity. The core constraint "cannot rob adjacent nodes" is identical across all three — only the adjacency structure changes from linear to circular to parent-child
+- **Tuple return pattern generalizes** → any tree DP where a node's optimal answer depends on its children's states uses this pair/tuple return. LC #124 returns single gain value but maintains global max separately. LC #337 returns two states letting the parent decide optimally — richer information flow up the tree
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+
+//this question is a postorder traversal, because you need to calculate the maximum amount of money that can be robbed for the left and right child of the current node before you can calculate the maximum amount of money that can be robbed for the current node, because the maximum amount of money that can be robbed for the current node is the maximum of the two cases, if we rob the current node, then we can only add the value of the current node to the maximum amount of money that can be robbed for the left and right child of the current node when they are not robbed, if we do not rob the current node, then we can add the maximum amount of money that can be robbed for the left and right child of the current node, because if we do not rob the current node, then we can rob both the left and right child of the current node, so we can add the maximum amount of money that can be robbed for
+// the left and right child of the current node
+class Solution {
+private:
+    std::pair<int,int> robHelper(TreeNode* root){
+        if (root == nullptr){
+            return {0, 0};
+        }
+        //simple trick to remember, store {if robbed, if skipped}
+        //and add .second if we rob the current node, because the second is if we skip the left and right children, which is needed when we rob the current node
+
+        //the left number in the pair is the max amnt of money that can be robbed if the current node is not robbed,
+        // and the right number in the pair is the max amnt of money that can be robbed if the current node is robbed, this will allow us to easily calculate the max amnt of money that can be robbed for the current node, because if the current node is not robbed, then we can rob both the left and right child of the current node, so we can add the max amnt of money that can be robbed for the left and right child of the current node, if the current node is robbed, then we cannot rob the left and right child of the current node, so we can only add the value of the current node to the max amnt of money that can be robbed for the left and right child of the current node when they are not robbed
+
+        std::pair<int, int> left = robHelper(root->left); //this will return a pair of integers, the first integer is the maximum amount of money that can be robbed if the current node is not robbed, and the second integer is the maximum amount of money that can be robbed if the current node is robbed, 
+        //this will allow us to easily calculate the maximum amount of money that can be robbed for the current node, because if the current node is not robbed, then we can rob both the left and right child of the current node, so we can add the maximum amount of money that can be robbed for the left and 
+        //right child of the current node, if the current node is robbed, then we cannot rob the left and right child of the current node, so we can only add the value of the current node to the maximum amount of money that can be robbed for the left and right child of the current node when they are not robbed
+        std::pair<int, int> right = robHelper(root->right);
+        int robCurrent = root->val + left.second + right.second; //if we rob the current node, then we cannot rob the left and right child of the current node, so we can only add the value of the current node to the maximum amount of money that can be robbed for the left and right child 
+        //of the current node when they are not robbed
+
+        //root->val is current node, and we add left.second and right.second because
+        //left.first is the max amount of money if we rob that node, and left.second is the max amount of money if we skip that node
+        //we add .second because root->val is the house we rob, and left.second and right.second is the max amount of money we can rob if we skip the left and right child of the current node, because we cannot rob the left and right child of the current node if we rob the current node, so we can only add the value 
+        //of the current node to the maximum amount of money that can be robbed for the left and right child of the current node when they are not robbed
+        int notRobCurrent = max(left.second, left.first) + max(right.second, right.first);
+        //left.first and right.first is the max amount of money that can be robbed if we rob the left and right child of the current node.
+        //there is a case where we rob the left child and not rob the right child, and there is a case where we rob the right child and not rob the left child, so we need to take the maximum of the two cases, so we can add the maximum amount of money that can be robbed for the left and right child of the current node, because if we do not rob the current node, then we can rob both the left and right child of the current node, so we can add the maximum amount of money that can be robbed for the left and right child of the current node 
+        return {robCurrent, notRobCurrent};
+    }
+public:
+    int rob(TreeNode* root) {
+        std::pair<int, int> result = robHelper(root);
+        return std::max(result.first, result.second); //the maximum amount of money that can be robbed for the current node is the maximum of the two cases, if we rob the current node, then we can only add the value of the current node to the maximum amount of money that can be robbed for the left and right child of the current node when they are not robbed, if we do not rob the current node, then we can add the maximum amount of money that can be robbed for the left and right child of the current node, because if we do not rob the current node, then we can rob both the left and right child of the current node, so we can add the maximum amount of money that can be robbed for the left and right child of the current node
+        //this is for the root node, this is like the last step of the postorder traversal, because we need to calculate the maximum amount of money that can be robbed for the left and right child of the current node before we can calculate the maximum amount of money that can be robbed for the current node, because the maximum amount 
+        //of money that can be robbed for the current node is the maximum of the two cases, if we rob the current node, then we can only add the value of the current node to the maximum amount of money that can be robbed for the left and right child of the current node when they are not robbed, if we do not rob the current node, then we can add the maximum amount of money that can be robbed for the left and right child of the current node, because if we do not rob the current node, then we can rob both the left and right child of the current node, so we can add the maximum amount of money that can be robbed for the left and right child of the current node
+    }
+};
+```
+
+## Construct Quad Tree LC 427
+
+<!-- notecardId: 1781477175035 -->
+
+Given a n * n matrix grid of 0's and 1's only. We want to represent grid with a Quad-Tree.
+
+Return the root of the Quad-Tree representing grid.
+
+A Quad-Tree is a tree data structure in which each internal node has exactly four children. Besides, each node has two attributes:
+
+val: True if the node represents a grid of 1's or False if the node represents a grid of 0's. Notice that you can assign the val to True or False when isLeaf is False, and both are accepted in the answer.
+isLeaf: True if the node is a leaf node on the tree or False if the node has four children.
+class Node {
+    public boolean val;
+    public boolean isLeaf;
+    public Node topLeft;
+    public Node topRight;
+    public Node bottomLeft;
+    public Node bottomRight;
+}
+We can construct a Quad-Tree from a two-dimensional area using the following steps:
+
+If the current grid has the same value (i.e all 1's or all 0's) set isLeaf True and set val to the value of the grid and set the four children to Null and stop.
+If the current grid has different values, set isLeaf to False and set val to any value and divide the current grid into four sub-grids as shown in the photo.
+Recurse for each of the children with the proper sub-grid.
+
+If you want to know more about the Quad-Tree, you can refer to the wiki.
+
+Quad-Tree format:
+
+You don't need to read this section for solving the problem. This is only if you want to understand the output format here. The output represents the serialized format of a Quad-Tree using level order traversal, where null signifies a path terminator where no node exists below.
+
+It is very similar to the serialization of the binary tree. The only difference is that the node is represented as a list [isLeaf, val].
+
+If the value of isLeaf or val is True we represent it as 1 in the list [isLeaf, val] and if the value of isLeaf or val is False we represent it as 0.
+
+ 
+
+Example 1:
+
+
+Input: grid = [[0,1],[1,0]]
+Output: [[0,1],[1,0],[1,1],[1,1],[1,0]]
+Explanation: The explanation of this example is shown below:
+Notice that 0 represents False and 1 represents True in the photo representing the Quad-Tree.
+
+Example 2:
+
+
+
+Input: grid = [[1,1,1,1,0,0,0,0],[1,1,1,1,0,0,0,0],[1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1],[1,1,1,1,0,0,0,0],[1,1,1,1,0,0,0,0],[1,1,1,1,0,0,0,0],[1,1,1,1,0,0,0,0]]
+Output: [[0,1],[1,1],[0,1],[1,1],[1,0],null,null,null,null,[1,0],[1,0],[1,1],[1,1]]
+Explanation: All values in the grid are not the same. We divide the grid into four sub-grids.
+The topLeft, bottomLeft and bottomRight each has the same value.
+The topRight have different values so we divide it into 4 sub-grids where each has the same value.
+Explanation is shown in the photo below:
+
+ 
+
+Constraints:
+
+n == grid.length == grid[i].length
+n == 2x where 0 <= x <= 6
+
+**Link**: [text](https://leetcode.com/problems/construct-quad-tree/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS), Postorder Traversal
+
+**Approach:** Use a depth-first search (DFS) approach to construct the Quad-Tree from the given grid. Start from the entire grid and check if all values are the same. If they are, create a leaf node with the corresponding value. If not, divide the grid into four equal sub-grids and recursively construct the Quad-Tree for each sub-grid. Combine the results to create an internal node with four children.
+
+**Key Insight:** The key insight is that you can determine whether a node is a leaf or an internal node by checking if all values in the corresponding grid are the same. If they are, you can create a leaf node. If not, you need to divide the grid and create internal nodes for each sub-grid. This approach naturally leads to a postorder traversal, where you compute the values for the children before computing the value for the current node.
+
+**Gotchas:** Be careful to handle edge cases where the grid is empty or where all values are the same. In such cases, you should return a single leaf node with the appropriate value. Additionally, make sure to correctly manage the indices when dividing the grid into sub-grids to avoid out-of-bounds errors.
+
+**Complexity:** Time: O(n^2) where n is the length of the grid (since you need to check all values in the grid) | Space: O(n^2) for the Quad-Tree in the worst case (when all values are different)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Construct Binary Tree from Preorder and Inorder — LC #105 | Build binary not quad tree → same recursive construction different split | Partial — same construction idea |
+| Range Sum Query 2D — LC #304 | Prefix sum on 2D matrix → same 2D region sum as subroutine for uniform check | Yes — direct application |
+| Serialize and Deserialize Binary Tree — LC #297 | Encode decode binary tree not quad tree → same recursive structure different branching | Partial — same serialization idea |
+| N-ary Tree Preorder Traversal — LC #589 | Traverse not construct n-ary tree → same multiple children structure | Partial — same n-ary idea |
+| Maximum Sum Rectangle — LC #363 | Find max sum submatrix → same 2D region decomposition idea | No — different pattern |
+| Image Overlap — LC #835 | Compare 2D regions → same grid subdivision idea different operation | No — different pattern |
+| Count Complete Tree Nodes — LC #222 | Count nodes using tree structure → same recursive subdivision | Partial — same recursive idea |
+| Longest Univalue Path — LC #687 | Uniform value path in binary tree → same uniform check different structure | Partial — same uniformity idea |
+
+**How this pattern scales:**
+- **Recursive grid subdivision** is the core trick — check if current region is uniform (all 0s or all 1s). If uniform return a leaf node with that value. If not split into four equal quadrants (topLeft topRight bottomLeft bottomRight) recurse on each. O(n² log n) naive O(n²) with prefix sums
+- **Uniformity check optimization** — naive uniformity check scans entire subgrid O(n²) per call producing O(n⁴) total. Build a 2D prefix sum array first then check any subgrid sum equals `0` or `rows * cols` in O(1). Reduces total to O(n²) — this optimization is mandatory for large grids
+- **Four children always** — unlike binary trees where null children are common quad trees always split into exactly four children when not a leaf. Never have 1, 2, or 3 children — always 0 (leaf) or 4 (internal node)
+- **Prefix sum integration** → LC #304 builds the exact same 2D prefix sum array. Subgrid sum formula `P[r2][c2] - P[r1-1][c2] - P[r2][c1-1] + P[r1-1][c1-1]` checks uniformity in O(1). Knowing LC #304 cold makes the optimization step of LC #427 trivially derived
+- **Spatial indexing generalization** → quad trees are used in real systems for 2D spatial indexing (collision detection, map rendering, image compression). The recursive subdivision pattern appears in kd-trees for higher dimensions and R-trees for geographic data — worth mentioning as a system design connection
+
+```cpp
+/*
+// Definition for a QuadTree node.
+class Node {
+public:
+    bool val;
+    bool isLeaf;
+    Node* topLeft;
+    Node* topRight;
+    Node* bottomLeft;
+    Node* bottomRight;
+    
+    Node() {
+        val = false;
+        isLeaf = false;
+        topLeft = NULL;
+        topRight = NULL;
+        bottomLeft = NULL;
+        bottomRight = NULL;
+    }
+    
+    Node(bool _val, bool _isLeaf) {
+        val = _val;
+        isLeaf = _isLeaf;
+        topLeft = NULL;
+        topRight = NULL;
+        bottomLeft = NULL;
+        bottomRight = NULL;
+    }
+    
+    Node(bool _val, bool _isLeaf, Node* _topLeft, Node* _topRight, Node* _bottomLeft, Node* _bottomRight) {
+        val = _val;
+        isLeaf = _isLeaf;
+        topLeft = _topLeft;
+        topRight = _topRight;
+        bottomLeft = _bottomLeft;
+        bottomRight = _bottomRight;
+    }
+};
+*/
+
+class Solution {
+private:
+    //THIS QUESTION IS DIFFICULT, REVIEW THIS CLEARLY
+    Node* constructTree(vector<vector<int>>& grid, int r1, int c1, int r2, int c2){
+        bool same = true;
+        //check the corners to find if the n by n grid is a subtree or not
+        for(int i = r1; i <= r2; i++){
+            for (int j = c1 ; j <= c2; j++){
+                if (grid[i][j] != grid[r1][c1]){
+                    same = false;
+                    break;
+                }
+            }
+            if (!same) break;
+        }
+        if(same){
+            return new Node(grid[r1][c1] == 1, true); //val is 1, isLeaf is true, because if all the values in the grid are the same, then this is a leaf node, and the value of the node is the value of the grid, which is either 0 or 1,
+            // so we can just check if it is equal to 1 to get the boolean value for the node
+        }
+
+        //what if not the same, this is where we need to divide the grid into 4 subgrids and recursively call the constructTree function on each subgrid,
+        // and then create a new node with the value of the current grid, which is not a leaf node, and the children of the node are the nodes returned by the recursive calls on the subgrids
+
+        int midRow = r1 + (r2 - r1) / 2;
+        int midCol = c1 + (c2 - c1) / 2;
+
+        Node* root = new Node(true, false); //given in the problem, we know that the value of the node is true, and the node is not a leaf node, because we are going to divide the grid into 4 subgrids, so we know that this node is not a leaf node, and the value of the node is true, because it does not matter what the value of the node is, 
+        //because it is not a leaf node, so we can just set it to true
+
+        root->topLeft = constructTree(grid, r1, c1, midRow, midCol);
+        root->topRight = constructTree(grid, r1, midCol + 1, midRow, c2);
+        root->bottomLeft = constructTree(grid, midRow + 1, c1, r2, midCol);
+        root->bottomRight = constructTree(grid, midRow + 1, midCol + 1, r2, c2);
+
+        return root;
+    }
+public:
+    Node* construct(vector<vector<int>>& grid) {
+        return constructTree(grid, 0, 0, grid.size() -1, grid[0].size() - 1);
+    }
+};
+```
+
+## Delete Node in a BST LC 450
+
+<!-- notecardId: 1781479005108 -->
+
+Given a root node reference of a BST and a key, delete the node with the given key in the BST. Return the root node reference (possibly updated) of the BST.
+
+Basically, the deletion can be divided into two stages:
+
+Search for a node to remove.
+If the node is found, delete the node.
+ 
+
+Example 1:
+
+
+Input: root = [5,3,6,2,4,null,7], key = 3
+Output: [5,4,6,2,null,null,7]
+Explanation: Given key to delete is 3. So we find the node with value 3 and delete it.
+One valid answer is [5,4,6,2,null,null,7], shown in the above BST.
+Please notice that another valid answer is [5,2,6,null,4,null,7] and it's also accepted.
+
+Example 2:
+
+Input: root = [5,3,6,2,4,null,7], key = 0
+Output: [5,3,6,2,4,null,7]
+Explanation: The tree does not contain a node with value = 0.
+Example 3:
+
+Input: root = [], key = 0
+Output: []
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [0, 104].
+-105 <= Node.val <= 105
+Each node has a unique value.
+root is a valid binary search tree.
+-105 <= key <= 105
+ 
+
+Follow up: Could you solve it with time complexity O(height of tree)?
+
+**Link**: [text](https://leetcode.com/problems/delete-node-in-a-bst/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS), Binary Search Tree (BST) Properties, inorder Traversal
+
+**Approach:** Use a depth-first search (DFS) approach to traverse the binary search tree (BST) and find the node with the given key. Once the node is found, there are three cases to consider: if the node has no children, simply remove it; if the node has one child, replace it with its child; if the node has two children, find the inorder successor (the smallest node in the right subtree), replace the value of the current node with the value of the inorder successor, and then delete the inorder successor.
+
+**Key Insight:** The key insight is to leverage the properties of the binary search tree to efficiently find the node to delete. The inorder successor is used in the case where the node has two children because it maintains the BST property when replacing the value of the current node. By recursively calling the delete function on the right subtree after replacing the value, you can ensure that the duplicate value (the inorder successor) is removed from its original position.
+
+**Gotchas:** Be careful to handle edge cases where the node to delete is the root node or where the node has only one child. In such cases, you need to ensure that the tree remains a valid BST after deletion. Additionally, make sure to correctly manage the pointers when replacing nodes to avoid memory leaks or dangling pointers.
+
+**Complexity:** Time: O(h) where h is the height of the tree (O(log n) for balanced BST, O(n) for skewed BST) | Space: O(h) due to recursive call stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Search in BST — LC #700 | Find node not delete → same left right navigation simpler termination | Yes — foundation |
+| Insert into BST — LC #701 | Insert not delete → same navigation find position attach new node | Yes — direct variant |
+| Validate Binary Search Tree — LC #98 | Validate ordering not modify → same BST property different goal | Partial — same BST property |
+| Lowest Common Ancestor of BST — LC #235 | Find LCA not delete → same ordering navigation different goal | Partial — same BST navigation |
+| Trim a BST — LC #669 | Remove all nodes outside range → same recursive deletion different condition | Yes — direct variant |
+| Kth Smallest Element in BST — LC #230 | Find kth not delete → same inorder property different goal | No — different pattern |
+| Balance a BST — LC #1382 | Rebalance after modifications → same inorder collect rebuild | Partial — same BST modification |
+| Delete Nodes and Return Forest — LC #1110 | Delete multiple nodes return forest → same deletion logic repeated | Partial — same deletion idea |
+
+**How this pattern scales:**
+- **Three deletion cases** is the core trick — (1) node is a leaf → return null (2) node has one child → return that child (3) node has two children → find inorder successor (leftmost node in right subtree) copy its value to current node delete inorder successor from right subtree. O(h) time O(h) space
+- **Inorder successor for two child case** — when deleting a node with two children you cannot simply remove it. Replace its value with the inorder successor (smallest value in right subtree) then delete the inorder successor which is guaranteed to have at most one child making it a simpler case
+- **Inorder predecessor alternative** — instead of inorder successor use inorder predecessor (largest value in left subtree). Either maintains BST property — successor comes from right subtree predecessor from left. Choose whichever simplifies implementation
+- **Recursive structure** — navigate left if target less than root, right if greater. When target found apply three cases. Return modified subtree root at each level to rewire parent pointers automatically. Same recursive rewiring as insert
+- **Trim BST connection** → LC #669 applies deletion logic to all nodes outside a range in a single postorder pass. Instead of finding a specific node and handling three cases it recursively prunes entire subtrees. Same BST navigation same three case awareness different triggering condition
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* deleteNode(TreeNode* root, int key) {
+        if(root == nullptr) return nullptr;
+        if(key > root -> val){
+            root -> right = deleteNode(root->right, key);
+        }
+        else if(key < root -> val){
+            root -> left = deleteNode(root->left, key);
+        }
+        else{
+            //here we got to delete a node, how is this done?
+            //what if a leaf node, this just becomes a nullptr because nothing below it
+            if(root-> left == nullptr){
+                TreeNode *temp = root -> right;
+                delete root; 
+                return temp; //return right child
+                
+            }
+            else if (root -> right == nullptr){
+                TreeNode *temp = root -> left;
+                delete root;
+                return temp; //return left child
+            }
+
+            //if node has two children, find the smallest in right subtree (inorder traversal)
+            TreeNode* successor = root -> right;
+            while(successor->left != nullptr){
+                successor = successor->left;
+            }
+
+            //now, we have found the smallest in the right subtree;
+
+            root ->val = successor->val; //update current nodes value with the value of the successor we want to update with (smallest in right subtree)
+
+            root ->right = deleteNode(root->right, successor->val); //now we have to go in and delete that value in the right subtree, since we have already updated the root's value.
+            //very clever!
+        }
+        return root;
+    }
+};
+```
+
+## Diameter of Binary Tree LC 543
+
+<!-- notecardId: 1781482449579 -->
+
+Given the root of a binary tree, return the length of the diameter of the tree.
+
+The diameter of a binary tree is the length of the longest path between any two nodes in a tree. This path may or may not pass through the root.
+
+The length of a path between two nodes is represented by the number of edges between them.
+
+ 
+
+Example 1:
+
+
+Input: root = [1,2,3,4,5]
+Output: 3
+Explanation: 3 is the length of the path [4,2,1,3] or [5,2,1,3].
+Example 2:
+
+Input: root = [1,2]
+Output: 1
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [1, 104].
+-100 <= Node.val <= 100
+
+**Link**: [text](https://leetcode.com/problems/diameter-of-binary-tree/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS), Postorder Traversal
+
+**Approach:** Use a depth-first search (DFS) approach to traverse the binary tree and calculate the diameter. At each node, compute the longest path through that node by summing the longest path from the left child and the longest path from the right child. Update a global variable to keep track of the maximum diameter found so far. The longest path from a node is defined as the maximum of the longest path from its left child and the longest path from its right child plus one (to account for the edge to the child).
+
+**Key Insight:** The key insight is that the diameter of the tree can be found by considering the longest path that passes through each node. By using a postorder traversal, you can compute the longest path from the left and right children before computing the diameter at the current node. This allows you to efficiently update the maximum diameter as you traverse the tree.
+
+**Gotchas:** Be careful to handle edge cases where the tree has only one node or where all nodes are in a straight line (skewed tree). In such cases, the diameter would be the number of edges between the nodes, which is one less than the number of nodes. Additionally, make sure to correctly manage the global variable that tracks the maximum diameter to avoid incorrect updates.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the tree (since you visit each node once) | Space: O(h) where h is the height of the tree (worst case O(n) for skewed tree)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Binary Tree Maximum Path Sum — LC #124 | Maximum sum path not longest path → same global max + local return split | Yes — direct variant |
+| Longest Univalue Path — LC #687 | Longest path with same value constraint → same postorder extension logic value check | Yes — direct variant |
+| Maximum Depth of Binary Tree — LC #104 | Return height only no diameter computation → same postorder DFS simpler return | Yes — foundation |
+| Balanced Binary Tree — LC #110 | Check height difference not diameter → same postorder height return sentinel on fail | Partial — same DFS structure |
+| Count Good Nodes — LC #1448 | Carry max value down preorder → same DFS different direction | No — different direction |
+| Binary Tree Cameras — LC #968 | Place minimum cameras covering all nodes → same postorder state return up tree | Partial — same postorder family |
+| Diameter of N-ary Tree — LC #1522 | Multiple children not just two → same global max sum all child heights | Yes — direct generalization |
+| Longest Path With Different Adjacent Values — LC #2246 | Longest path no adjacent same value → same global max local return different constraint | Yes — same pattern |
+
+**How this pattern scales:**
+- **Global max + local height return** is the core trick — maintain global `diameter` variable. At each node compute `leftHeight = dfs(left)` and `rightHeight = dfs(right)`. Update `diameter = max(diameter, leftHeight + rightHeight)`. Return `1 + max(leftHeight, rightHeight)` to parent. O(n) time O(h) space
+- **Two separate computations** — diameter through current node uses both branches (leftHeight + rightHeight). Height returned to parent uses only the taller branch (1 + max). Same split as LC #124 — confusing these two is the most common wrong answer
+- **Edge count vs node count** — diameter is measured in edges not nodes by default. `leftHeight + rightHeight` gives edge count naturally since leaf returns 0. If node count is asked add 1 to the final answer
+- **LC #124 structural twin** → replace height with gain (`max(0, dfs(child))`) replace `leftHeight + rightHeight` with `node.val + leftGain + rightGain` replace `max(leftHeight, rightHeight)` with `max(leftGain, rightGain)`. Same skeleton two different metrics
+- **N-ary generalization** → LC #1522 sums all child heights instead of just two. Sort child heights descending take top two for diameter update. Return largest child height plus one. Same global max local return structure one loop replaces two recursive calls
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+private:
+int maxDiameter = 0;
+int maxDepth(TreeNode* root){
+        if (root == nullptr){
+            return 0; 
+        }
+
+        int leftDepth = maxDepth(root->left); //recursively call the left side of the tree, this will return the maximum depth of the left side of the tree
+        int rightDepth = maxDepth(root->right); //recursively call the right side of the tree, this will return the maximum depth of the right side of the tree
+
+        int currentDiameter = leftDepth + rightDepth;
+        maxDiameter = max(maxDiameter, currentDiameter);
+        return std::max(leftDepth,rightDepth) + 1;
+
+    }
+
+public:
+    int diameterOfBinaryTree(TreeNode* root) {
+        maxDiameter = 0;
+        //this is a postorder traversal question, because you need to calculate the maximum depth of the left and right child of the root node before you can calculate the diameter of the tree, 
+        //because the diameter of the tree is the maximum depth of the left side of the tree plus the maximum depth of the right side of the tree, so you need to calculate the maximum depth of the left and right child of the root node before 
+        //you can calculate the diameter of the tree, so this is a postorder traversal question, because you need to calculate the maximum depth of the left and right child of the root node before you can calculate the diameter of the tree
+        maxDepth(root); //call the maxDepth function to calculate the maximum depth of the tree, this will also update the maxDiameter variable with the maximum diameter of the tree,
+        // because the diameter of the tree is the maximum depth of the left side of the tree plus the maximum depth of the right side of the tree, so you need to call the maxDepth function to calculate the maximum depth of the tree, and then return the maxDiameter variable after you have calculated the maximum depth of the tree
+        return maxDiameter;
+    }
+};
+```
+
+## Subtree of Another Tree LC 572
+
+<!-- notecardId: 1781482807807 -->
+
+Given the roots of two binary trees root and subRoot, return true if there is a subtree of root with the same structure and node values of subRoot and false otherwise.
+
+A subtree of a binary tree tree is a tree that consists of a node in tree and all of this node's descendants. The tree tree could also be considered as a subtree of itself.
+
+ 
+
+Example 1:
+
+
+Input: root = [3,4,5,1,2], subRoot = [4,1,2]
+Output: true
+Example 2:
+
+
+Input: root = [3,4,5,1,2,null,null,null,null,0], subRoot = [4,1,2]
+Output: false
+ 
+
+Constraints:
+
+The number of nodes in the root tree is in the range [1, 2000].
+The number of nodes in the subRoot tree is in the range [1, 1000].
+-104 <= root.val <= 104
+-104 <= subRoot.val <= 104
+
+**Link**: [text](https://leetcode.com/problems/subtree-of-another-tree/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS), Preorder Traversal, Tree Comparison
+
+**Approach:** Use a depth-first search (DFS) approach to traverse the main tree (root) and at each node, check if the subtree rooted at that node is identical to the subRoot tree. This can be done by implementing a helper function that compares two trees for structural and value equality. The main function will call this helper function at each node of the main tree until it finds a match or exhausts all nodes.
+
+**Key Insight:** The key insight is that to determine if one tree is a subtree of another, you need to check for a match at every node of the main tree. By using a helper function to compare the two trees, you can efficiently determine if they are identical in structure and values. This approach ensures that you are checking all possible subtrees of the main tree for a match with the subRoot. It is preorder traversal, as you will check each node and then check its children.
+
+**Gotchas:** Be careful to handle edge cases where the subRoot is null (which should return true since an empty tree is a subtree of any tree) or where the main tree is null (which should return false unless subRoot is also null). Additionally, make sure to correctly implement the tree comparison function to check both structure and values, as a mismatch in either should result in a false return.
+
+**Complexity:** Time: O(m * n) where m is the number of nodes in the main tree and n is the number of nodes in the subRoot tree (in the worst case, you may compare every node of the main tree with every node of the subRoot) | Space: O(h) where h is the height of the main tree (due to recursive call stack)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Same Tree — LC #100 | Check two trees identical not subtree → same recursive pair comparison no search | Yes — direct foundation |
+| Count Univalue Subtrees — LC #250 | Count subtrees where all nodes equal → same postorder validation different goal | Partial — same subtree idea |
+| Find Duplicate Subtrees — LC #652 | Find all duplicate subtrees → same serialization fingerprint hash map | Partial — same subtree idea |
+| Binary Tree Maximum Path Sum — LC #124 | Combine values bottom up → same postorder DFS different goal | No — different pattern |
+| Most Frequent Subtree Sum — LC #508 | Find most frequent subtree sum → same postorder compute sum per subtree | Partial — same subtree computation |
+| Serialize and Deserialize Binary Tree — LC #297 | Encode decode full tree → same preorder serialization as subtree fingerprint | Partial — same serialization idea |
+| Construct Binary Tree from Preorder and Inorder — LC #105 | Build not compare → same tree structure idea different goal | No — different pattern |
+| Check Subtree CTCI 4.10 | Classic interview variant → same LC #100 subroutine at every node | Yes — same pattern |
+
+**How this pattern scales:**
+- **LC #100 as subroutine at every node** is the core trick — for each node in the main tree call `isSameTree(node, subRoot)`. If any call returns true subRoot is a subtree. O(m*n) time O(h) space where m and n are tree sizes
+- **Serialization optimization** — serialize both trees to strings using preorder with null markers. Check if subRoot's serialization is a substring of root's serialization. O(m+n) time O(m+n) space — reduces to string matching. Must use delimiters to avoid false matches like `12` matching `1` in `120`
+- **Delimiter requirement** — when serializing add delimiters between values and null markers. Without delimiters `#12#` appears as substring of `#120#` causing false positives. Use comma separated format `1,2,#,` to avoid all ambiguity
+- **Tree hashing alternative** — hash each subtree using a Merkle-style hash combining node value and children hashes. Compare subRoot hash against all subtree hashes in O(1) per node. O(m+n) time with high probability correct — collision risk makes it less reliable than serialization
+- **Subtree vs path** — a subtree must include all descendants of the matching node. A path only requires connected nodes. LC #572 checks full structural equality from the matching node down — any missing leaf or extra node fails the check
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+private:
+
+    bool isSame(TreeNode* node1, TreeNode* node2){
+        if (node1 == nullptr && node2 == nullptr){
+            return true;
+        }
+        if(node1 == nullptr || node2 == nullptr){
+            return false;
+        }
+        if(node1-> val != node2 -> val){
+            return false;
+        }
+        return isSame(node1->left, node2->left) && isSame(node1->right, node2->right);
+    }
+
+public:
+    bool isSubtree(TreeNode* root, TreeNode* subRoot) {
+        if(root == nullptr){
+            return false;
+        }
+        if(isSame(root, subRoot)){
+            return true;
+        }
+        return isSubtree(root->left, subRoot)|| isSubtree(root->right, subRoot); //have to call isSubtree, not isSame, dont make silly error
+
+    }
+};
+```
+
+## Insert into a Binary Search Tree LC 701
+
+<!-- notecardId: 1781483363132 -->
+
+You are given the root node of a binary search tree (BST) and a value to insert into the tree. Return the root node of the BST after the insertion. It is guaranteed that the new value does not exist in the original BST.
+
+Notice that there may exist multiple valid ways for the insertion, as long as the tree remains a BST after insertion. You can return any of them.
+
+ 
+
+Example 1:
+
+
+Input: root = [4,2,7,1,3], val = 5
+Output: [4,2,7,1,3,5]
+Explanation: Another accepted tree is:
+
+Example 2:
+
+Input: root = [40,20,60,10,30,50,70], val = 25
+Output: [40,20,60,10,30,50,70,null,null,25]
+Example 3:
+
+Input: root = [4,2,7,1,3,null,null,null,null,null,null], val = 5
+Output: [4,2,7,1,3,5]
+ 
+
+Constraints:
+
+The number of nodes in the tree will be in the range [0, 104].
+-108 <= Node.val <= 108
+All the values Node.val are unique.
+-108 <= val <= 108
+It's guaranteed that val does not exist in the original BST.
+
+**Link**: [text](https://leetcode.com/problems/insert-into-a-binary-search-tree/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS), Binary Search Tree (BST) Properties
+
+**Approach:** Use a depth-first search (DFS) approach to traverse the binary search tree (BST) and find the correct position to insert the new value. Start from the root and compare the new value with the current node's value. If the new value is less than the current node's value, move to the left child; if it is greater, move to the right child. Continue this process until you find a null position where you can insert the new node with the given value.
+
+**Key Insight:** The key insight is to leverage the properties of the binary search tree to efficiently find the correct position for the new value. By comparing the new value with the current node's value at each step, you can determine whether to go left or right, which allows you to maintain the BST property after insertion. This approach ensures that you are only traversing down one path from the root to a leaf, making it efficient.
+
+**Gotchas:** Be careful to handle edge cases where the tree is empty (i.e., the root is null), in which case you should simply create a new node with the given value and return it as the new root. Additionally, make sure to correctly manage the pointers when inserting the new node to avoid memory leaks or dangling pointers.
+
+**Complexity:** Time: O(h) where h is the height of the tree (O(log n) for balanced BST, O(n) for skewed BST) | Space: O(h) due to recursive call stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Search in BST — LC #700 | Find node not insert → same left right navigation simpler termination | Yes — direct foundation |
+| Delete Node in BST — LC #450 | Delete not insert → same navigation three deletion cases on find | Yes — direct variant |
+| Validate Binary Search Tree — LC #98 | Validate ordering not modify → same BST property different goal | Partial — same BST property |
+| Lowest Common Ancestor of BST — LC #235 | Find LCA not insert → same ordering navigation different goal | Partial — same BST navigation |
+| Balance a BST — LC #1382 | Rebalance after modifications → inorder collect then rebuild | Partial — same BST modification |
+| Convert Sorted Array to BST — LC #108 | Build BST from scratch not insert one node → same BST property different construction | Partial — same BST family |
+| Trim a BST — LC #669 | Remove nodes outside range → same recursive navigation different operation | Partial — same BST navigation |
+| Two Sum IV — LC #653 | Find two nodes summing to target in BST → same BST navigation with hash set | Partial — same BST property |
+
+**How this pattern scales:**
+- **Recursive navigation to null slot** is the core trick — if val less than root go left, if greater go right. When null is reached create and return a new node. Recursive return value automatically rewires parent pointer to new node. O(h) time O(h) space
+- **Return value rewiring** — `root.left = insert(root.left, val)` and `root.right = insert(root.right, val)` rewires parent pointers automatically on the way back up the recursion. No explicit parent tracking needed — same clean recursive pattern as delete
+- **Iterative alternative** — track parent pointer explicitly as you navigate. When null child found attach new node directly to parent. O(h) time O(1) space — preferred when stack space is a concern for deep trees
+- **Always inserts at leaf** — BST insertion always finds a null slot at the leaf level. Unlike balanced BST operations (AVL, Red-Black) that may rotate after insertion plain BST insert never modifies existing structure above the insertion point
+- **BST modification family** → Search (LC #700) → Insert (LC #701) → Delete (LC #450) is the core BST operation ladder. Each builds on the same left right navigation skeleton — search terminates on find, insert terminates on null, delete terminates on find then restructures. All three share identical navigation logic with different termination behavior
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* insertIntoBST(TreeNode* root, int val) {
+        if (root == nullptr){
+            return new TreeNode(val);
+        }
+        if(val > root->val) root->right = insertIntoBST(root->right, val);
+        else root -> left = insertIntoBST(root -> left, val);
+        return root;
+    }
+};
+```
+
+## Delete Leaves With a Given Value LC 1325
+
+<!-- notecardId: 1781483592009 -->
+
+Given a binary tree root and an integer target, delete all the leaf nodes with value target.
+
+Note that once you delete a leaf node with value target, if its parent node becomes a leaf node and has the value target, it should also be deleted (you need to continue doing that until you cannot).
+
+ 
+
+Example 1:
+
+
+
+Input: root = [1,2,3,2,null,2,4], target = 2
+Output: [1,null,3,null,4]
+Explanation: Leaf nodes in green with value (target = 2) are removed (Picture in left). 
+After removing, new nodes become leaf nodes with value (target = 2) (Picture in center).
+Example 2:
+
+
+
+Input: root = [1,3,3,3,2], target = 3
+Output: [1,3,null,null,2]
+Example 3:
+
+
+
+Input: root = [1,2,null,2,null,2], target = 2
+Output: [1]
+Explanation: Leaf nodes in green with value (target = 2) are removed at each step.
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [1, 3000].
+1 <= Node.val, target <= 1000
+
+**Link**: [text](https://leetcode.com/problems/delete-leaves-with-a-given-value/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS), Postorder Traversal
+
+**Approach:** Use a depth-first search (DFS) approach to traverse the binary tree in postorder (left, right, node) and check if each node is a leaf with the target value. If it is, delete it by returning null to the parent. After processing both children, check if the current node has become a leaf with the target value and delete it if necessary. This process continues recursively until all applicable nodes are deleted.
+
+**Key Insight:** The key insight is that you need to use postorder traversal to ensure that you check the children of a node before checking the node itself. This way, if a child node is deleted and causes the parent to become a leaf with the target value, you can then delete the parent node in the same recursive call. This cascading deletion is essential to correctly handle cases where multiple nodes in a path need to be deleted.
+
+**Gotchas:** Be careful to handle edge cases where the root node itself may need to be deleted if it is a leaf with the target value. Additionally, make sure to correctly manage the return values to ensure that parent nodes are updated with null when their children are deleted.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the tree (since you visit each node once) | Space: O(h) where h is the height of the tree (due to recursive call stack)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Delete Node in BST — LC #450 | Delete specific node not leaves with value → same recursive return rewiring | Partial — same deletion idea |
+| Delete Nodes and Return Forest — LC #1110 | Delete specific nodes return forest → same postorder deletion different trigger | Yes — direct variant |
+| Prune Binary Tree — LC #814 | Remove subtrees containing only zeros → same postorder prune different condition | Yes — direct variant |
+| Count Univalue Subtrees — LC #250 | Count subtrees all same value → same postorder bottom up validation | Partial — same postorder idea |
+| Lowest Common Ancestor — LC #236 | Find LCA not delete → same postorder return value up tree | No — different pattern |
+| Binary Tree Pruning — LC #814 | Remove zero subtrees → same leaf check cascade upward | Yes — same pattern |
+| Serialize and Deserialize Binary Tree — LC #297 | Encode decode not delete → same postorder traversal different goal | No — different pattern |
+| Find Leaves of Binary Tree — LC #366 | Group leaves by height → same postorder leaf identification different goal | Partial — same leaf idea |
+
+**How this pattern scales:**
+- **Postorder deletion with cascade** is the core trick — process children before parent. After recursing on both children check if current node has become a leaf with the target value. If so return null to parent effectively deleting it. Cascade continues upward automatically. O(n) time O(h) space
+- **Postorder is mandatory** — must process children first so that newly created leaves (nodes whose children were just deleted) are caught in the same pass. Preorder would miss nodes that become leaves after their children are deleted
+- **Return null to delete** — same return value rewiring as LC #701 and LC #450. `root.left = delete(root.left)` automatically disconnects deleted nodes. Returning null from a node removes it from the tree without explicit parent pointer manipulation
+- **Cascade effect** — deleting a leaf may expose its parent as a new leaf with the target value which must also be deleted. Postorder naturally handles this since the parent is evaluated after its children have already been processed and potentially deleted
+- **Prune BST connection** → LC #814 applies the same postorder cascade logic — remove subtrees containing only zeros. A node is pruned if both its children are pruned and its own value is zero. Same bottom up cascade, different pruning condition
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+//postorder traversal, need to deal with leaves first before dealing with the root
+    TreeNode* removeLeafNodes(TreeNode* root, int target) {
+        if (root == nullptr) return nullptr;
+
+        if(root -> left) root -> left = removeLeafNodes(root->left, target);
+        if(root -> right) root -> right = removeLeafNodes(root->right, target);
+        if(root->left == nullptr && root->right == nullptr && root->val == target){
+            return nullptr; //if leaf node and the value of the leaf node is equal to the target, then we can delete the leaf node by returning nullptr, this will allow us to easily delete the leaf node, because when we return nullptr,
+            // it will be assigned to the left or right child of the parent node, which will effectively delete the leaf node from the tree
+        }
+        return root;
+    }
+};
+```
+
+## Count Good Nodes in Binary Tree LC 1448
+
+<!-- notecardId: 1781484178258 -->
+
+Given a binary tree root, a node X in the tree is named good if in the path from root to X there are no nodes with a value greater than X.
+
+Return the number of good nodes in the binary tree.
+
+ 
+
+Example 1:
+
+
+
+Input: root = [3,1,4,3,null,1,5]
+Output: 4
+Explanation: Nodes in blue are good.
+Root Node (3) is always a good node.
+Node 4 -> (3,4) is the maximum value in the path starting from the root.
+Node 5 -> (3,4,5) is the maximum value in the path
+Node 3 -> (3,1,3) is the maximum value in the path.
+Example 2:
+
+
+
+Input: root = [3,3,null,4,2]
+Output: 3
+Explanation: Node 2 -> (3, 3, 2) is not good, because "3" is higher than it.
+Example 3:
+
+Input: root = [1]
+Output: 1
+Explanation: Root is considered as good.
+ 
+
+Constraints:
+
+The number of nodes in the binary tree is in the range [1, 10^5].
+Each node's value is between [-10^4, 10^4].
+
+**Link**: [text](https://leetcode.com/problems/count-good-nodes-in-binary-tree/)
+
+%
+
+**Pattern:** Tree Traversal, Depth-First Search (DFS), Preorder Traversal
+
+**Approach:** Use a depth-first search (DFS) approach to traverse the binary tree in preorder (node, left, right) while keeping track of the maximum value encountered along the path from the root to the current node. At each node, compare its value with the maximum value seen so far. If the current node's value is greater than or equal to the maximum value, it is considered a good node, and you can increment a counter. Update the maximum value if the current node's value is greater than the existing maximum before recursively traversing the left and right children.
+
+**Key Insight:** The key insight is that you need to maintain the maximum value along the path from the root to the current node in order to determine if the current node is a good node. By using a preorder traversal, you can check the current node before traversing its children, which allows you to correctly count good nodes as you go down the tree.
+
+**Gotchas:** Be careful to handle edge cases where the tree has only one node (the root), which is always a good node. Additionally, make sure to correctly update the maximum value as you traverse down the tree, and ensure that you are comparing the current node's value against the correct maximum value for that path.
+
+**Complexity:** Time: O(n) where n is the number of nodes in the tree (since you visit each node once) | Space: O(h) where h is the height of the tree (due to recursive call stack)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Path Sum — LC #112 | Check if root to leaf sum equals target → same preorder carry running sum down | Yes — same pattern |
+| Path Sum II — LC #113 | Collect all root to leaf paths meeting target → same preorder carry path backtrack | Yes — same pattern |
+| Maximum Depth of Binary Tree — LC #104 | Carry depth down preorder → same preorder parameter passing different value | Yes — same DFS family |
+| Binary Tree Maximum Path Sum — LC #124 | Combine values bottom up postorder → opposite direction to LC #1448 | No — different direction |
+| Count Nodes Equal to Average of Subtree — LC #2265 | Count nodes where value equals subtree average → same postorder return sum and count | Partial — same counting idea |
+| Pseudo-Palindromic Paths — LC #1457 | Count root to leaf paths that are pseudo palindromes → same preorder carry bitmask down | Yes — same pattern |
+| Sum Root to Leaf Numbers — LC #129 | Build numbers from root to leaf paths → same preorder carry running number down | Yes — same pattern |
+| Path Sum III — LC #437 | Count paths summing to target not just root to leaf → prefix sum hash map DFS | Partial — same path family |
+
+**How this pattern scales:**
+- **Preorder carry max down** is the core trick — pass running maximum from root to current node as parameter. At each node if `node.val >= maxSoFar` it is a good node increment count and update max. Recurse on both children with updated max. O(n) time O(h) space
+- **Preorder carry direction** — information flows TOP DOWN. Parent passes context (running max) to children. This is the opposite of postorder problems like LC #124 where information flows BOTTOM UP. Recognizing which direction information needs to flow determines traversal order immediately
+- **Global counter vs return value** — maintain a global count variable or pass count as a return value accumulated up the tree. Global variable is cleaner for counting problems. Return value accumulation (`return 1 + left + right`) is equally valid and avoids global state
+- **Carry value pattern family** → Path Sum (LC #112) carries running sum, LC #1448 carries running max, Pseudo-Palindromic Paths (LC #1457) carries a bitmask of seen digits. All three use identical preorder skeleton — only the carried value and the condition check differ
+- **Top down vs bottom up decision** → if a node needs information from its ancestors use preorder carry down. If a node needs information from its descendants use postorder return up. LC #1448 needs the max of all ancestors so preorder is mandatory — postorder cannot provide ancestor context
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int goodNodes(TreeNode* root) {
+        return countGoodNodes(root, root-> val); //start with the root
+    }
+
+private:
+    int countGoodNodes(TreeNode* root, int maxSoFar){
+        if(root == nullptr) return 0;
+
+        int good = 0;
+        if(root ->val >= maxSoFar){
+            good = 1; //if it is good, just increment counter by 1, so if a node is good, good always gets incremented by 1 in the recursive call
+            maxSoFar = root->val;  //update the max value, future nodes downstream get checked with this
+        }
+         good += countGoodNodes(root->left, maxSoFar); //this is an idea of preorder traversal, check the root and then check the left and right child, 
+         //because you need to check the value of the current node before you check the left and right child, because if the value of the current node is not good, 
+         //then you can return 0 immediately without checking the left and right child, so this is a preorder traversal question, because you need to check the value of the current node before you 
+         //check the left and right child
+        good += countGoodNodes(root->right, maxSoFar);
+
+    return good;
+
+
+
+    }
+};
+```
+
