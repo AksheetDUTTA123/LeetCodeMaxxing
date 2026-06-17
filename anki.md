@@ -11774,3 +11774,574 @@ private:
 };
 ```
 
+## Implement Trie (Prefix Tree) LC 208
+
+<!-- notecardId: 1781629631361 -->
+
+A trie (pronounced as "try") or prefix tree is a tree data structure used to efficiently store and retrieve keys in a dataset of strings. There are various applications of this data structure, such as autocomplete and spellchecker.
+
+Implement the Trie class:
+
+Trie() Initializes the trie object.
+void insert(String word) Inserts the string word into the trie.
+boolean search(String word) Returns true if the string word is in the trie (i.e., was inserted before), and false otherwise.
+boolean startsWith(String prefix) Returns true if there is a previously inserted string word that has the prefix prefix, and false otherwise.
+ 
+
+Example 1:
+
+Input
+["Trie", "insert", "search", "search", "startsWith", "insert", "search"]
+[[], ["apple"], ["apple"], ["app"], ["app"], ["app"], ["app"]]
+Output
+[null, null, true, false, true, null, true]
+
+Explanation
+Trie trie = new Trie();
+trie.insert("apple");
+trie.search("apple");   // return True
+trie.search("app");     // return False
+trie.startsWith("app"); // return True
+trie.insert("app");
+trie.search("app");     // return True
+ 
+
+Constraints:
+
+1 <= word.length, prefix.length <= 2000
+word and prefix consist only of lowercase English letters.
+At most 3 * 104 calls in total will be made to insert, search, and startsWith.
+
+**Link**: [text](https://leetcode.com/problems/implement-trie-prefix-tree/)
+
+%
+
+**Pattern:** Trie Data Structure, Tree Implementation
+
+**Approach:** Implement a Trie (prefix tree) data structure using a class with methods for inserting words, searching for complete words, and checking for prefixes. The Trie can be implemented using a nested class for the TrieNode, which contains a map of child nodes and a boolean flag to indicate if a node represents the end of a word. The insert method will add characters of the word to the Trie, the search method will check if a complete word exists in the Trie, and the startsWith method will check if any word in the Trie starts with the given prefix.
+
+**Key Insight:** The key insight is that a Trie is a tree-like data structure where each node represents a character of a string. By using a map to store child nodes, you can efficiently navigate through the Trie to insert and search for words. The boolean flag at each node allows you to distinguish between nodes that represent the end of a valid word and those that are just intermediate characters.
+
+**Gotchas:** Be careful to handle edge cases such as inserting an empty string or searching for an empty string. Additionally, make sure to correctly manage the child nodes in the Trie to avoid memory leaks or incorrect insertions. When implementing the search and startsWith methods, ensure that you are correctly traversing the Trie and checking the appropriate conditions for word completion and prefix matching.
+
+**Complexity:** Time: O(m) for insert, search, and startsWith where m is the length of the word or prefix (since you need to traverse the Trie for each character) | Space: O(n * m) in the worst case where n is the number of words and m is the average length of the words (if all words are unique and share no common prefixes)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Word Search II — LC #212 | Find multiple words in board using Trie → same Trie structure as lookup optimization | Yes — direct application |
+| Add and Search Word — LC #211 | Search with wildcard support → same Trie structure DFS on wildcard nodes | Yes — direct upgrade |
+| Longest Common Prefix — LC #14 | Find longest shared prefix → Trie generalizes the vertical scan approach | Yes — generalization |
+| Replace Words — LC #648 | Replace words with shortest root → same Trie prefix matching different goal | Yes — direct application |
+| Design Search Autocomplete System — LC #642 | Autocomplete suggestions → same Trie with frequency tracking at nodes | Yes — direct upgrade |
+| Maximum XOR of Two Numbers — LC #421 | Binary Trie for bitwise prefix matching → same Trie structure different alphabet | Yes — same pattern different domain |
+| Map Sum Pairs — LC #677 | Sum values of keys with given prefix → same Trie with value aggregation at nodes | Yes — direct upgrade |
+| Word Break — LC #139 | Check if string can be segmented using dictionary → Trie optimizes dictionary lookup | Partial — Trie as optimization |
+
+**How this pattern scales:**
+- **Array or hash map of children + isEnd flag** is the core structure — each TrieNode contains either a fixed size array of 26 children (lowercase only) or a hash map for general alphabets, plus a boolean `isEnd` marking complete words. Insert traverses or creates nodes character by character setting `isEnd = true` at the final node. O(L) time per operation where L is word length
+- **Search vs startsWith distinction** — search requires `isEnd == true` at the final node confirming a complete word exists. startsWith only requires the traversal to complete successfully regardless of `isEnd`. Conflating these two checks is the most common implementation bug
+- **Array vs hash map children** — fixed array of 26 is faster (O(1) indexing via `c - 'a'`) but wastes space for sparse alphabets. Hash map is more flexible for Unicode or mixed case but has higher constant overhead. Default to array for lowercase English problems, hash map otherwise
+- **Trie as the answer to "repeated prefix lookups"** — any problem requiring multiple prefix queries against a fixed dictionary benefits from Trie's O(L) lookup regardless of dictionary size, compared to scanning all words which is O(n*L). This is the single biggest signal for reaching for a Trie
+- **Word Search II connection** → LC #212 builds a Trie from the word list then DFS explores the board pruning branches where no Trie path exists. Building the Trie first transforms an O(words * board) brute force into a single combined board traversal — Trie eliminates redundant prefix checks across multiple words simultaneously
+
+```cpp
+class Trie {
+    private:
+        struct TrieNode{
+            TrieNode* children[26]; //each node has an array of 26 pointers to its children, each pointer corresponds to a letter of the alphabet
+            //if the pointer is null, we know that there is no child node for that letter, if the pointer is not null, we know that there is a child node for that letter, and we can follow the pointer to the child node to continue searching for the next letter in the word
+            bool isEnd; //need a marker for each node to indicate if it is the end of a word, because we can have a case where we have a word that is a prefix of another word, for example, "app" and "apple", 
+            //in this case, we need to be able to distinguish between the two words, so we need a marker for each node to indicate if it is the end of a word, because if we reach the end of the word "app", we need to be able to return true for the search function, but if we reach the end of the word "apple", we need to be able to return false for the search function, because "app" is not a complete word, it is just a prefix of "apple", so we need a marker for each node to indicate if it is the end of a word
+            TrieNode(){ //when initializing a node, just set it as empty for now, this will get filled when inserting something
+                isEnd = false;
+                for(int i = 0; i < 26; i++){
+                    children[i] = nullptr;
+                }
+            }
+        };
+
+        TrieNode* root; //need to establish a root node for the trie, this will be the starting point for all operations 
+        //on the trie, because all words in the trie will be stored as a path from the root node to a leaf node, so we need to establish a root node for the trie, this will be the starting point for all operations on the trie, because all words in the trie will be stored as a path from the root node to a leaf node
+public:
+    Trie() {
+        root = new TrieNode(); 
+    }
+    
+    void insert(string word) {
+        TrieNode * curr = root; //start at the root every time
+        for(char c : word){
+            if(curr->children[c - 'a'] == nullptr){ //letter doesnt exist, so we need to create a new node fpr that letter, we can calculate the index of the letter in the children array by subtracting 'a' from the character, 
+            //this will give us a number between 0 and 25, which corresponds to the index of the letter in the children array, for example, if c is 'a', then c - 'a' will be 0, which corresponds to the index of 'a' in the children array, if c is 'b', then c - 'a' will be 1, which corresponds to the index of 'b' in the children array, and so on
+                curr->children[c - 'a'] = new TrieNode();
+            }
+            curr = curr->children[c - 'a']; //this is how to traverse through the trie, we follow the pointer to the child node for the current letter, and then we continue to the next letter in the word, this will allow us to insert the word into the trie by creating new nodes for each letter in the word that does not already exist in the trie, 
+            //and then we can mark the end of the word by setting the isEnd marker to true for the last node in the path of the word
+        }
+        curr->isEnd = true;
+    }
+    
+    bool search(string word) {
+        TrieNode * curr = root;
+        for(char c : word){
+            if(curr->children[c - 'a'] == nullptr){
+                return false; //if the child doesnt exist, we know that this string will not be in the trie, so return false
+            }
+            curr = curr->children[c - 'a'];
+        }
+        if(curr->isEnd == false){ //if not isEnd, we have a situation like search is "app" but the word is "apple", in this case, we will reach the end of the search string "app", 
+        //but we will not have reached the end of the word "apple", so we need to check if the isEnd marker is true for the last node in the path of the search string, if it is not true, 
+        //then we know that the search string is just a prefix of a word in the trie, and it is not a complete word in the trie, so we need to return false
+            return false;
+        }
+        return true;
+    }
+    
+    bool startsWith(string prefix) {
+          TrieNode * curr = root;
+        for(char c : prefix){
+            if(curr->children[c - 'a'] == nullptr){
+                return false; //same logic as search
+            }
+            curr = curr->children[c - 'a'];
+        }
+        return true; //if we have successfully traversed through the trie for all the letters in the prefix, then we know that there is a word in the trie that starts with the prefix, so we can return true, 
+        //we do not need to check if the isEnd marker is true for the last node in the path of the prefix, because we are only checking if there is a word in the trie that starts with the prefix, and it does not matter if the prefix itself is a complete word in the trie or not, as long as there is a word in the trie that starts with the prefix, we can return true
+        //dont need to check isEnd because we are only checking if there is a word in the trie that starts with the prefix, 
+        //and it does not matter if the prefix itself is a complete word in the trie or not, as long as there is a word in the trie that starts with the prefix, we can return true
+    }
+};
+
+/**
+ * Your Trie object will be instantiated and called as such:
+ * Trie* obj = new Trie();
+ * obj->insert(word);
+ * bool param_2 = obj->search(word);
+ * bool param_3 = obj->startsWith(prefix);
+ */
+```
+
+## Design Add and Search Words Data Structure LC 211
+
+<!-- notecardId: 1781630922244 -->
+
+Design a data structure that supports adding new words and finding if a string matches any previously added string.
+
+Implement the WordDictionary class:
+
+WordDictionary() Initializes the object.
+void addWord(word) Adds word to the data structure, it can be matched later.
+bool search(word) Returns true if there is any string in the data structure that matches word or false otherwise. word may contain dots '.' where dots can be matched with any letter.
+ 
+
+Example:
+
+Input
+["WordDictionary","addWord","addWord","addWord","search","search","search","search"]
+[[],["bad"],["dad"],["mad"],["pad"],["bad"],[".ad"],["b.."]]
+Output
+[null,null,null,null,false,true,true,true]
+
+Explanation
+WordDictionary wordDictionary = new WordDictionary();
+wordDictionary.addWord("bad");
+wordDictionary.addWord("dad");
+wordDictionary.addWord("mad");
+wordDictionary.search("pad"); // return False
+wordDictionary.search("bad"); // return True
+wordDictionary.search(".ad"); // return True
+wordDictionary.search("b.."); // return True
+ 
+
+Constraints:
+
+1 <= word.length <= 25
+word in addWord consists of lowercase English letters.
+word in search consist of '.' or lowercase English letters.
+There will be at most 2 dots in word for search queries.
+At most 104 calls will be made to addWord and search.
+
+**Link**: [text](https://leetcode.com/problems/design-add-and-search-words-data-structure/)
+
+%
+
+**Pattern:** Trie Data Structure with Wildcard Support, Tree Implementation
+
+**Approach:** Implement a Trie (prefix tree) data structure similar to LC #208, but with additional support for wildcard characters ('.') in the search method. The TrieNode will contain a map of child nodes and a boolean flag to indicate if a node represents the end of a word. The addWord method will insert words into the Trie as before, while the search method will need to handle both exact character matches and wildcard matches by recursively checking all possible child nodes when a '.' is encountered.
+
+**Key Insight:** The key insight is that when searching for a word with potential wildcard characters, you need to explore all possible paths in the Trie when you encounter a '.', since it can match any letter. This requires a recursive search approach that checks each child node of the current TrieNode when a '.' is encountered, while still maintaining the standard Trie traversal for exact character matches.
+
+**Gotchas:** Be careful to handle edge cases such as searching for an empty string or a string that consists entirely of wildcard characters. Additionally, ensure that the recursive search correctly backtracks when exploring wildcard matches, and that it properly checks the isEnd flag to confirm complete word matches.
+
+**Complexity:** Time: O(m) for addWord where m is the length of the word, O(26^k) for search where k is the number of wildcards (since each wildcard can match any of the 26 letters) | Space: O(n * m) in the worst case for addWord where n is the number of words and m is the average length of the words (if all words are unique and share no common prefixes)
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Implement Trie — LC #208 | No wildcard support → same Trie structure simpler search no DFS branching | Yes — direct foundation |
+| Word Search II — LC #212 | Search board for multiple words → same Trie structure DFS on 2D grid not wildcard | Partial — same Trie + DFS idea |
+| Wildcard Matching — LC #44 | Match pattern with * and ? against string → DP not Trie, different wildcard semantics | No — different pattern |
+| Regular Expression Matching — LC #10 | Match pattern with . and * → DP not Trie, different wildcard semantics | No — different pattern |
+| Replace Words — LC #648 | Replace words with shortest root → same Trie structure no wildcard needed | Partial — same Trie foundation |
+| Design Search Autocomplete System — LC #642 | Autocomplete with frequency ranking → same Trie structure additional metadata | Partial — same Trie upgrade |
+| Stream of Characters — LC #1032 | Check if any dictionary word ends at current stream position → Trie built in reverse | Yes — same Trie idea reversed |
+| Map Sum Pairs — LC #677 | Sum values with given prefix → same Trie with value aggregation | Partial — same Trie foundation |
+
+**How this pattern scales:**
+- **Trie + DFS on wildcard** is the core trick — insert words normally into a Trie. Search recursively: for a normal character follow the single corresponding child. For `.` try all 26 possible children recursively (branching DFS). Return true if any branch reaches a node with `isEnd == true` at the end of the pattern. O(L) for exact match O(26^d) worst case for d dots
+- **Branching only on wildcard** — the search degrades to exponential only in the number of `.` characters not the total word length. A pattern with zero dots is O(L) identical to LC #208. Most practical inputs have few wildcards keeping this fast in expected cases
+- **DFS with index parameter** — pass current Trie node and current index into the pattern string as DFS parameters. Base case: index equals pattern length, return `node.isEnd`. Recursive case: if character is `.` loop through all existing children recursively, otherwise follow single child if it exists
+- **Early termination optimization** — when looping through all 26 children for a `.`, return true immediately on the first successful branch rather than checking all 26. This is a single line optimization but meaningfully reduces average case work
+- **Stream of Characters connection** → LC #1032 inserts dictionary words in REVERSE into a Trie then checks backward from the current stream position. Different problem framing but the same insight — Trie lookup direction can be inverted depending on what the query needs to check
+
+```cpp
+class WordDictionary {
+private:
+    struct TrieNode{
+        TrieNode* children[26];
+        bool isEnd;
+
+
+        TrieNode() {
+            isEnd = false;
+            for(int i = 0; i < 26; i++){
+                children[i] = nullptr;
+            }
+        }
+    };
+
+    TrieNode* root;
+
+    bool SearchCheck(string& word, int start, TrieNode* ptr){ //need this helper function to do the recursive check for the search function, because we need to be able to check for the '.' character, which can match any letter, 
+    //so we need to be able to check for all possible letters when we encounter a '.', and we can do this by recursively calling the SearchCheck function for each possible letter when we encounter a '.', this will allow us to check 
+    //for all possible combinations of letters when we encounter a '.', and if any of those combinations match the word we are searching for, then we can return true, otherwise we can return false
+        if(start == word.length()) return ptr->isEnd; //base case, if index is at end of word, check if it is the actual end or not
+
+        char c = word[start]; //index to the character
+
+        if (c == '.'){
+            for(int i = 0; i < 26; i++){
+                if (ptr->children[i] != nullptr){ //check for all possible matches for characters after the '.' character, if any of those matches return true, 
+                //then we can return true for the search function, otherwise we can return false, this will allow us to check for all possible combinations of letters when we encounter a '.', and if any of those combinations match the word we are searching for, then we can return true, otherwise we can return false
+                    if(SearchCheck(word, start + 1, ptr->children[i])) return true;
+                }
+            }
+            return false;
+        }
+        else{
+            if(ptr->children[c - 'a'] != nullptr){ //this is the case where we are at a letter, we just need to check if the child node for that letter exists, if it does, then we can continue to the next letter 
+            //in the word by recursively calling the SearchCheck function with the child node for that letter, this will allow us to continue searching for the next letter in the word, and if we reach the end of the word and the isEnd marker 
+            //is true for the last node in the path of the word, then we can return true for the search function, otherwise we can return false
+               return SearchCheck(word, start + 1, ptr->children[c - 'a']);
+            }
+        return false;
+        }
+    }
+
+    
+public:
+    WordDictionary() {
+        root = new TrieNode();
+    }
+    
+    void addWord(string word) { //this is the same way to add a word to a trie like other questions, we just need to follow the path of the word in the trie, and create new nodes for each letter in the word that does not 
+    //already exist in the trie, and then we can mark the end of the word by setting the isEnd marker to true for the last node in the path of the word
+       TrieNode* curr = root;
+    for(char c : word){
+        if(curr->children[c - 'a'] == nullptr){
+            curr->children[c - 'a'] = new TrieNode();
+        }
+        curr = curr -> children[c-'a'];
+    }
+    curr ->isEnd = true;
+    }
+    
+    bool search(string word) {
+        return SearchCheck(word, 0, root); //kick off recursion with this helper function, we start at index 0 of the word and the root of the trie, 
+        //and then we can recursively check for each character in the word, and if we reach the end of the word and the isEnd marker is true for the 
+        //last node in the path of the word, then we can return true for the search function, otherwise we can return false
+    }
+};
+
+/**
+ * Your WordDictionary object will be instantiated and called as such:
+ * WordDictionary* obj = new WordDictionary();
+ * obj->addWord(word);
+ * bool param_2 = obj->search(word);
+ */
+```
+
+## Extra Characters in a String LC 2707 
+
+<!-- notecardId: 1781634215584 -->
+
+You are given a 0-indexed string s and a dictionary of words dictionary. You have to break s into one or more non-overlapping substrings such that each substring is present in dictionary. There may be some extra characters in s which are not present in any of the substrings.
+
+Return the minimum number of extra characters left over if you break up s optimally.
+
+ 
+
+Example 1:
+
+Input: s = "leetscode", dictionary = ["leet","code","leetcode"]
+Output: 1
+Explanation: We can break s in two substrings: "leet" from index 0 to 3 and "code" from index 5 to 8. There is only 1 unused character (at index 4), so we return 1.
+
+Example 2:
+
+Input: s = "sayhelloworld", dictionary = ["hello","world"]
+Output: 3
+Explanation: We can break s in two substrings: "hello" from index 3 to 7 and "world" from index 8 to 12. The characters at indices 0, 1, 2 are not used in any substring and thus are considered as extra characters. Hence, we return 3.
+ 
+
+Constraints:
+
+1 <= s.length <= 50
+1 <= dictionary.length <= 50
+1 <= dictionary[i].length <= 50
+dictionary[i] and s consists of only lowercase English letters
+dictionary contains distinct words
+
+**Link**: [text](https://leetcode.com/problems/extra-characters-in-a-string/)
+
+%
+
+**Pattern:** Dynamic Programming, String Segmentation, Trie
+
+**Approach:** Use DP to solve by using a memo table. The idea is to iterate through the string and for each index, check if any of the words in the dictionary match a substring starting at that index. If a match is found, recursively call the function for the index immediately following the matched word. The base case is when the index reaches the end of the string, at which point we return 0 (no extra characters). For each index, we also consider the case where we skip the current character (counting it as an extra character) and move to the next index. The minimum of these two options will give us the optimal solution.
+
+**Gotchas:** Be careful to handle the base case correctly when the index reaches the end of the string. Additionally, ensure that you are correctly checking for matches against the dictionary words and that you are properly updating the minimum count of extra characters. It’s also important to use memoization to avoid redundant calculations and improve performance. You can't just go letter by letter and checking the trie as you might think for a brute force case, because you might have a case where you have a word in the dictionary that is longer than one letter, so you need to be able to check for matches against the dictionary words, and this is where the recursive calls come in, because you need to be able to check for matches against the dictionary words starting at each index of the string, and if you find a match, then you can recursively call the function for the index immediately following the matched word, this will allow you to check for all possible segmentations of the string against the dictionary words, and find the optimal solution with the minimum number of extra characters.
+
+**Complexity:** Time: O(n * m * k) where n is the length of the string, m is the number of words in the dictionary, and k is the average length of the words (since for each index we check all words and their lengths) | Space: O(n) for the memoization table
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Word Break — LC #139 | Check if string can be fully segmented → same DP foundation no extra char counting | Yes — direct foundation |
+| Word Break II — LC #140 | Return all valid segmentations → same DP with backtracking to collect paths | Partial — same DP family |
+| Implement Trie — LC #208 | Build Trie for dictionary lookup → same Trie optimization for substring matching | Partial — same Trie optimization |
+| Concatenated Words — LC #472 | Find words formed by other dictionary words → same DP segmentation different goal | Partial — same DP family |
+| Palindrome Partitioning II — LC #132 | Minimum cuts for palindrome partitioning → same DP partition minimize cost | Yes — same DP structure |
+| Perfect Squares — LC #279 | Minimum squares summing to n → same DP partition minimize count | Yes — same DP structure |
+| Word Break with Trie optimization | Optimize dictionary lookup with Trie → same Trie + DP combination | Yes — direct optimization |
+| Coin Change — LC #322 | Minimum coins summing to amount → same DP partition minimize count | Yes — same DP structure |
+
+**How this pattern scales:**
+- **DP partition minimizing leftover** is the core trick — `dp[i]` represents minimum extra characters in `s[0:i]`. For each position i try every substring `s[j:i]` checking if it is a dictionary word. If yes `dp[i] = min(dp[i], dp[j])`. If no extension helps `dp[i] = dp[i-1] + 1` (treat character i-1 as extra). O(n² * m) time where m is average word check cost, O(n) space
+- **Base case and transition** — `dp[0] = 0` (empty prefix has zero extra characters). For each i from 1 to n, default `dp[i] = dp[i-1] + 1` assuming the current character is extra, then try all valid dictionary word endings to potentially improve it
+- **Hash set for O(1) word lookup** — store dictionary words in a hash set for O(1) membership checks during the substring scan. Without it each check against the dictionary list is O(d) where d is dictionary size, blowing up total complexity significantly
+- **Trie optimization** — replace the hash set with a Trie and walk the Trie while scanning substrings ending at each position. Avoids generating every possible substring explicitly since the Trie naturally prunes paths that cannot match any dictionary word. Reduces practical runtime when dictionary words share many prefixes
+- **DP partition family** → Word Break (LC #139) asks "can it be fully segmented" (boolean). LC #2707 asks "minimize what is left over" (optimization). Coin Change (LC #322) and Perfect Squares (LC #279) ask "minimize count of pieces." All four share the identical partition DP skeleton — only the recurrence's combination logic and target metric differ
+
+```cpp
+class Solution {
+private:
+
+
+    struct TrieNode{
+        TrieNode* children[26];
+        bool isEnd;
+
+        TrieNode(){
+            isEnd = false;
+            for(int i = 0; i < 26; i++){
+                children[i] = nullptr;
+            }
+        }
+    };
+        TrieNode* root;
+
+    void insert(string word){
+            TrieNode* curr = root;
+            for(char c : word){
+                if(curr->children[c - 'a'] == nullptr){
+                    curr->children[c - 'a'] = new TrieNode();
+                }
+                curr = curr->children[c - 'a'];
+            }
+            curr->isEnd = true;
+        }
+
+public:
+    int minExtraChar(string s, vector<string>& dictionary) {
+        vector<int> memo(s.length() + 1, 0);
+        int charCt = 0;
+        root = new TrieNode(); 
+        for(string word : dictionary){
+            insert(word);
+        }
+
+        for(int i = s.length() - 1; i >= 0; i--){ //start from the back of the string, this is a bottom up dp approach, we are building the solution from the end of the string to the beginning of the string, this way we can use the memoization array to store the minimum number of extra characters needed for each substring of the string, and we can use that information to build the solution for the entire string
+            int charCt = memo[i + 1] + 1; //if we dont find a match in the trie, then we need to add 1 to the character count, because that character is an extra character that is not in the dictionary
+            TrieNode* curr = root; //start at the root of the trie, we will use this pointer to traverse through the trie to check for matches
+            //for substrings of the string, we will start from the current index i and check for matches for substrings of the string that start at index i, and we will continue to check for longer substrings of the string until we either find a match in the trie or we reach the end of the string, if we find a match in the trie for a substring of the string, then we can update the character count by taking the minimum of the current character count and the character count for the substring that starts at index j + 1, because if we have found a match for a substring of the string, then we can skip over that substring and just add the character count for the remaining substring that starts at index j + 1, this will allow us to build the solution for longer substrings of the string as we continue to iterate through the string from back to front
+            for(int j = i; j < s.length(); j++){
+                if(curr->children[s[j] - 'a'] == nullptr){ //if there is no match in the trie for the current character, then we can
+                // break out of the loop, because there is no point in continuing to check for longer substrings if there is no match for the current character
+                    break;
+                }
+                curr = curr->children[s[j] - 'a'];
+                if(curr->isEnd){ //if we have found a match in the trie for a substring of the string, then we can update the character count by taking the minimum of the current character
+                // count and the character count for the substring that starts at index j + 1, because if we have found a match for a substring of the string, then we can skip over that substring
+                //and just add the character count for the remaining substring that starts at index j + 1
+                    charCt = min(charCt, memo[j + 1]);
+                }
+            }
+            memo[i] = charCt; //update the memoization array with the minimum number of extra characters needed for the substring that starts at index i, this will allow us to use this
+            // information to build the solution for longer substrings of the string as we continue to iterate through the string from back to front
+
+        }
+        return memo[0];
+    }
+};
+```
+
+## Word Search II LC 212
+
+<!-- notecardId: 1781634840691 -->
+
+Given an m x n board of characters and a list of strings words, return all words on the board.
+
+Each word must be constructed from letters of sequentially adjacent cells, where adjacent cells are horizontally or vertically neighboring. The same letter cell may not be used more than once in a word.
+
+ 
+
+Example 1:
+
+
+Input: board = [["o","a","a","n"],["e","t","a","e"],["i","h","k","r"],["i","f","l","v"]], words = ["oath","pea","eat","rain"]
+Output: ["eat","oath"]
+Example 2:
+
+
+Input: board = [["a","b"],["c","d"]], words = ["abcb"]
+Output: []
+ 
+
+Constraints:
+
+m == board.length
+n == board[i].length
+1 <= m, n <= 12
+board[i][j] is a lowercase English letter.
+1 <= words.length <= 3 * 104
+1 <= words[i].length <= 10
+words[i] consists of lowercase English letters.
+All the strings of words are unique.
+
+**Link**: [text](https://leetcode.com/problems/word-search-ii/)
+
+%
+
+**Pattern:** Trie + Backtracking, DFS on 2D Grid
+
+**Approach:** Build a Trie from the list of words to allow for efficient prefix checking. Then, perform a DFS on the board starting from each cell. During the DFS, check if the current path matches any prefix in the Trie. If it does, continue exploring; if it matches a complete word, add it to the result set. Use a visited set to ensure that the same cell is not used more than once in a single word path.
+
+**Key Insight:** The key insight is that by using a Trie, you can efficiently check if the current path in the DFS is a valid prefix of any word in the list. This allows you to prune the search space early, avoiding unnecessary exploration of paths that cannot lead to a valid word. Additionally, using a set to store found words ensures that duplicates are not added to the result.
+
+**Gotchas:** Be careful to mark cells as visited during the DFS and unmark them when backtracking to ensure that the same cell is not reused in a single path. Also, make sure to handle edge cases such as an empty board or an empty list of words. When adding found words to the result set, ensure that you are checking for complete word matches in the Trie, not just prefixes.
+
+**Complexity:** Time: O(m * n * 4^L) where m and n are the dimensions of the board and L is the maximum length of words (since in the worst case, you may explore all paths of length L from each cell) | Space: O(W * L) for the Trie where W is the number of words and L is the average length of the words, plus O(L) for the recursion stack during DFS
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Word Search — LC #79 | Search for one word not multiple → same DFS backtracking no Trie needed | Yes — foundation |
+| Implement Trie — LC #208 | Build Trie standalone → same Trie structure used as optimization here | Yes — direct foundation |
+| Add and Search Word — LC #211 | Wildcard search in Trie → same Trie structure different query type | Partial — same Trie idea |
+| Number of Islands — LC #200 | Count connected components → same DFS grid traversal different goal | Partial — same grid DFS family |
+| Longest Common Prefix — LC #14 | Find shared prefix → Trie generalizes this idea to multiple words | Partial — same Trie foundation |
+| Boggle Solver — classic problem | Find all valid words on letter grid → exact restatement of LC #212 | Yes — same problem family |
+| Concatenated Words — LC #472 | Find words formed by other words → same Trie based prefix pruning idea | Partial — same Trie optimization |
+| Robot Room Cleaner — LC #489 | DFS backtracking on grid with constraints → same backtrack and unmark visited | Partial — same backtracking idea |
+
+**How this pattern scales:**
+- **Trie + DFS backtracking with pruning** is the core trick — build a Trie from all words first. DFS from every cell in the board following Trie paths rather than checking each word independently. If the current cell's character has no corresponding Trie child, prune immediately. When a Trie node has `isEnd == true`, record the complete word. O(rows * cols * 4^L) worst case but Trie pruning makes practical performance far better
+- **Why Trie beats per-word DFS** — naive approach runs DFS once per word giving O(words * rows * cols * 4^L). Building one Trie and running DFS once per starting cell shares prefix exploration across all words simultaneously — words sharing a prefix like "cat" and "car" explore the shared "ca" path only once
+- **Mark visited and backtrack** — use a temporary marker (e.g. set cell to `#`) before recursing into neighbors and restore the original character after returning. Same visited tracking as LC #79 — failing to restore breaks subsequent searches starting from different cells
+- **Trie pruning optimization** — after fully exploring a Trie node's subtree with no further unfound words below it, remove that child reference from the parent. This prevents repeatedly re-exploring dead branches across multiple starting cells, meaningfully improving performance on large boards
+- **Duplicate avoidance** — once a word is found set `isEnd = false` or remove it from a results set check to avoid adding the same word twice if multiple paths reach it. A naive implementation can report the same word multiple times since multiple cells might trace the same word
+
+```cpp
+class Solution {
+private:
+
+    struct TrieNode{
+        TrieNode* children[26];
+        string word;//store full word at end
+
+
+        TrieNode(){
+            word= "";
+            for(int i = 0; i < 26; i++){
+                children[i] = nullptr;
+            }
+        }
+
+    };
+
+    void insert(string word){
+        TrieNode * curr = root;
+        for(char c : word){
+            if(curr->children[c - 'a'] == nullptr){
+                curr->children[c - 'a'] = new TrieNode();
+            }
+            curr = curr->children[c-'a'];
+        }
+        curr->word= word;
+    }
+
+    void dfs(vector<vector<char>>& board, int row, int col, TrieNode* curr, vector<string>& result){
+        if(row < 0 || row >= board.size() || col < 0 || col >= board[0].size()) return;
+
+        char currentChar = board[row][col];
+
+        if (currentChar == '#' || curr->children[currentChar - 'a'] == nullptr) return; //if we have already visited this cell, or if there is no child node for the current character in the trie, 
+        //then we can return, because there is no point in continuing to search for words in the board if we have already visited this cell, or if there is no child node for the current character in the trie,
+        // because that means that there are no words in the trie that start with the current character, so we can return and stop searching for words in the board
+
+        curr = curr->children[currentChar-'a']; //move down the trie to the child node for the current character, 
+        //this will allow us to continue searching for words in the trie that start with the current character, and if we reach 
+        //the end of a word in the trie, then we can add that word to the result vector, because we have found a word in the board that is in the trie
+
+        if(curr->word != ""){ //found a word
+            result.push_back(curr->word);
+            curr->word = "";
+        }
+
+        board[row][col] = '#'; //mark as visited, we can also use a separate visited array, but this is more space efficient, we just need to make sure to unmark it after the dfs calls, 
+        //this will allow us to avoid using extra space for a visited array, and we can just use the board itself to mark visited cells by changing the character to a special character like '#', and then we can change it back to the original character after the dfs calls, this will allow us to avoid using extra space for a visited array,
+        // and we can just use the board itself to mark visited cells by changing the character to a special character like '#', and then we can change it back to the original character after the dfs calls
+        dfs(board, row + 1, col,curr,  result);
+        dfs(board, row - 1, col, curr,result);
+        dfs(board, row, col + 1, curr,result);
+        dfs(board, row, col - 1,curr, result);
+
+        board[row][col] = currentChar; //need to unmark because we are doing a depth first search, and we need to be able to backtrack to the previous cell, 
+        //so we need to unmark the current cell after the dfs calls, this will allow us to backtrack to the previous cell and continue searching for other words in the board
+    }
+
+    TrieNode *root;
+public:
+    vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {
+        vector<string> result;
+        root = new TrieNode();
+        for(string s : words){
+            insert(s);
+        }
+
+        for(int i = 0; i < board.size(); i++){
+            for(int j = 0; j < board[0].size(); j++){
+                dfs(board, i, j, root, result); //running DFS through entire grid, this will allow us to find all the words in the board that are in the trie, because we will be searching for words in the trie that start with the characters in the board, and if we reach the end 
+                //of a word in the trie, then we can add that word to the result vector, because we have found a word in the board that is in the trie
+            }
+        }
+        return result;
+    }
+};
+```
+
