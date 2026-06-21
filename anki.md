@@ -12345,3 +12345,380 @@ public:
 };
 ```
 
+## Kth largest element in an array LC 215
+
+<!-- notecardId: 1781844369109 -->
+
+Given an integer array nums and an integer k, return the kth largest element in the array.
+
+Note that it is the kth largest element in the sorted order, not the kth distinct element.
+
+Can you solve it without sorting?
+
+ 
+
+Example 1:
+
+Input: nums = [3,2,1,5,6,4], k = 2
+Output: 5
+Example 2:
+
+Input: nums = [3,2,3,1,2,4,5,5,6], k = 4
+Output: 4
+ 
+
+Constraints:
+
+1 <= k <= nums.length <= 105
+-104 <= nums[i] <= 104
+
+**Link**: [text](https://leetcode.com/problems/kth-largest-element-in-an-array/)
+
+%
+
+**Pattern:** Quickselect Algorithm, Partitioning, Priority Queue (Heap), Min Heap
+
+**Approach:** Use the Quickselect algorithm, which is a selection algorithm to find the k-th smallest/largest element in an unordered list. The algorithm is based on the partitioning method used in QuickSort. We can choose a pivot and partition the array into two parts: elements greater than the pivot and elements less than the pivot. Depending on the position of the pivot after partitioning, we can determine if we need to search in the left or right partition or if we have found the k-th largest element. Or, if using a priority queue, we can maintain a min-heap of size k to keep track of the k largest elements seen so far. As we iterate through the array, we add elements to the heap and if the heap exceeds size k, we remove the smallest element. At the end, the root of the min-heap will be the k-th largest element.
+
+**Key Insight:** The key insight is that the Quickselect algorithm allows us to find the k-th largest element in average O(n) time without needing to sort the entire array, which would take O(n log n). By partitioning the array around a pivot, we can effectively narrow down our search space for the k-th largest element. Alternatively, using a min-heap of size k allows us to maintain the k largest elements efficiently, ensuring that we can retrieve the k-th largest element in O(1) time after processing all elements.
+
+**Gotchas:** When implementing the Quickselect algorithm, be careful with the partitioning logic to ensure that you are correctly identifying the position of the pivot and adjusting your search space accordingly. Additionally, when using a min-heap, make sure to handle edge cases such as when k is equal to the length of the array or when there are duplicate elements in the array. Also, be mindful of the time complexity of your chosen approach, as using a sorting method would not meet the requirement of solving it without sorting. When doing this question, it is easy to think using a max Heap is optimal, but it is not, because we would have to add all the elements to the max Heap, which would take O(n log n) time, and then we would have to remove the top element k times, which would take O(k log n) time, so the total time complexity would be O(n log n + k log n) which is not optimal. Using a min Heap of size k allows us to maintain only the k largest elements seen so far, and we can add elements to the heap in O(log k) time and remove the smallest element in O(log k) time, so the total time complexity would be O(n log k) which is more efficient than using a max Heap.
+
+**Complexity:** Time: O(n) average case for Quickselect, O(n log k) for min-heap approach | Space: O(1) for Quickselect (in-place), O(k) for min-heap approach
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Kth Smallest Element in Sorted Matrix — LC #378 | Kth smallest across sorted matrix → binary search on value or heap | Partial — same kth idea |
+| Top K Frequent Elements — LC #347 | K most frequent not kth largest → heap or bucket sort on frequency | Partial — same heap family |
+| K Closest Points to Origin — LC #973 | K closest by distance not kth largest → same min heap size k | Yes — same pattern |
+| Find K Pairs with Smallest Sums — LC #373 | K smallest pair sums → min heap lazy expansion | Partial — same heap idea |
+| Sort an Array — LC #912 | Full sort not kth element → QuickSort or MergeSort no early stop | Partial — same partition idea |
+| Wiggle Sort II — LC #324 | Interleave smaller and larger halves → same median finding via QuickSelect | Partial — same partition idea |
+| Median of Two Sorted Arrays — LC #4 | Median across two sorted arrays → binary search on partition | Partial — same kth element family |
+| Kth Largest Element in Stream — LC #703 | Kth largest in streaming data → maintain min heap of size k | Yes — direct variant |
+
+**How this pattern scales:**
+- **QuickSelect** is the optimal O(n) average approach — partition array around a random pivot. If pivot lands at index `n-k` (kth largest position from left in sorted order) return it. If pivot index is too large recurse left. If too small recurse right. O(n) average O(n²) worst case with bad pivot choice
+- **Min heap of size k** is the O(n log k) alternative — iterate through array maintaining a min heap of size k. If current element exceeds heap minimum pop minimum push current. After processing all elements heap top is kth largest. Cleaner to implement under pressure than QuickSelect
+- **Randomized pivot is mandatory for QuickSelect** — deterministic pivot selection (always first or last element) degrades to O(n²) on sorted or reverse sorted input. Always shuffle or pick a random pivot index before partitioning to guarantee O(n) average
+- **Partition around pivot** — swap random pivot to end, use two pointer partition placing all elements less than pivot to the left all greater to the right return final pivot position. Same partition logic as Sort Colors (LC #75) Dutch National Flag applied to two groups not three
+- **QuickSelect vs heap tradeoff** — QuickSelect is O(n) average but O(n²) worst case and modifies the input array. Min heap is O(n log k) always and does not modify input. For interviews always clarify whether input can be modified and whether worst case guarantee matters before choosing
+
+```cpp
+class Solution {
+public:
+    int findKthLargest(vector<int>& nums, int k) {
+        std::priority_queue<int, vector<int>, greater<int>> pq;
+        for(int i = 0; i < nums.size(); i++){
+            pq.push(nums[i]);
+            if(pq.size() > k){
+                pq.pop();
+            }
+        }
+        return pq.top();
+    }
+};
+
+// QuickSelect implementation for reference
+class Solution {
+private:
+    int partition(vector<int>& nums, int left, int right, int pivotIndex) {
+        int pivotValue = nums[pivotIndex];
+        swap(nums[pivotIndex], nums[right]); // Move pivot to end
+        int storeIndex = left;
+
+        for (int i = left; i < right; i++) {
+            if (nums[i] > pivotValue) { // For kth largest, use > for descending order
+                swap(nums[storeIndex], nums[i]);
+                storeIndex++;
+            }
+        }
+        swap(nums[right], nums[storeIndex]); // Move pivot to its final place
+        return storeIndex;
+    }
+
+    int quickSelect(vector<int>& nums, int left, int right, int k) {
+        if (left == right) return nums[left]; // Only one element
+
+        int pivotIndex = left + rand() % (right - left + 1); // Random pivot
+        pivotIndex = partition(nums, left, right, pivotIndex);
+
+        if (k == pivotIndex) {
+            return nums[k]; // Found the kth largest
+        } else if (k < pivotIndex) {
+            return quickSelect(nums, left, pivotIndex - 1, k); // Search left
+        } else {
+            return quickSelect(nums, pivotIndex + 1, right, k); // Search right
+        }
+    }
+public:
+    int findKthLargest(vector<int>& nums, int k) {
+        return quickSelect(nums, 0, nums.size() - 1, k - 1); // k-1 for zero-based index
+    }
+};
+```
+
+## Find Median from Data Stream LC 295
+
+<!-- notecardId: 1781845202397 -->
+
+The median is the middle value in an ordered integer list. If the size of the list is even, there is no middle value, and the median is the mean of the two middle values.
+
+For example, for arr = [2,3,4], the median is 3.
+For example, for arr = [2,3], the median is (2 + 3) / 2 = 2.5.
+Implement the MedianFinder class:
+
+MedianFinder() initializes the MedianFinder object.
+void addNum(int num) adds the integer num from the data stream to the data structure.
+double findMedian() returns the median of all elements so far. Answers within 10-5 of the actual answer will be accepted.
+ 
+
+Example 1:
+
+Input
+["MedianFinder", "addNum", "addNum", "findMedian", "addNum", "findMedian"]
+[[], [1], [2], [], [3], []]
+Output
+[null, null, null, 1.5, null, 2.0]
+
+Explanation
+MedianFinder medianFinder = new MedianFinder();
+medianFinder.addNum(1);    // arr = [1]
+medianFinder.addNum(2);    // arr = [1, 2]
+medianFinder.findMedian(); // return 1.5 (i.e., (1 + 2) / 2)
+medianFinder.addNum(3);    // arr[1, 2, 3]
+medianFinder.findMedian(); // return 2.0
+ 
+
+Constraints:
+
+-105 <= num <= 105
+There will be at least one element in the data structure before calling findMedian.
+At most 5 * 104 calls will be made to addNum and findMedian.
+ 
+
+Follow up:
+
+If all integer numbers from the stream are in the range [0, 100], how would you optimize your solution?
+If 99% of all integer numbers from the stream are in the range [0, 100], how would you optimize your solution?
+
+**Link**: [text](https://leetcode.com/problems/find-median-from-data-stream/)
+
+%
+
+**Pattern:** Two Heaps (Min Heap and Max Heap), Median Maintenance
+
+**Approach:** Use two heaps to maintain the lower half and upper half of the numbers. The max heap will store the smaller half of the numbers, while the min heap will store the larger half. When adding a number, we first add it to one of the heaps based on its value compared to the current median. After adding, we balance the heaps so that their sizes differ by at most one. To find the median, if both heaps have the same size, we take the average of their top elements; if one heap has more elements than the other, the median is the top element of that heap.
+
+**Key Insight:** The key insight is that by maintaining two heaps, we can efficiently keep track of the median as new numbers are added. The max heap allows us to quickly access the largest number in the lower half, while the min heap allows us to quickly access the smallest number in the upper half. By ensuring that the heaps are balanced in size, we can easily compute the median based on the top elements of the heaps.
+
+**Gotchas:** Be careful to maintain the balance of the two heaps after each insertion. When adding a new number, you may need to move elements between the heaps to ensure that their sizes differ by at most one. Additionally, when calculating the median, make sure to handle both cases where the heaps are of equal size and where one heap has more elements than the other. Also, consider edge cases such as when the first few numbers are added and how the median is calculated in those scenarios. To answer the follow ups, if all numbers are in the range [0, 100], we can use a counting array of size 101 to keep track of the frequency of each number and calculate the median based on the counts. If 99% of the numbers are in the range [0, 100], we can still use the counting array for those numbers and maintain a separate structure (like a min heap) for the outliers to efficiently calculate the median.
+
+**Complexity:** Time: O(log n) for adding a number and O(1) for finding the median | Space: O(n) for storing the numbers in the heaps
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Kth Largest Element in Stream — LC #703 | Kth largest not median → single min heap of size k | Partial — same heap family |
+| Sliding Window Median — LC #480 | Median in sliding window not full stream → same two heap idea with eviction | Yes — direct upgrade |
+| Kth Largest Element in Array — LC #215 | Kth largest in static array → QuickSelect or heap no streaming | Partial — same heap idea |
+| Find Median from Data Stream II | Weighted median with frequencies → same two heap structure different balancing | Partial — same heap family |
+| IPO — LC #502 | Maximize capital using two heaps → same max heap min heap combination | Partial — same two heap idea |
+| Sort an Array — LC #912 | Full sort not median → MergeSort or QuickSort no heap needed | No — different pattern |
+| Data Stream as Disjoint Intervals — LC #352 | Track intervals not median → sorted set insertion different goal | No — different pattern |
+| Maximum Average Subarray — LC #643 | Fixed window average not streaming median → sliding window | No — different pattern |
+
+**How this pattern scales:**
+- **Two heap invariant** is the core trick — maintain a max heap `lo` for the lower half and a min heap `hi` for the upper half. Invariant: `lo.size() == hi.size()` or `lo.size() == hi.size() + 1`. Median is `lo.top()` when sizes differ or `(lo.top() + hi.top()) / 2.0` when equal. O(log n) add O(1) findMedian
+- **Add element protocol** — always push to `lo` first then balance. Push new element to `lo`. If `lo.top() > hi.top()` pop from `lo` push to `hi` to fix ordering violation. Then rebalance sizes — if `hi.size() > lo.size()` pop from `hi` push to `lo`
+- **Three step add protocol** — (1) push to lo (2) fix ordering if lo top exceeds hi top (3) rebalance sizes. Collapsing these into fewer steps produces subtle bugs where the size invariant breaks on edge cases
+- **Sliding window upgrade** → LC #480 adds eviction of expired elements from the window. Same two heap structure but requires lazy deletion — mark expired elements as deleted and skip them when they reach heap tops. Significantly harder than LC #295 — worth knowing exists as the natural hard follow-up
+- **Two heap pattern generalizes** → IPO (LC #502) uses the same max heap min heap pair for a different purpose — min heap of project costs to find affordable projects max heap of profits to pick the best available. Same two heap management different semantic meaning per heap
+
+```cpp
+class MedianFinder {
+private:
+    priority_queue<int> maxHeap;
+    priority_queue<int, vector<int>, greater<int>> minHeap;
+public:
+    MedianFinder() {
+    }
+    
+/*
+maxHeap = 3 2 
+minHeap =  4 
+
+
+
+*/
+
+
+    void addNum(int num) {
+        maxHeap.push(num);
+        minHeap.push(maxHeap.top());
+        maxHeap.pop();
+        while(minHeap.size() > maxHeap.size()){
+             maxHeap.push(minHeap.top());
+             minHeap.pop();
+        }
+    }
+    
+    double findMedian() {
+        if(maxHeap.size() > minHeap.size()){
+            return (double) maxHeap.top();
+        }
+        else return (double) (minHeap.top() + maxHeap.top()) / 2;
+    }
+};
+
+/**
+ * Your MedianFinder object will be instantiated and called as such:
+ * MedianFinder* obj = new MedianFinder();
+ * obj->addNum(num);
+ * double param_2 = obj->findMedian();
+ */
+```
+
+## Design Twitter LC 355
+
+<!-- notecardId: 1781850268078 -->
+
+Design a simplified version of Twitter where users can post tweets, follow/unfollow another user, and is able to see the 10 most recent tweets in the user's news feed.
+
+Implement the Twitter class:
+
+Twitter() Initializes your twitter object.
+void postTweet(int userId, int tweetId) Composes a new tweet with ID tweetId by the user userId. Each call to this function will be made with a unique tweetId.
+List<Integer> getNewsFeed(int userId) Retrieves the 10 most recent tweet IDs in the user's news feed. Each item in the news feed must be posted by users who the user followed or by the user themself. Tweets must be ordered from most recent to least recent.
+void follow(int followerId, int followeeId) The user with ID followerId started following the user with ID followeeId.
+void unfollow(int followerId, int followeeId) The user with ID followerId started unfollowing the user with ID followeeId.
+ 
+
+Example 1:
+
+Input
+["Twitter", "postTweet", "getNewsFeed", "follow", "postTweet", "getNewsFeed", "unfollow", "getNewsFeed"]
+[[], [1, 5], [1], [1, 2], [2, 6], [1], [1, 2], [1]]
+Output
+[null, null, [5], null, null, [6, 5], null, [5]]
+
+Explanation
+Twitter twitter = new Twitter();
+twitter.postTweet(1, 5); // User 1 posts a new tweet (id = 5).
+twitter.getNewsFeed(1);  // User 1's news feed should return a list with 1 tweet id -> [5]. return [5]
+twitter.follow(1, 2);    // User 1 follows user 2.
+twitter.postTweet(2, 6); // User 2 posts a new tweet (id = 6).
+twitter.getNewsFeed(1);  // User 1's news feed should return a list with 2 tweet ids -> [6, 5]. Tweet id 6 should precede tweet id 5 because it is posted after tweet id 5.
+twitter.unfollow(1, 2);  // User 1 unfollows user 2.
+twitter.getNewsFeed(1);  // User 1's news feed should return a list with 1 tweet id -> [5], since user 1 is no longer following user 2.
+ 
+
+Constraints:
+
+1 <= userId, followerId, followeeId <= 500
+0 <= tweetId <= 104
+All the tweets have unique IDs.
+At most 3 * 104 calls will be made to postTweet, getNewsFeed, follow, and unfollow.
+A user cannot follow himself.
+
+**Link**: [text](https://leetcode.com/problems/design-twitter/)
+
+%
+
+**Pattern:** Design, Hash Map, Priority Queue (Heap), Linked List
+
+**Approach:** Use a hash map to store the tweets for each user, where the key is the userId and the value is a list of tweets (each tweet can be represented as a pair of tweetId and timestamp). Use another hash map to store the followers for each user, where the key is the userId and the value is a set of followeeIds. When posting a tweet, add it to the user's list of tweets with a timestamp. When retrieving the news feed, use a priority queue (min heap) to merge the most recent tweets from the user and their followees, keeping only the 10 most recent tweets in the heap. When following or unfollowing, update the followers hash map accordingly.
+
+**Key Insight:** The key insight is that by using a hash map to store the tweets and followers, we can efficiently manage the relationships between users and their tweets. The priority queue allows us to efficiently retrieve the most recent tweets from the user and their followees without needing to sort all tweets every time. By keeping only the 10 most recent tweets in the heap, we can ensure that retrieving the news feed is efficient even as the number of tweets grows.
+
+**Gotchas:** Be careful to handle edge cases such as when a user has no tweets or when a user is not following anyone. When retrieving the news feed, make sure to include the user's own tweets in addition to the tweets from their followees. Also, ensure that the timestamps are correctly assigned to each tweet so that the priority queue can accurately determine the most recent tweets. When implementing the follow and unfollow functionality, make sure to prevent users from following themselves and to handle cases where a user tries to unfollow someone they are not following.
+
+**Complexity:** Time: O(N log k) for retrieving the news feed where N is the total number of tweets from the user and their followees, and k is the number of followees (since we are merging tweets using a heap) | Space: O(U + T) where U is the number of users and T is the total number of tweets stored in the hash map
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Merge k Sorted Lists — LC #23 | Merge k sorted lists not k user tweet feeds → same min heap k way merge | Yes — direct foundation |
+| Find Median from Data Stream — LC #295 | Two heaps for median not feed ranking → same heap management different goal | Partial — same heap family |
+| Top K Frequent Elements — LC #347 | K most frequent not k most recent → heap on frequency not timestamp | Partial — same heap idea |
+| LRU Cache — LC #146 | Evict least recently used → same recency tracking different structure | Partial — same recency idea |
+| Design HashMap — LC #706 | Hash map foundation → same hash map for user data storage | Partial — same design family |
+| Kth Largest Element in Stream — LC #703 | Kth largest in stream → same min heap size k | Partial — same heap family |
+| News Feed Design — system design | Design scalable news feed → same follow/unfollow tweet concepts at scale | Partial — same concept |
+| Design File System — LC #1166 | Hash map for path storage → same hash map design pattern | No — different pattern |
+
+**How this pattern scales:**
+- **Hash map + timestamp + k way merge heap** is the core trick — maintain `userTweets` map of userId to list of (timestamp, tweetId) pairs and `following` map of userId to set of followeeIds. For getNewsFeed collect most recent tweets from all followees into a min heap of size 10 extracting the globally most recent across all feeds. O(n log k) for getNewsFeed where n is total followees and k is feed size
+- **Global timestamp counter** — maintain a single incrementing integer timestamp for every tweet posted. Higher timestamp means more recent. Using system time introduces collision risk — a single global counter guarantees strict ordering across all users
+- **K way merge for feed** — initialize heap with the most recent tweet from each followee. Extract max (most recent) append to feed insert that followee's next tweet into heap. Same exact pattern as LC #23 (Merge k Sorted Lists) — getNewsFeed IS a k way merge problem where each user's tweet history is one sorted list
+- **Follow self edge case** — when calling getNewsFeed always include the user's own tweets alongside their followees. Either add the user to their own following set on creation or handle explicitly in getNewsFeed. Missing this produces wrong feeds for users who only follow others
+- **Lazy deletion for unfollow** — when a user unfollows someone simply remove from the following set. No need to clean up cached feeds since getNewsFeed rebuilds from scratch each time. If feed caching were added unfollow would require cache invalidation — worth mentioning as a scale consideration
+
+```cpp
+class Twitter {
+    private:
+        int timeStamp; //track time each tweet sent at with global counter
+        unordered_map<int, unordered_set<int>> followingMap; //check who is following who
+        unordered_map<int, vector<pair<int, int>>> AllTweets; //all related tweets for a person is stored in a vector of pairs, we deal 
+        //with the top 10 most recent wtihin getNewsFeed
+public:
+    Twitter() {
+        timeStamp = 0;
+       
+    }
+    
+    void postTweet(int userId, int tweetId) {
+        AllTweets[userId].push_back({timeStamp++, tweetId}); //push pair storing timestamp and tweetID into AllTweets
+    }
+    
+    vector<int> getNewsFeed(int userId) {
+    std::priority_queue<pair<int, int>> pq; //maxHeap, largest .first (most recent) will show up
+
+    for(const auto twt : AllTweets[userId]){
+        pq.push(twt); //push all usertTweets
+    }
+
+    for(auto followee : followingMap[userId]){
+        for(const auto twt : AllTweets[followee])
+        pq.push(twt); //push all tweets from followees into the pq
+    }
+
+    vector<int> res;
+    while(!pq.empty() && res.size() < 10){
+        int currID = pq.top().second; //until top 10 found, push currIDs onto the vector
+        pq.pop();
+        res.push_back(currID);
+    }
+    return res;
+
+    }
+    
+    void follow(int followerId, int followeeId) {
+        if (followerId == followeeId) return;
+        followingMap[followerId].insert(followeeId);
+    }
+    
+    void unfollow(int followerId, int followeeId) {
+        followingMap[followerId].erase(followeeId);
+    }
+};
+
+/**
+ * Your Twitter object will be instantiated and called as such:
+ * Twitter* obj = new Twitter();
+ * obj->postTweet(userId,tweetId);
+ * vector<int> param_2 = obj->getNewsFeed(userId);
+ * obj->follow(followerId,followeeId);
+ * obj->unfollow(followerId,followeeId);
+ */
+```
+
+## IPO LC 502
+
+<!-- notecardId: 1781850428455 -->
+
+
