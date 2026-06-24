@@ -12721,4 +12721,1051 @@ public:
 
 <!-- notecardId: 1781850428455 -->
 
+Suppose LeetCode will start its IPO soon. In order to sell a good price of its shares to Venture Capital, LeetCode would like to work on some projects to increase its capital before the IPO. Since it has limited resources, it can only finish at most k distinct projects before the IPO. Help LeetCode design the best way to maximize its total capital after finishing at most k distinct projects.
+
+You are given n projects where the ith project has a pure profit profits[i] and a minimum capital of capital[i] is needed to start it.
+
+Initially, you have w capital. When you finish a project, you will obtain its pure profit and the profit will be added to your total capital.
+
+Pick a list of at most k distinct projects from given projects to maximize your final capital, and return the final maximized capital.
+
+The answer is guaranteed to fit in a 32-bit signed integer.
+
+ 
+
+Example 1:
+
+Input: k = 2, w = 0, profits = [1,2,3], capital = [0,1,1]
+Output: 4
+Explanation: Since your initial capital is 0, you can only start the project indexed 0.
+After finishing it you will obtain profit 1 and your capital becomes 1.
+With capital 1, you can either start the project indexed 1 or the project indexed 2.
+Since you can choose at most 2 projects, you need to finish the project indexed 2 to get the maximum capital.
+Therefore, output the final maximized capital, which is 0 + 1 + 3 = 4.
+Example 2:
+
+Input: k = 3, w = 0, profits = [1,2,3], capital = [0,1,2]
+Output: 6
+ 
+
+Constraints:
+
+1 <= k <= 105
+0 <= w <= 109
+n == profits.length
+n == capital.length
+1 <= n <= 105
+0 <= profits[i] <= 104
+0 <= capital[i] <= 109
+
+**Link**: [text](https://leetcode.com/problems/ipo/)
+
+%
+
+**Pattern:** Greedy, Priority Queue (Heap)
+
+**Approach:** In this question, you can use two heaps or a sorted vector and a heap. I used the sorted vector and a heap approach. First, create a vector of pairs where each pair contains the capital required and the profit for each project. Sort this vector based on the capital required in ascending order. Then, use a max heap to keep track of the profits of the projects that can be started with the current capital. Iterate through the sorted vector and for each project that can be started (i.e., its capital requirement is less than or equal to the current capital), push its profit into the max heap. After processing all projects that can be started, pop the maximum profit from the heap and add it to the current capital. Repeat this process for at most k projects.
+
+**Key Insight:** The key insight is that at each step, you want to choose the project that gives you the maximum profit among the projects that you can currently afford. By sorting the projects based on their capital requirements, you can efficiently determine which projects are available to you as your capital increases. Using a max heap allows you to quickly retrieve the project with the highest profit among those available, ensuring that you maximize your capital after completing each project.
+
+**Gotchas:** Be careful with the sorting of the projects based on capital requirements. Make sure to sort them in ascending order so that you can efficiently check which projects are available as your capital increases. Also, ensure that you handle the case where there are no available projects to start (i.e., when the max heap is empty) by breaking out of the loop early. Additionally, be mindful of the constraints on k and the size of the input arrays to avoid unnecessary computations.
+
+**Complexity:** Time: O(n log n + k log n) where n is the number of projects (for sorting and heap operations) | Space: O(n) for storing the sorted vector and the max heap
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Find Median from Data Stream — LC #295 | Two heaps for median not capital selection → same max/min heap combination | Partial — same two heap family |
+| Task Scheduler — LC #621 | Schedule tasks with cooldown → max heap on frequency not capital | Partial — same greedy heap idea |
+| Merge k Sorted Lists — LC #23 | Merge k sorted lists → same min heap extraction different goal | Partial — same heap family |
+| Minimum Cost to Connect Sticks — LC #1167 | Minimize cost combining sticks → same greedy min heap pick smallest | Partial — same greedy heap idea |
+| Course Schedule III — LC #630 | Maximize courses taken within deadlines → same greedy sort + max heap | Yes — same pattern |
+| Reorganize String — LC #767 | Arrange chars no adjacent same → same max heap greedy selection | Partial — same greedy heap family |
+| Maximum Capital — variant | Maximize capital after k investments → exact restatement of LC #502 | Yes — same problem |
+| Huffman Encoding | Build optimal prefix tree → same greedy min heap pick two smallest | Partial — same greedy heap idea |
+
+**How this pattern scales:**
+- **Sort + two heap greedy** is the core trick — sort projects by capital requirement. Maintain a min heap of locked projects sorted by capital and a max heap of unlocked projects sorted by profit. At each of k steps unlock all affordable projects (capital requirement ≤ current capital) by moving them from min heap to max heap. Extract max profit from max heap and add to capital. O(n log n + k log n) time O(n) space
+- **Unlock then pick** is the two phase step — (1) drain min heap pushing all projects with `capital <= currentCapital` to max heap (2) extract max profit from max heap and add to capital. Repeating this k times greedily always picks the highest profit among all currently affordable projects
+- **Greedy correctness** — at each step taking the highest profit affordable project is always optimal. Taking a lower profit project first can never improve future options since capital only increases — higher profit now means more projects become affordable sooner. This greedy argument must be stated explicitly in interviews
+- **Min heap as a lock** — the capital-sorted min heap acts as a gate that unlocks projects as capital grows. This two heap structure where one heap gates availability and another optimizes selection appears in Course Schedule III (LC #630) — sort by deadline drain expired courses from max heap when over limit
+- **Course Schedule III connection** → LC #630 sorts courses by deadline uses a max heap of durations and evicts the longest course when total time exceeds the current deadline. Same sort + two structure management — different gating condition (time vs capital) same greedy extraction logic
+
+```cpp
+class Solution {
+public:
+    int findMaximizedCapital(int k, int w, vector<int>& profits, vector<int>& capital) {
+        int currProjectNum = 0;
+        vector<pair<int, int>> projects;
+        for(int i = 0; i < profits.size(); i++){
+            projects.push_back({capital[i], profits[i]}); //sort capitals from low to high, store as pairs
+        }
+    std::sort(projects.begin(), projects.end());
+    priority_queue<int> pq; //store just profits, maxHeap so most progitable ones are popped and added first when able
+    for(int i = 0; i < k; i++){ //max number of projects we can do is k, so loop k times to find best project at each step
+
+        while(currProjectNum < projects.size() && projects[currProjectNum].first <= w){ //ensure we can index through projects and make sure the capital required for the project is less than or equal to our current capital, 
+        //if it is, then we can add the profit of that project to the priority queue, and then we can move on to the next project,
+            pq.push(projects[currProjectNum].second); //add the profit to maxHeap priority queue
+            currProjectNum++; //increment projectNum to next project, want to see the next lowest capital project and if it is also less than or equal to our current capital, 
+            //if it is, then we can add that profit to the priority queue as well, we want to add all projects that are less than or equal to our current capital to the priority queue,
+        }
+        
+        if(pq.empty()) break;
+        int best = pq.top(); //best available project that can be done with current capital, this is the project with the highest profit that we can do with our current capital, so we want to do this project first to maximize our capital for the next iteration,
+        w += best;
+        pq.pop();
+    }
+
+    return w;
+    }
+
+
+};
+```
+
+## Task Scheduler LC 621
+
+<!-- notecardId: 1782188799284 -->
+
+You are given an array of CPU tasks, each labeled with a letter from A to Z, and a number n. Each CPU interval can be idle or allow the completion of one task. Tasks can be completed in any order, but there's a constraint: there has to be a gap of at least n intervals between two tasks with the same label.
+
+Return the minimum number of CPU intervals required to complete all tasks.
+
+ 
+
+Example 1:
+
+Input: tasks = ["A","A","A","B","B","B"], n = 2
+
+Output: 8
+
+Explanation: A possible sequence is: A -> B -> idle -> A -> B -> idle -> A -> B.
+
+After completing task A, you must wait two intervals before doing A again. The same applies to task B. In the 3rd interval, neither A nor B can be done, so you idle. By the 4th interval, you can do A again as 2 intervals have passed.
+
+Example 2:
+
+Input: tasks = ["A","C","A","B","D","B"], n = 1
+
+Output: 6
+
+Explanation: A possible sequence is: A -> B -> C -> D -> A -> B.
+
+With a cooling interval of 1, you can repeat a task after just one other task.
+
+Example 3:
+
+Input: tasks = ["A","A","A", "B","B","B"], n = 3
+
+Output: 10
+
+Explanation: A possible sequence is: A -> B -> idle -> idle -> A -> B -> idle -> idle -> A -> B.
+
+There are only two types of tasks, A and B, which need to be separated by 3 intervals. This leads to idling twice between repetitions of these tasks.
+
+ 
+
+Constraints:
+
+1 <= tasks.length <= 104
+tasks[i] is an uppercase English letter.
+0 <= n <= 100
+
+**Link**: [text](https://leetcode.com/problems/task-scheduler/)
+
+%
+
+**Pattern:** Greedy, Priority Queue (Heap), Counting
+
+**Approach:** Count the frequency of each task and use a max heap to always execute the task with the highest remaining count. After executing a task, decrease its count and place it in a cooldown queue for n intervals. If the cooldown queue has tasks that have completed their cooldown, push them back into the max heap. Continue this process until all tasks are completed, counting the total intervals (including idle time) required.
+
+**Key Insight:** The key insight is that by always executing the task with the highest remaining count, we can minimize idle time. The cooldown queue ensures that we respect the cooling interval constraint, and by using a max heap, we can efficiently retrieve the next task to execute. This greedy approach guarantees that we are always making the optimal choice at each step, leading to the minimum number of intervals required to complete all tasks.
+
+**Gotchas:** Be careful with the handling of the cooldown queue. Make sure to correctly track the time intervals and only push tasks back into the max heap when their cooldown has expired. Additionally, consider edge cases such as when n is 0 (no cooling interval) or when there are multiple tasks with the same frequency. Ensure that your implementation correctly handles these scenarios to avoid unnecessary idle time.
+
+**Complexity:** Time: O(N log k) where N is the number of tasks and k is the number of unique tasks (for heap operations) | Space: O(k) for storing the task counts and the max heap
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Reorganize String — LC #767 | Arrange chars no adjacent same → same max heap greedy most frequent first | Yes — direct variant |
+| Rearrange String k Distance Apart — LC #358 | No same char within k positions → same max heap cooldown queue generalized | Yes — direct upgrade |
+| IPO — LC #502 | Two heap greedy capital selection → same max heap greedy different constraint | Partial — same greedy heap family |
+| Find Median from Data Stream — LC #295 | Two heaps for median → same heap management different goal | No — different pattern |
+| Minimum Number of CPU Intervals — variant | Minimize idle time → exact restatement of LC #621 | Yes — same problem |
+| Course Schedule III — LC #630 | Maximize courses within deadlines → same greedy sort heap eviction | Partial — same greedy family |
+| Maximum Frequency Stack — LC #895 | Pop most frequent element → same frequency tracking different structure | Partial — same frequency idea |
+| Hire K Workers — LC #857 | Minimize cost hiring k workers → same greedy heap selection different metric | Partial — same greedy heap family |
+
+**How this pattern scales:**
+- **Max heap + cooldown queue** is the simulation approach — maintain a max heap of (frequency, task) pairs. At each time unit pop the most frequent task execute it decrement its frequency push to a cooldown queue with release time `currentTime + n + 1`. At each step release all tasks whose cooldown has expired back to the heap. O(t log 26) time where t is total intervals
+- **Math formula** is the O(1) approach — count frequency of most common task `maxFreq`. Count how many tasks share `maxFreq` call it `maxCount`. Answer is `max(tasks.length, (maxFreq - 1) * (n + 1) + maxCount)`. The formula computes the minimum length schedule by filling n+1 sized blocks with the most frequent tasks
+- **Formula intuition** — imagine arranging tasks in rows of `n+1` slots. Fill each row with the most frequent tasks first. Total rows needed is `maxFreq - 1` plus a final partial row of `maxCount` tasks. If enough tasks exist to fill all idle slots the answer is simply `tasks.length`
+- **Two approaches tradeoff** — math formula is O(n) time O(1) space elegant but hard to derive under pressure. Simulation is O(t log 26) but intuitive and generalizes to variants with different constraints. Always derive simulation first then mention formula as optimization
+- **Reorganize String connection** → LC #767 is LC #621 with n=1 (no same adjacent character) asking whether a valid arrangement exists instead of minimum length. Same max heap greedy — if the most frequent character exceeds `(length + 1) / 2` return empty string otherwise simulate placement
+
+```cpp
+class Solution {
+public:
+    int leastInterval(vector<char>& tasks, int n) {
+        
+        int count[26] = {0};
+        for(char task : tasks){
+            count[task - 'A']++; //need to track the count of each task
+        }
+
+        std::priority_queue<int> heap;
+        for(int i = 0; i < 26; i++){
+            if(count[i] > 0){
+                heap.push(count[i]); //if the count of a task is greater than 0, we can add it to the heap, we want to use a max heap to always execute the task with the highest count first, 
+                //because that will allow us to minimize the number of idle intervals, if we execute a task with a lower count first, then we might end up with more idle intervals later on when we have 
+                //more tasks with higher counts that need to be executed
+            }
+        }
+
+        int timer = 0; //this tracks the current time
+        queue<pair<int, int>> waitingPeriod; //this is all the tasks that are in a cooldown mode, have to wait for timer to hit timer + n before we can add them back to the heap, 
+        //we need to track the remaining count of the task and the time when we can add it back to the heap, so we can use a pair to store that information in the queue,
+        while(!heap.empty() || !waitingPeriod.empty()){ //as long as there are tasks in the heap or there are tasks in the waiting period, we need to keep executing tasks or waiting for tasks to come out of the waiting period
+            timer++; //increment clock by 1
+            if(!heap.empty()){
+                int remaining = heap.top() - 1; //this task is currently not in waitingPeriod, so we can execute it, we need to decrement the count of the task by 1,
+                // because we have executed it once, and then we need to check if there are any remaining instances of the task that need to be executed,
+                // if there are, then we need to add it to the waiting period,
+                heap.pop();
+
+                if(remaining > 0){
+                    waitingPeriod.push({remaining, timer + n});
+                }
+            }
+
+            if(!waitingPeriod.empty() && waitingPeriod.front().second == timer){ //if the task at the front of the waiting period has reached its cooldown time, 
+            //then we can add it back to the heap, because we can execute it again
+                heap.push(waitingPeriod.front().first);
+                waitingPeriod.pop();
+            }
+
+
+        }
+            return timer;
+    }
+};
+```
+
+## Kth Largest Element in a Stream LC 703
+
+<!-- notecardId: 1782189598864 -->
+
+You are part of a university admissions office and need to keep track of the kth highest test score from applicants in real-time. This helps to determine cut-off marks for interviews and admissions dynamically as new applicants submit their scores.
+
+You are tasked to implement a class which, for a given integer k, maintains a stream of test scores and continuously returns the kth highest test score after a new score has been submitted. More specifically, we are looking for the kth highest score in the sorted list of all scores.
+
+Implement the KthLargest class:
+
+KthLargest(int k, int[] nums) Initializes the object with the integer k and the stream of test scores nums.
+int add(int val) Adds a new test score val to the stream and returns the element representing the kth largest element in the pool of test scores so far.
+ 
+
+Example 1:
+
+Input:
+["KthLargest", "add", "add", "add", "add", "add"]
+[[3, [4, 5, 8, 2]], [3], [5], [10], [9], [4]]
+
+Output: [null, 4, 5, 5, 8, 8]
+
+Explanation:
+
+KthLargest kthLargest = new KthLargest(3, [4, 5, 8, 2]);
+kthLargest.add(3); // return 4
+kthLargest.add(5); // return 5
+kthLargest.add(10); // return 5
+kthLargest.add(9); // return 8
+kthLargest.add(4); // return 8
+
+Example 2:
+
+Input:
+["KthLargest", "add", "add", "add", "add"]
+[[4, [7, 7, 7, 7, 8, 3]], [2], [10], [9], [9]]
+
+Output: [null, 7, 7, 7, 8]
+
+Explanation:
+
+KthLargest kthLargest = new KthLargest(4, [7, 7, 7, 7, 8, 3]);
+kthLargest.add(2); // return 7
+kthLargest.add(10); // return 7
+kthLargest.add(9); // return 7
+kthLargest.add(9); // return 8
+ 
+
+Constraints:
+
+0 <= nums.length <= 104
+1 <= k <= nums.length + 1
+-104 <= nums[i] <= 104
+-104 <= val <= 104
+At most 104 calls will be made to add.
+
+**Link**: [text](https://leetcode.com/problems/kth-largest-element-in-a-stream/)
+
+%
+
+**Pattern:** Heap, Priority Queue
+
+**Approach:** Use a min heap of size k to maintain the k largest elements seen so far. When initializing the class, add all elements from the input array to the min heap, ensuring that it never exceeds size k by removing the smallest element when necessary. When adding a new element, push it onto the min heap and again ensure that the size does not exceed k by popping the smallest element if needed. The kth largest element will always be at the top of the min heap.
+
+**Key Insight:** The key insight is that by maintaining a min heap of size k, we can efficiently keep track of the k largest elements in the stream. The smallest element in this heap will be the kth largest overall, as it represents the threshold below which all other elements are smaller. This allows for efficient insertion and retrieval of the kth largest element in O(log k) time. It might seem like common sense to use a max heap, but using a min heap of size k is more efficient because it allows us to discard smaller elements and keep only the largest k elements, which is exactly what we need for this problem.
+
+**Gotchas:** Be careful with the initial population of the min heap. If the input array has more than k elements, you need to ensure that only the k largest are kept in the heap. Also, when adding new elements, always check if the size of the heap exceeds k and pop the smallest element if it does. This ensures that the heap always contains exactly k elements, and the top of the heap is always the kth largest element.
+
+**Complexity:** Time: O(log k) for adding a new element and O(1) for retrieving the kth largest element | Space: O(k) for storing the k largest elements in the min heap
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Kth Largest Element in Array — LC #215 | Static array not stream → QuickSelect or full heap no streaming needed | Yes — direct foundation |
+| Find Median from Data Stream — LC #295 | Median not kth largest → two heaps not single min heap | Partial — same streaming heap idea |
+| Sliding Window Maximum — LC #239 | Maximum in sliding window → monotonic deque not heap | Partial — same streaming idea |
+| Top K Frequent Elements — LC #347 | K most frequent not kth largest → heap on frequency not value | Partial — same heap family |
+| K Closest Points to Origin — LC #973 | K closest by distance → same min heap size k different metric | Yes — same pattern |
+| Online Stock Span — LC #901 | Span of consecutive lower prices → monotonic stack not heap | No — different pattern |
+| Design Twitter — LC #355 | K most recent tweets → same k selection idea different structure | Partial — same k selection family |
+| Find K Pairs with Smallest Sums — LC #373 | K smallest pair sums → min heap lazy expansion | Partial — same heap family |
+
+**How this pattern scales:**
+- **Min heap of size k** is the core trick — maintain a min heap of exactly k elements. The heap top is always the kth largest seen so far. On each add if new element exceeds heap top pop minimum push new element. If heap has fewer than k elements just push. O(log k) per add O(1) for top query
+- **Why min heap not max heap** — counterintuitive but correct. We want the kth largest so we need to track the k largest elements seen. A min heap of size k keeps the k largest with the smallest of those (kth largest) always at the top for O(1) access. A max heap would require full traversal to find the kth element
+- **Initialization with constructor elements** — initial array passed to constructor may have more or fewer than k elements. Process all constructor elements through the same add logic — do not special case initialization. Handles both under and over k initial elements cleanly
+- **Stream vs static distinction** — LC #215 can use QuickSelect O(n) because all elements are known upfront. LC #703 receives elements one at a time making QuickSelect impossible — heap is the only viable O(log k) per element approach for streaming data
+- **Sliding window upgrade** → if the problem added a window constraint (only consider last w elements) the min heap approach breaks since eviction is needed. Would require an order statistic tree or segment tree to support O(log n) insert delete and kth largest simultaneously
+
+```cpp
+class KthLargest {
+private:
+    int limit;
+    std::priority_queue<int, vector<int>, greater<int>> pq; //this is the key optimization, instead of storing a maxHeap that stores every element
+    //store a minHeap of size k, and the smallest element in the pq is the kth largest element
+public:
+    KthLargest(int k, vector<int>& nums) {
+            limit = k;
+            for(int i = 0; i < nums.size(); i++){
+                pq.push(nums[i]);
+
+                if(pq.size() > limit){
+                    pq.pop();
+                }
+            };
+    }
+    
+    int add(int val) {
+        pq.push(val);
+        if(pq.size() > limit){
+            pq.pop();
+        }
+        return pq.top();
+    }
+};
+```
+
+## Reorganize String LC 767
+
+<!-- notecardId: 1782190102586 -->
+
+Given a string s, rearrange the characters of s so that any two adjacent characters are not the same.
+
+Return any possible rearrangement of s or return "" if not possible.
+
+ 
+
+Example 1:
+
+Input: s = "aab"
+Output: "aba"
+Example 2:
+
+Input: s = "aaab"
+Output: ""
+ 
+
+Constraints:
+
+1 <= s.length <= 500
+s consists of lowercase English letters.
+
+**Link**: [text](https://leetcode.com/problems/reorganize-string/)
+
+%
+
+**Pattern:** Greedy, Priority Queue (Heap), Counting
+
+**Approach:** Count the frequency of each character in the string. Use a max heap to always place the character with the highest remaining count next, ensuring that it is not the same as the last placed character. If the last placed character is the same as the current character, pop the next highest character from the heap and place it instead. After placing a character, decrease its count and push it back into the heap if it still has remaining occurrences. Continue this process until all characters are placed or determine that it is impossible to rearrange. Get the first two off the heap, and then alternate between them until one runs out, then push the remaining back onto the heap and repeat. If at any point the heap is empty and there are still characters left to place, return "".
+
+**Key Insight:** The key insight is that by always placing the character with the highest remaining count, we can maximize the chances of successfully rearranging the string. If at any point the most frequent character exceeds half the length of the string (rounded up), it is impossible to rearrange without adjacent duplicates. Using a max heap allows us to efficiently retrieve and place characters based on their frequency, ensuring that we are always making the optimal choice at each step.
+
+**Gotchas:** Be careful with the case where the most frequent character exceeds half the length of the string. In such cases, it is impossible to rearrange the string without adjacent duplicates, and you should return an empty string. Also, ensure that you handle the case where there are only two characters left in the heap, as you may need to alternate between them to avoid placing the same character adjacent to itself. Also, if there is one char left in the heap, add one of it, and if there is more than 1, we know it is impossible to reorganize the string, so return "".
+
+**Complexity:** Time: O(n log k) where n is the length of the string and k is the number of unique characters (for heap operations) | Space: O(k) for storing the character counts and the max heap
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Task Scheduler — LC #621 | Minimize intervals with cooldown n → same max heap greedy most frequent first | Yes — direct foundation |
+| Rearrange String k Distance Apart — LC #358 | No same char within k positions not just 1 → same max heap cooldown queue generalized | Yes — direct upgrade |
+| Distant Barcodes — LC #1054 | Rearrange barcodes no adjacent same → exact restatement of LC #767 different domain | Yes — same problem |
+| Sort Characters By Frequency — LC #451 | Sort by frequency not rearrange → same frequency count different output | Partial — same frequency idea |
+| Reorganize Array — variant | Rearrange array no adjacent equal → same greedy frequency approach | Yes — same pattern |
+| IPO — LC #502 | Two heap greedy capital selection → same max heap greedy different constraint | Partial — same greedy heap family |
+| Maximum Frequency Stack — LC #895 | Pop most frequent element → same frequency tracking different structure | Partial — same frequency idea |
+| Minimum Number of Swaps to Make String Balanced — LC #1963 | Balance brackets with minimum swaps → greedy no heap needed | No — different pattern |
+
+**How this pattern scales:**
+- **Max heap greedy interleaving** is the simulation approach — build frequency map push all (frequency, char) pairs into max heap. At each step pop the two most frequent characters append both to result decrement frequencies and push back if nonzero. O(n log 26) time O(n) space
+- **Why pop two at once** — popping one character and immediately pushing it back could place the same character adjacent to itself. Popping two simultaneously guarantees the most frequent character is separated by at least one other character before it can be reconsidered
+- **Feasibility check first** — if any character's frequency exceeds `(n + 1) / 2` return empty string immediately. No valid rearrangement exists. This check is O(26) and avoids running the full simulation on impossible inputs
+- **Greedy correctness** — always placing the most frequent remaining character next minimizes the risk of being stuck with a character that cannot be placed. Any other strategy risks leaving too many of one character at the end making valid placement impossible
+- **k distance generalization** → LC #358 extends the cooldown from 1 to k positions. Pop k characters at once from the max heap append to result push back nonzero frequencies. If fewer than k characters are available and heap is not empty return empty string — same feasibility logic stricter constraint
+
+```cpp
+class Solution {
+public:
+    string reorganizeString(string s) {
+        string result = "";
+        int count[26] = {0};
+
+        for(int i = 0; i < s.size(); i++){
+            count[s[i] - 'a']++;
+            if(count[s[i] - 'a'] > ((s.length() + 1)/ 2)) return "";
+        }
+
+        vector<pair<int, int>> charStor;
+        for(int i = 0; i < 26; i++){
+            charStor.push_back({i , count[i]});
+        }
+
+        auto comparator = [](const pair<int, int> p1, const pair<int, int> p2){
+            return p1.second < p2.second;
+        };
+
+        priority_queue<pair<int, int>, vector<pair<int, int>>, decltype(comparator)> pq;
+
+        for(int i = 0; i < 26; i++){
+            if(charStor[i].second > 0) pq.push(charStor[i]);
+        }
+
+        while(pq.size() >= 2){
+            auto top = pq.top();
+            pq.pop();
+            auto second = pq.top();
+            pq.pop();
+            top.second--;
+            second.second--;
+            result += top.first + 'a';
+            result += second.first + 'a';
+            if(top.second > 0 ) pq.push(top);
+            if(second.second > 0) pq.push(second);
+        }
+
+        if(pq.size() == 1){
+            auto top = pq.top();
+            pq.pop();
+            top.second--;
+            result += top.first + 'a';
+            if(top.second > 0) return "";
+        }
+        return result;
+
+    }
+};
+```
+
+## K Closest Points to Origin LC 973
+
+<!-- notecardId: 1782191316762 -->
+
+Given an array of points where points[i] = [xi, yi] represents a point on the X-Y plane and an integer k, return the k closest points to the origin (0, 0).
+
+The distance between two points on the X-Y plane is the Euclidean distance (i.e., √(x1 - x2)2 + (y1 - y2)2).
+
+You may return the answer in any order. The answer is guaranteed to be unique (except for the order that it is in).
+
+ 
+
+Example 1:
+
+
+Input: points = [[1,3],[-2,2]], k = 1
+Output: [[-2,2]]
+Explanation:
+The distance between (1, 3) and the origin is sqrt(10).
+The distance between (-2, 2) and the origin is sqrt(8).
+Since sqrt(8) < sqrt(10), (-2, 2) is closer to the origin.
+We only want the closest k = 1 points from the origin, so the answer is just [[-2,2]].
+Example 2:
+
+Input: points = [[3,3],[5,-1],[-2,4]], k = 2
+Output: [[3,3],[-2,4]]
+Explanation: The answer [[-2,4],[3,3]] would also be accepted.
+ 
+
+Constraints:
+
+1 <= k <= points.length <= 104
+-104 <= xi, yi <= 104
+
+**Link**: [text](https://leetcode.com/problems/k-closest-points-to-origin/)
+
+%
+
+**Pattern:** Heap, Priority Queue
+
+**Approach:** Use a max heap to keep track of the k closest points to the origin. Iterate through the list of points, calculate the squared distance from the origin for each point, and push it onto the max heap. If the size of the heap exceeds k, pop the farthest point (the one with the largest distance) from the heap. After processing all points, the heap will contain the k closest points to the origin. Use a custom comparator to compare the squared distances of the points, which avoids the need for computing square roots and keeps the comparisons efficient.
+
+**Key Insight:** The key insight is that by maintaining a max heap of size k, we can efficiently keep track of the k closest points to the origin. The farthest point in the heap will always be at the top, allowing us to easily remove it when we encounter a closer point. This ensures that we only keep the closest k points in the heap at any given time. Using squared distances avoids unnecessary computation of square roots, which is both faster and sufficient for comparison purposes.
+
+**Gotchas:** Be careful with the distance calculation. Use squared distances to avoid floating-point inaccuracies and unnecessary computation of square roots. Also, ensure that you handle the case where multiple points have the same distance from the origin correctly, as they should all be considered for inclusion in the heap. Additionally, make sure to return the points in any order, as the problem does not require a specific order for the output.
+
+**Complexity:** Time: O(n log k) where n is the number of points and k is the number of closest points to keep in the heap | Space: O(k) for storing the k closest points in the max heap
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Kth Largest Element in Array — LC #215 | Kth largest value not k closest points → same QuickSelect or heap approach | Yes — direct foundation |
+| Kth Largest Element in Stream — LC #703 | Streaming kth largest → same min heap size k different metric | Yes — same pattern |
+| Find K Closest Elements — LC #658 | K closest in sorted 1D array → binary search on window not heap | Partial — same k closest idea |
+| Top K Frequent Elements — LC #347 | K most frequent not k closest → same heap or bucket sort different metric | Partial — same k selection family |
+| Find K Pairs with Smallest Sums — LC #373 | K smallest pair sums → min heap lazy expansion | Partial — same heap family |
+| Minimum Distance Between BST Nodes — LC #783 | Minimum distance in BST → inorder traversal no heap | No — different pattern |
+| Sort Colors — LC #75 | Partition into groups → Dutch National Flag no heap | No — different pattern |
+| Closest Binary Search Tree Value II — LC #272 | K closest values in BST → inorder traversal + sliding window | Partial — same k closest idea |
+
+**How this pattern scales:**
+- **Max heap of size k** is the core trick — maintain a max heap of size k sorted by distance. For each point compute squared distance push to heap. If heap exceeds size k pop the maximum (farthest) element. After processing all points heap contains exactly the k closest. O(n log k) time O(k) space
+- **Squared distance avoids sqrt** — distance formula is `sqrt(x² + y²)` but comparing distances does not require the square root since sqrt is monotonically increasing. Use `x² + y²` directly avoiding floating point computation and improving performance
+- **Max heap not min heap** — we want to keep the k closest so we need to quickly evict the farthest. Max heap puts the farthest point at the top for O(1) eviction check. This is the mirror of LC #703 which uses min heap to keep k largest — here we use max heap to keep k smallest distances
+- **QuickSelect alternative** — partition points around a random pivot by distance. If pivot lands at index k return first k points. O(n) average O(n²) worst case. Modifies input array. Same tradeoff as LC #215 — QuickSelect is faster on average but heap is safer and does not modify input
+- **Full sort alternative** — sort all points by distance return first k. O(n log n) time O(1) extra space. Simplest to implement but suboptimal — only acceptable when n is small or interviewer does not probe for optimization
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> kClosest(vector<vector<int>>& points, int k) {
+        auto comparator = [](const vector<int>& v1, const vector<int>& v2){
+            int dist1 =((v1[0] * v1[0]) + (v1[1] * v1[1]));
+            int dist2 = ((v2[0] * v2[0]) + (v2[1] * v2[1])); //dont use sqrt, doesnt make difference and decimals would cause rounding issues
+        
+            return dist1 < dist2; //return true, strict weak ordering
+        };
+        std::priority_queue<vector<int>, vector<vector<int>>, decltype(comparator)> pq; //this is how to declare a priority queue with a custom comparator,
+        // we need to use decltype to specify the type of the comparator, and we need to pass the comparator as an argument to the constructor of the priority queue, 
+        //this will allow us to use the custom comparator to compare the elements in the priority queue, and we can use this priority queue to store the k closest points, and then we can iterate through the points and compare
+        // the distance of each point to the distance of the farthest point in the heap, if the distance of the current point is less than the distance of the farthest point in the heap, then we can remove the farthest point 
+        //from the heap and add the current point to the heap, this way we can maintain a heap of size k that contains the k closest points, and at the end we can return the points in the heap as the result
+        for(vector<int> point : points){
+            pq.push(point);
+            if(pq.size() > k){ //if size greater than k, remove the farthest point from the heap, which is the point at the top of the heap, 
+            //because we are using a max heap, the point at the top of the heap is the point with the largest distance from the origin, so if we have more than 
+            //k points in the heap, we can remove the point at the top of the heap to maintain a heap of size k that contains the k closest points
+                pq.pop();
+            }
+        }
+        
+        vector<vector<int>> result;
+        while(pq.size() > 0){
+            result.push_back(pq.top());
+            pq.pop();
+        }
+        return result;     
+    }
+};
+```
+
+## Last Stone Weight LC 1046
+
+<!-- notecardId: 1782191600733 -->
+
+You are given an array of integers stones where stones[i] is the weight of the ith stone.
+
+We are playing a game with the stones. On each turn, we choose the heaviest two stones and smash them together. Suppose the heaviest two stones have weights x and y with x <= y. The result of this smash is:
+
+If x == y, both stones are destroyed, and
+If x != y, the stone of weight x is destroyed, and the stone of weight y has new weight y - x.
+At the end of the game, there is at most one stone left.
+
+Return the weight of the last remaining stone. If there are no stones left, return 0.
+
+ 
+
+Example 1:
+
+Input: stones = [2,7,4,1,8,1]
+Output: 1
+Explanation: 
+We combine 7 and 8 to get 1 so the array converts to [2,4,1,1,1] then,
+we combine 2 and 4 to get 2 so the array converts to [2,1,1,1] then,
+we combine 2 and 1 to get 1 so the array converts to [1,1,1] then,
+we combine 1 and 1 to get 0 so the array converts to [1] then that's the value of the last stone.
+Example 2:
+
+Input: stones = [1]
+Output: 1
+ 
+
+Constraints:
+
+1 <= stones.length <= 30
+1 <= stones[i] <= 1000
+
+**Link**: [text](https://leetcode.com/problems/last-stone-weight/)
+
+%
+
+**Pattern:** Heap, Priority Queue
+
+**Approach:** Use a max heap to keep track of the heaviest stones. Continuously pop the two heaviest stones from the heap, smash them together according to the rules, and push the result back into the heap if it is non-zero. Repeat this process until there is at most one stone left in the heap. The weight of the last remaining stone (or 0 if none are left) is the answer.
+
+**Key Insight:** The key insight is that by always selecting the two heaviest stones, we can efficiently simulate the smashing process. Using a max heap allows us to quickly retrieve and remove the heaviest stones in O(log n) time, ensuring that we are always working with the correct stones according to the problem's rules. This greedy approach guarantees that we are making optimal choices at each step, leading to the correct final result.
+
+**Gotchas:** Be careful with the case where the two heaviest stones have equal weight, as both stones will be destroyed and nothing will be pushed back into the heap. Also, ensure that you handle the case where there is only one stone left in the heap, as this will be the final result. Additionally, consider edge cases such as when all stones have the same weight or when there is only one stone to begin with.
+
+**Complexity:** Time: O(n log n) where n is the number of stones (for heap operations) | Space: O(n) for storing the stones in the max heap
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| K Closest Points to Origin — LC #973 | K closest by distance → max heap size k different eviction condition | Partial — same heap family |
+| Kth Largest Element in Array — LC #215 | Kth largest not last remaining → QuickSelect or heap no simulation | Partial — same heap idea |
+| Find Median from Data Stream — LC #295 | Two heaps for median → same max heap idea different structure | Partial — same heap family |
+| Task Scheduler — LC #621 | Schedule tasks with cooldown → same max heap greedy different simulation | Partial — same greedy heap family |
+| Reorganize String — LC #767 | Rearrange chars no adjacent same → same max heap pop two simulate | Yes — same simulation pattern |
+| Stone Game — LC #877 | Optimal stone picking game theory → DP not heap simulation | No — different pattern |
+| Minimum Cost to Connect Sticks — LC #1167 | Minimize total cost combining sticks → same min heap pop two combine | Yes — direct variant |
+| Zuma Game — LC #488 | Insert balls to clear groups → BFS/DFS not heap simulation | No — different pattern |
+
+**How this pattern scales:**
+- **Max heap simulation** is the core trick — push all stones into a max heap. While heap has more than one stone pop two largest stones `x` and `y`. If equal both destroyed push nothing. If unequal push difference `y - x`. Repeat until one or zero stones remain. Return heap top or 0 if empty. O(n log n) time O(n) space
+- **Pop two simulate destroy** — same pattern as LC #767 (Reorganize String) where popping two elements at once drives the simulation forward. Any problem where two items interact and produce zero or one result uses this same pop-two-push-result heap loop
+- **Minimum Cost to Connect Sticks connection** → LC #1167 is the exact same pop two combine push result loop but uses a min heap instead of max heap and always pushes the sum (never destroys). Both problems reduce to the same greedy "always combine the two extreme elements" insight — max for collision, min for cost minimization
+- **Greedy correctness** — always smashing the two largest stones is optimal because it maximally reduces the total weight at each step. Any other pairing leaves larger stones in the heap longer increasing the chance of a large remainder
+- **Result handling** — after the loop check if heap is empty (all stones destroyed return 0) or has one element (return it). Missing the empty check produces null pointer exceptions on inputs where all stones perfectly cancel like `[2, 2]`
+
+```cpp
+class Solution {
+public:
+    int lastStoneWeight(vector<int>& stones) {
+        std::priority_queue<int> pq; //need a maxHeap here, heaviest elements on top
+
+        for(int i = 0; i < stones.size(); i++){
+            pq.push(stones[i]);
+        }
+
+        while(pq.size() > 1){
+            int y = pq.top();
+            pq.pop();
+            int x = pq.top();
+            pq.pop();
+
+            if(x != y) pq.push(y - x);
+        }
+        if(pq.size() == 1) return pq.top();
+        return 0;
+    }
+};
+```
+
+## Car Pooling LC 1094
+
+<!-- notecardId: 1782191778643 -->
+
+There is a car with capacity empty seats. The vehicle only drives east (i.e., it cannot turn around and drive west).
+
+You are given the integer capacity and an array trips where trips[i] = [numPassengersi, fromi, toi] indicates that the ith trip has numPassengersi passengers and the locations to pick them up and drop them off are fromi and toi respectively. The locations are given as the number of kilometers due east from the car's initial location.
+
+Return true if it is possible to pick up and drop off all passengers for all the given trips, or false otherwise.
+
+ 
+
+Example 1:
+
+Input: trips = [[2,1,5],[3,3,7]], capacity = 4
+Output: false
+Example 2:
+
+Input: trips = [[2,1,5],[3,3,7]], capacity = 5
+Output: true
+ 
+
+Constraints:
+
+1 <= trips.length <= 1000
+trips[i].length == 3
+1 <= numPassengersi <= 100
+0 <= fromi < toi <= 1000
+1 <= capacity <= 105
+
+**Link**: [text](https://leetcode.com/problems/car-pooling/)
+
+%
+
+**Pattern:** Greedy, Sweep Line, Difference Array, Priority Queue
+
+**Approach:** Use a sweep line algorithm to track the number of passengers in the car at any given time. Create an array to represent the number of passengers getting on and off at each kilometer. For each trip, increment the number of passengers at the pickup location and decrement it at the drop-off location. Then, iterate through the array to calculate the running total of passengers in the car. If at any point the number of passengers exceeds the capacity, return false. Otherwise, return true after checking all trips. When using a priority queue, you can maintain a min heap of drop-off locations and the number of passengers to be dropped off. As you process each trip, you can pop from the heap any trips that have already dropped off their passengers before the current trip's pickup location, updating the current passenger count accordingly.
+
+**Key Insight:** The key insight is that by using a sweep line approach, we can efficiently track the number of passengers in the car at any given time without needing to simulate the entire trip. By marking the changes in passenger count at each pickup and drop-off location, we can quickly determine if the capacity is exceeded at any point. This allows us to handle multiple trips and overlapping intervals in a straightforward manner.
+
+**Gotchas:** Be careful with the order of processing trips. You need to sort the trips by their pickup location to ensure that you are processing them in the correct order. Additionally, make sure to handle cases where multiple trips have the same pickup or drop-off locations correctly, as this can affect the passenger count. When using a priority queue, ensure that you are correctly updating the current passenger count as trips are completed and passengers are dropped off.
+
+**Complexity:** Time: O(n log n) for sorting the trips and O(n log n) for processing the trips with a priority queue and for difference array, time complexity is O(n) | Space: O(n) for storing the trips and the priority queue and O(1001) for the difference array if using that approach
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Meeting Rooms II — LC #253 | Count overlapping intervals not capacity → same sweep line different aggregation | Yes — same pattern |
+| My Calendar I — LC #729 | Check single booking no overlap → same interval insertion different condition | Partial — same interval idea |
+| My Calendar II — LC #731 | Allow double booking not triple → same sweep line capacity threshold 2 | Yes — direct variant |
+| Corporate Flight Bookings — LC #1109 | Add passengers to range of flights → same difference array range update | Yes — direct variant |
+| Number of Flowers in Full Bloom — LC #2251 | Count overlapping blooms at query points → same sweep line event processing | Yes — same pattern |
+| Minimum Number of Arrows — LC #452 | Burst overlapping balloons → sort by end greedy no capacity tracking | No — different pattern |
+| Task Scheduler — LC #621 | Schedule tasks with cooldown → max heap greedy no sweep line | No — different pattern |
+| Maximum Population Year — LC #1854 | Peak population across years → same difference array sweep | Yes — same pattern |
+
+**How this pattern scales:**
+- **Difference array sweep** is the optimal trick — create an array of size `max_stop + 1`. For each trip add `numPassengers` at `from` and subtract `numPassengers` at `to`. Sweep through the difference array accumulating prefix sum. If prefix sum ever exceeds capacity return false. O(n + max_stop) time O(max_stop) space
+- **Why difference array beats sorting** — sorting events is O(n log n). Since stop positions are bounded by 1000 (per constraints) a difference array gives O(n + 1000) which is effectively O(n). When the range of values is small difference array beats sorting
+- **Event sorting alternative** — create (position, +passengers) for boarding and (position, -passengers) for alighting events. Sort all events by position breaking ties by putting alighting before boarding at same position. Sweep accumulating passenger count checking against capacity. O(n log n) time O(n) space
+- **Tie breaking in event sort** — at the same stop passengers must alight BEFORE new passengers board to correctly check capacity. Sorting alighting events before boarding events at the same position handles this. Forgetting tie breaking produces wrong answers when passengers leave and join at the same stop
+- **Meeting Rooms II connection** → LC #253 uses the same sweep line to find the maximum number of simultaneously active intervals (minimum rooms needed). LC #1094 checks if the maximum simultaneous passengers ever exceeds capacity. Same sweep structure different threshold check
+
+```cpp
+// class Solution {
+//this solution is the heap one, this is considered more space efficient 
+//if unbounded distances
+// public:
+//     bool carPooling(vector<vector<int>>& trips, int capacity) {
+//         int currentNum = 0;
+//         int currIdx = 0;
+//         auto comparator = [](const pair<int, int>& p1, const pair<int, int>& p2){
+//            return  p1.second > p2.second; //sort by stop time, earliest stop time comes first, this way we can easily 
+//             remove passengers from the current number of passengers when we reach their stop time, because we can just check the top of the heap to see if the stop time of 
+//the passengers at the top of the heap is less than or equal to the current start time of the next trip, if it is, then we can remove those passengers from the current number of passengers and 
+//pop them from the heap, this way we can efficiently manage the number of passengers in the car at any given time, and we can easily check if we exceed the capacity of the car at any point in time
+//         };
+//         std::sort(trips.begin(), trips.end(), [](const vector<int> left, const vector<int> right){
+//                 return left[1] < right[1]; //sort by start time, earliest start time comes first, this way we can easily add passengers
+// to the current number of passengers when we reach their start time, because we can just iterate through the sorted trips array and add passengers to the current number of passengers when we reach their start time, 
+//this will allow us to efficiently manage the number of passengers in the car at any given time, and we can easily check if we exceed the capacity of the car at any point in time
+//         });
+//         priority_queue<pair<int, int>, vector<pair<int, int>>, decltype(comparator)> pq;
+
+//         while(currIdx < trips.size()){
+//             int numPassengers = trips[currIdx][0];
+//             int startTime = trips[currIdx][1];
+//             int stopTime = trips[currIdx][2];
+
+//             while(!pq.empty() && pq.top().second <= startTime){ //this occurs when trips have stop times that are less than or equal to the start time of the next trip, this means that we have reached the stop time of some passengers,
+// so we need to remove those passengers from the current number of passengers and pop them from the heap,
+//                 currentNum -= pq.top().first;
+//                 pq.pop();
+//             }
+
+//             currentNum += numPassengers; //after unloading passengers, we can add the passengers from the current trip to the current number of passengers, and then 
+//we can check if we exceed the capacity of the car, if we do, then we can return false, because it is not possible to carpool all the trips without exceeding the capacity of the car
+//             if(currentNum > capacity) return false;
+
+//             pq.push({numPassengers, stopTime});
+//             currIdx++; //move to the next trip
+//         }
+
+
+
+//         return true;
+//     }
+// };
+
+class Solution {
+public:
+    bool carPooling(vector<vector<int>>& trips, int capacity) {
+    //since location is bounded from 0 to 1000, you can use a prefix sum array here
+    int locations[1001] = {0};
+
+    int currCustomers = 0;
+    for(auto trip : trips){
+        int numPassengers = trip[0];
+        int startLoc = trip[1];
+        int endLoc = trip[2];
+
+        locations[startLoc] += numPassengers; //addPassengers
+        locations[endLoc] -= numPassengers; //removePassengers
+    }
+    for(int i = 0; i < 1001; i++){
+        currCustomers += locations[i];
+        if(currCustomers > capacity) return false;
+    }
+    return true;
+    }
+};
+```
+
+## Longest Happy String LC 1405
+
+<!-- notecardId: 1782192124031 -->
+
+A string s is called happy if it satisfies the following conditions:
+
+s only contains the letters 'a', 'b', and 'c'.
+s does not contain any of "aaa", "bbb", or "ccc" as a substring.
+s contains at most a occurrences of the letter 'a'.
+s contains at most b occurrences of the letter 'b'.
+s contains at most c occurrences of the letter 'c'.
+Given three integers a, b, and c, return the longest possible happy string. If there are multiple longest happy strings, return any of them. If there is no such string, return the empty string "".
+
+A substring is a contiguous sequence of characters within a string.
+
+ 
+
+Example 1:
+
+Input: a = 1, b = 1, c = 7
+Output: "ccaccbcc"
+Explanation: "ccbccacc" would also be a correct answer.
+Example 2:
+
+Input: a = 7, b = 1, c = 0
+Output: "aabaa"
+Explanation: It is the only correct answer in this case.
+ 
+
+Constraints:
+
+0 <= a, b, c <= 100
+a + b + c > 0
+
+**Link**: [text](https://leetcode.com/problems/longest-happy-string/)
+
+%
+
+**Pattern:** Greedy, Priority Queue (Heap)
+
+**Approach:** Use a max heap to keep track of the counts of 'a', 'b', and 'c'. At each step, pop the character with the highest remaining count from the heap and append it to the result string. If the last two characters in the result are the same as the character being added, pop the next highest character instead. After adding a character, decrement its count and push it back into the heap if it still has remaining occurrences. Repeat this process until no more characters can be added without violating the happy string conditions.
+
+**Key Insight:** The key insight is that by always choosing the character with the highest remaining count, we can maximize the length of the happy string while ensuring that we do not create any invalid substrings. By using a max heap, we can efficiently retrieve and manage the counts of each character, allowing us to make optimal choices at each step. The condition of not allowing three consecutive characters is enforced by checking the last two characters in the result before adding a new character.
+
+**Gotchas:** Be careful with the case where the last two characters in the result are the same as the character being added. In this case, you must pop the next highest character from the heap to avoid creating an invalid substring. Additionally, ensure that you handle cases where one or more characters have a count of zero, as these should not be added to the result string. Finally, consider edge cases where the counts of 'a', 'b', and 'c' are such that it is impossible to create a happy string, and return an empty string in those cases. Split the question into 2 cases, one is if last two characters is the same as the character we want to add, then we need to pop the next highest character from the heap, and if there is no next highest character, then we cannot add any more characters and we return the result. The other case is if last two characters is not the same as the character we want to add, then we can add that character to the result and push it back into the heap if it still has remaining occurrences.
+
+**Complexity:** Time: O(n log k) where n is the total number of characters (a + b + c) and k is the number of unique characters (3 in this case) | Space: O(k) for storing the counts of 'a', 'b', and 'c' in the max heap
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Reorganize String — LC #767 | No same adjacent char not max 2 consecutive → same max heap greedy most frequent | Yes — direct foundation |
+| Task Scheduler — LC #621 | Minimize intervals with cooldown → same max heap greedy different constraint | Yes — same pattern |
+| Rearrange String k Distance Apart — LC #358 | No same char within k positions → same max heap cooldown queue | Yes — direct upgrade |
+| Distant Barcodes — LC #1054 | No adjacent same barcode → same max heap greedy exact restatement | Yes — same problem family |
+| Maximum Frequency Stack — LC #895 | Pop most frequent → same frequency tracking different structure | Partial — same frequency idea |
+| IPO — LC #502 | Two heap greedy capital selection → same max heap different constraint | Partial — same greedy heap |
+| Construct K Palindrome Strings — LC #1400 | Build k palindromes from chars → same frequency counting different goal | Partial — same frequency idea |
+| Find the Closest Palindrome — LC #564 | Find closest palindrome number → math not heap | No — different pattern |
+
+**How this pattern scales:**
+- **Max heap greedy with consecutive tracking** is the core trick — push all (frequency, char) pairs into max heap. At each step pop the most frequent character. If it matches the last two characters in the result pop the second most frequent instead. Append chosen character decrement frequency push back if nonzero. O((a+b+c) log 3) effectively O(n) time O(1) space since alphabet is fixed size 3
+- **Consecutive count tracking** — instead of checking last two characters of result string maintain a `(lastChar, consecutiveCount)` pair. If top heap char equals lastChar AND consecutiveCount equals 2 pop second most frequent instead. Reset count to 1 on char change increment on same char. Cleaner than scanning result string
+- **Termination condition** — stop when heap is empty OR the only remaining character matches lastChar with consecutiveCount equal to 2. No more valid placements possible return result as is. This handles the case where remaining characters cannot be legally placed
+- **Reorganize String connection** → LC #767 is the special case where max consecutive is 1 and exactly 26 possible characters. LC #1405 relaxes to max consecutive 2 with only 3 characters. Same greedy skeleton — only the consecutive limit and alphabet size differ. LC #358 generalizes to k consecutive with 26 characters
+- **Greedy ladder** → LC #767 (k=1, 26 chars) → LC #1405 (k=2, 3 chars) → LC #358 (k=n, 26 chars). Each step relaxes or tightens the consecutive constraint. Same max heap pop-and-check structure throughout — only the fallback condition and consecutive limit change
+
+```cpp
+class Solution {
+public:
+    string longestDiverseString(int a, int b, int c) {
+        auto comparator = [](const pair<char, int>& p1, const pair<char, int>& p2){
+            return p1.second < p2.second;
+        };
+
+        std::priority_queue<pair<char, int>, vector<pair<char, int>>, decltype(comparator)> pq;
+
+        vector<pair<char, int>> charStor;
+        if (a > 0) pq.push({'a', a});
+        if (b > 0) pq.push({'b', b});
+        if (c > 0) pq.push({'c', c});
+        string res = "";
+
+        while(!pq.empty()){
+            auto top = pq.top();
+            pq.pop();
+
+            int n = res.size();
+            if (n >= 2 && res[n - 1] == top.first && res[n - 2] == top.first) {
+                    //we cannot use the most frequent character here
+                if(pq.empty()) break; // no other choice
+
+
+                auto nextTop = pq.top();
+                pq.pop();
+
+                res += nextTop.first;
+                nextTop.second--;
+
+                if(nextTop.second > 0) pq.push(nextTop);
+                pq.push(top);
+        }
+        else{
+            //we can use the most frequent character here
+
+            res += top.first;
+            top.second--;
+            if(top.second > 0){
+                pq.push(top);
+            }
+        }
+        }
+        return res;
+    }
+};
+```
+
+## Single Threaded CPU LC 1834
+
+<!-- notecardId: 1782192338923 -->
+
+You are given n​​​​​​ tasks labeled from 0 to n - 1 represented by a 2D integer array tasks, where tasks[i] = [enqueueTimei, processingTimei] means that the i​​​​​​th​​​​ task will be available to process at enqueueTimei and will take processingTimei to finish processing.
+
+You have a single-threaded CPU that can process at most one task at a time and will act in the following way:
+
+If the CPU is idle and there are no available tasks to process, the CPU remains idle.
+If the CPU is idle and there are available tasks, the CPU will choose the one with the shortest processing time. If multiple tasks have the same shortest processing time, it will choose the task with the smallest index.
+Once a task is started, the CPU will process the entire task without stopping.
+The CPU can finish a task then start a new one instantly.
+Return the order in which the CPU will process the tasks.
+
+ 
+
+Example 1:
+
+Input: tasks = [[1,2],[2,4],[3,2],[4,1]]
+Output: [0,2,3,1]
+Explanation: The events go as follows: 
+- At time = 1, task 0 is available to process. Available tasks = {0}.
+- Also at time = 1, the idle CPU starts processing task 0. Available tasks = {}.
+- At time = 2, task 1 is available to process. Available tasks = {1}.
+- At time = 3, task 2 is available to process. Available tasks = {1, 2}.
+- Also at time = 3, the CPU finishes task 0 and starts processing task 2 as it is the shortest. Available tasks = {1}.
+- At time = 4, task 3 is available to process. Available tasks = {1, 3}.
+- At time = 5, the CPU finishes task 2 and starts processing task 3 as it is the shortest. Available tasks = {1}.
+- At time = 6, the CPU finishes task 3 and starts processing task 1. Available tasks = {}.
+- At time = 10, the CPU finishes task 1 and becomes idle.
+Example 2:
+
+Input: tasks = [[7,10],[7,12],[7,5],[7,4],[7,2]]
+Output: [4,3,2,0,1]
+Explanation: The events go as follows:
+- At time = 7, all the tasks become available. Available tasks = {0,1,2,3,4}.
+- Also at time = 7, the idle CPU starts processing task 4. Available tasks = {0,1,2,3}.
+- At time = 9, the CPU finishes task 4 and starts processing task 3. Available tasks = {0,1,2}.
+- At time = 13, the CPU finishes task 3 and starts processing task 2. Available tasks = {0,1}.
+- At time = 18, the CPU finishes task 2 and starts processing task 0. Available tasks = {1}.
+- At time = 28, the CPU finishes task 0 and starts processing task 1. Available tasks = {}.
+- At time = 40, the CPU finishes task 1 and becomes idle.
+ 
+
+Constraints:
+
+tasks.length == n
+1 <= n <= 105
+1 <= enqueueTimei, processingTimei <= 109
+
+**Link**: [text](https://leetcode.com/problems/single-threaded-cpu/)
+
+%
+
+**Pattern:** Heap, Priority Queue, Greedy
+
+**Approach:** Use a min heap to keep track of the available tasks based on their processing time and index. First, sort the tasks by their enqueue time. Then, iterate through the sorted tasks and add them to the heap when they become available (i.e., when the current time is greater than or equal to their enqueue time). If the heap is not empty, pop the task with the shortest processing time (and smallest index in case of ties) and process it, updating the current time accordingly. If the heap is empty and there are still tasks left, jump the current time to the enqueue time of the next task. Repeat this process until all tasks have been processed.
+
+**Key Insight:** The key insight is that by using a min heap to manage the available tasks, we can efficiently select the next task to process based on the shortest processing time and smallest index. Sorting the tasks by enqueue time allows us to easily determine when tasks become available, and by maintaining the current time, we can ensure that we are always processing tasks in the correct order. This greedy approach guarantees that we are making optimal choices at each step, leading to the correct final order of task processing.
+
+**Gotchas:** Be careful with the case where the heap is empty and there are still tasks left to process. In this case, you need to jump the current time to the enqueue time of the next task to ensure that you are not skipping any available tasks. Additionally, ensure that you handle cases where multiple tasks have the same enqueue time or processing time correctly, as this can affect the order in which they are processed. Finally, consider edge cases such as when all tasks have the same enqueue time or when there is only one task to begin with.
+
+**Complexity:** Time: O(n log n) for sorting the tasks and O(n log n) for processing the tasks with a priority queue | Space: O(n) for storing the tasks in the min heap
+
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Task Scheduler — LC #621 | Minimize intervals with cooldown → same greedy scheduling different constraint | Partial — same scheduling family |
+| IPO — LC #502 | Unlock affordable projects pick max profit → same sort + two structure unlock then pick | Yes — same pattern |
+| Car Pooling — LC #1094 | Check capacity across time intervals → sweep line not priority queue | Partial — same interval idea |
+| Course Schedule III — LC #630 | Maximize courses within deadlines → same sort + max heap greedy eviction | Partial — same scheduling family |
+| Minimum Number of CPU Intervals — LC #621 | Minimize total CPU time with cooldown → same CPU scheduling idea | Partial — same CPU family |
+| Process Tasks Using Servers — LC #1882 | Assign tasks to servers not single CPU → same min heap availability tracking | Yes — direct variant |
+| Reorganize String — LC #767 | Arrange chars no adjacent same → same max heap greedy different domain | No — different pattern |
+| Meeting Rooms II — LC #253 | Count overlapping intervals → sweep line not simulation | No — different pattern |
+
+**How this pattern scales:**
+- **Sort by enqueue time + min heap by processing time** is the core trick — sort tasks by enqueue time. Use a pointer to track which tasks have become available. At each CPU free moment advance pointer enqueuing all tasks with `enqueueTime <= currentTime` into a min heap sorted by processing time then index. Pop shortest task execute it advance currentTime. O(n log n) time O(n) space
+- **Time jumping** — when CPU is free but no tasks are available yet jump `currentTime` directly to the next task's enqueue time instead of simulating idle cycles one by one. Without this optimization the simulation runs in O(max_time) instead of O(n log n)
+- **Two sort keys for heap** — heap sorts by `(processingTime, index)` to break ties by task index when processing times are equal. Missing the index tiebreaker produces wrong order on inputs with equal processing times which is a common test case
+- **IPO connection** → LC #502 uses the same sort + unlock + pick greedy structure. Sort by capital (enqueue condition), drain affordable projects into max profit heap (drain available tasks into min processing heap), pick best available repeat k times (pick shortest task repeat n times). Identical skeleton different optimization metric
+- **Process Tasks Using Servers connection** → LC #1882 generalizes to multiple servers using two min heaps — one for free servers sorted by weight then index one for busy servers sorted by free time. Same time jumping trick same unlock then pick structure scaled to k servers
+
+```cpp
+class Solution {
+public:
+    vector<int> getOrder(vector<vector<int>>& tasks) {
+        vector<int> result;
+
+        for(int i = 0; i < tasks.size(); i++){
+            tasks[i].push_back(i); //store index for all tasks
+        }
+
+        sort(tasks.begin(), tasks.end(), [](const vector<int>& a, const vector<int>& b){
+            return a[0] < b[0]; //sort tasks by enqueue time, this will allow us to easily add tasks to the priority queue when they become available, because we can just iterate 
+            //through the sorted tasks array and add tasks to the priority queue when their enqueue time is less than or equal to the current time, this will allow us to efficiently manage the 
+            //tasks that are available to be executed at any given time, and we can use the priority queue to always execute the task with the shortest processing time first, which will allow us to minimize the overall processing time of all tasks
+        });
+        auto comparator = [](const vector<int>& v1, const vector<int>& v2){
+            if(v1[1] == v2[1]){
+                    return v1[2] > v2[2]; //lower index comes first
+                }
+                return v1[1] > v2[1]; //shorter processing time comes first
+        };
+        priority_queue<vector<int>, vector<vector<int>>, decltype(comparator)> pq; 
+        long long currentTime = 0; //this is to avoid integer overflow
+        int currentIdx = 0; //track position in sorted tasks array(sorted by enqueue time), the currentIdx task is the next task that we need to add to the priority queue when 
+        //its enqueue time is less than or equal to the current time, we can use this index to keep track of which tasks have been added to the priority queue and which tasks have not been added yet, this will allow us to efficiently manage the tasks that are available to be executed at any given time, and we can use the priority queue to always execute the task with the shortest processing time first, which will allow us to minimize the overall processing time of all tasks
+
+        while (currentIdx < tasks.size() || !pq.empty()){ //as long as there are tasks that have not been added to the priority queue 
+        //or there are tasks in the priority queue that have not been executed, we need to keep processing tasks
+            if (pq.empty() && currentTime < tasks[currentIdx][0]){
+                currentTime = tasks[currentIdx][0]; //if the priority queue is empty and the current time is less than the enqueue time of the next task, 
+                //we need to fast forward the current time to the enqueue time of the next task
+                //this becomes the new time and now tasks will populate into the pq
+            }
+            while(currentIdx < tasks.size() && tasks[currentIdx][0] <= currentTime){ //while there are still tasks that have an enqueue time less than or equal to the current time, we can add them to the priority queue,
+                pq.push(tasks[currentIdx]);
+                currentIdx++;
+            }
+
+    
+                auto idx = pq.top();
+                pq.pop();
+                result.push_back(idx[2]);
+                currentTime += idx[1]; //after executing the task, 
+                //we need to increment the current time by the processing time of the task, because we have spent that amount of time executing the task, and then we can continue to add tasks to the priority queue and execute tasks until we have executed all tasks
+
+        }
+        return result;
+    }
+};
+```
 
