@@ -13769,3 +13769,1677 @@ public:
 };
 ```
 
+## Sum of All Subsets XOR Total LC 1863
+
+<!-- notecardId: 1783640045554 -->
+
+The XOR total of an array is defined as the bitwise XOR of all its elements, or 0 if the array is empty.
+
+For example, the XOR total of the array [2,5,6] is 2 XOR 5 XOR 6 = 1.
+Given an array nums, return the sum of all XOR totals for every subset of nums. 
+
+Note: Subsets with the same elements should be counted multiple times.
+
+An array a is a subset of an array b if a can be obtained from b by deleting some (possibly zero) elements of b.
+
+ 
+
+Example 1:
+
+Input: nums = [1,3]
+Output: 6
+Explanation: The 4 subsets of [1,3] are:
+- The empty subset has an XOR total of 0.
+- [1] has an XOR total of 1.
+- [3] has an XOR total of 3.
+- [1,3] has an XOR total of 1 XOR 3 = 2.
+0 + 1 + 3 + 2 = 6
+Example 2:
+
+Input: nums = [5,1,6]
+Output: 28
+Explanation: The 8 subsets of [5,1,6] are:
+- The empty subset has an XOR total of 0.
+- [5] has an XOR total of 5.
+- [1] has an XOR total of 1.
+- [6] has an XOR total of 6.
+- [5,1] has an XOR total of 5 XOR 1 = 4.
+- [5,6] has an XOR total of 5 XOR 6 = 3.
+- [1,6] has an XOR total of 1 XOR 6 = 7.
+- [5,1,6] has an XOR total of 5 XOR 1 XOR 6 = 2.
+0 + 5 + 1 + 6 + 4 + 3 + 7 + 2 = 28
+Example 3:
+
+Input: nums = [3,4,5,6,7,8]
+Output: 480
+Explanation: The sum of all XOR totals for every subset is 480.
+ 
+
+Constraints:
+
+1 <= nums.length <= 12
+1 <= nums[i] <= 20
+
+**Link**: [text](https://leetcode.com/problems/sum-of-all-subsets-xor-totals/)
+
+%
+
+**Pattern:** Backtracking, Bit Manipulation, Recursion
+
+**Approach:** Use backtracking to generate all possible subsets of the given array. For each subset, calculate the XOR total by performing a bitwise XOR operation on all elements in the subset. Keep a running sum of all XOR totals for every subset generated. The base case for the recursion is when we have considered all elements in the array, at which point we add the current XOR total to the overall sum. We can also use bit manipulation to represent subsets as binary numbers, where each bit indicates whether an element is included in the subset or not.
+
+**Key Insight:** The key insight is that each element in the array can either be included or excluded from a subset, leading to 2^n possible subsets for an array of size n. By using backtracking, we can systematically explore all combinations of elements, ensuring that we account for every possible subset. The XOR operation is associative and commutative, allowing us to compute the XOR total incrementally as we build each subset. This approach guarantees that we will calculate the correct XOR total for every subset.
+
+**Gotchas:** Be careful with the base case of the recursion to ensure that you are adding the XOR total of the current subset to the overall sum at the correct time. Additionally, ensure that you handle the empty subset correctly, as its XOR total is defined to be 0. When using bit manipulation, make sure to iterate through all possible binary representations of subsets and correctly compute the XOR total for each representation.
+
+**Complexity:** Time: O(2^n * n) where n is the length of the input array, as we generate all possible subsets and compute the XOR total for each subset | Space: O(n) for the recursion stack in backtracking or O(1) if using bit manipulation without recursion
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Subsets — LC #78 | Generate all subsets not sum XOR totals → same backtracking include exclude | Yes — direct foundation |
+| Subsets II — LC #90 | Generate subsets with duplicates → same backtracking skip duplicate elements | Partial — same family |
+| Sum of Subsets — variant | Sum values across all subsets → same contribution counting idea | Yes — same pattern |
+| XOR Queries of a Subarray — LC #1310 | XOR of elements in range → prefix XOR not subset enumeration | No — different pattern |
+| Count Number of Maximum Bitwise OR Subsets — LC #2044 | Count subsets achieving max OR → same backtracking enumeration different goal | Yes — same pattern |
+| Total Hamming Distance — LC #477 | Sum hamming distances across all pairs → same bit contribution counting | Partial — same contribution idea |
+| Maximize XOR of Two Numbers — LC #421 | Maximum XOR of two numbers → binary Trie not subset enumeration | No — different pattern |
+| Number of Wonderful Substrings — LC #1915 | Count substrings with at most one odd frequency → bitmask prefix XOR | Partial — same XOR idea |
+
+**How this pattern scales:**
+- **Backtracking enumeration** is the straightforward approach — generate all 2^n subsets computing XOR of each, accumulate total. O(n * 2^n) time O(n) space for recursion stack. Clean and easy to derive under pressure
+- **Bit contribution O(n) math trick** — for each bit position count how many subsets have that bit set in their XOR total. A bit is set in a subset's XOR if an odd number of elements in the subset have that bit set. If ANY element has a given bit set exactly half of all 2^n subsets will have that bit set in their XOR total. Therefore each bit position contributes `bit_value * 2^(n-1)` to the total sum if any element has that bit set
+- **OR of all elements** — the math trick simplifies further: `answer = OR(all elements) * 2^(n-1)`. The OR captures which bit positions have at least one element contributing. Each such bit contributes `2^(n-1)` to the final sum. O(n) time O(1) space — elegant but non-obvious
+- **Why half the subsets** — for any bit position where at least one element has it set, the subsets split evenly: exactly half have an odd count of that bit (XOR bit is 1) and half have an even count (XOR bit is 0). This symmetry holds regardless of how many elements have the bit set as long as at least one does
+- **Backtracking family connection** → Subsets (LC #78) generates the same 2^n subsets using include/exclude backtracking. LC #1863 is LC #78 plus a XOR accumulation step per subset. Any subset enumeration problem builds on the same include/exclude template — only the per-subset computation changes
+
+```cpp
+class Solution {
+private:
+    int sum;
+public:
+    void backTrack(vector<int>& nums, int index, int currentXOR){
+        if(index == nums.size()) {
+         sum += currentXOR;
+         return;   
+        }
+
+        for(int i = 0; i < 2; i++){
+            //pretend like this is a tree, with 0 being include and 1 being exclude, we can do a backtracking approach to explore all possible subsets of the nums array, and for each subset, 
+            //we can calculate the XOR total of that subset and add it to the sum variable, this will allow us to calculate the sum of all subset XOR totals by exploring all possible subsets of 
+            //the nums array and calculating their XOR totals
+
+            //say i == 0 is include
+            if(i == 0){
+                currentXOR = currentXOR ^ nums[index]; //include the current number in the XOR total, we can do this by XORing the currentXOR with the current number at the index, this will give us the new XOR total for the subset that includes the current number
+                backTrack(nums, index + 1, currentXOR); //move on to the next index, this will allow us to explore the next level of the tree, which represents the next number in the nums array, and we can continue to explore all possible subsets of the nums array by recursively calling the backTrack function for each level of the tree
+                currentXOR = currentXOR ^ nums[index]; //backtrack, we need to undo the change we made to the currentXOR variable when we included the current number in the XOR total, this will allow us to explore the next branch of the tree, which represents the subset that excludes the current number, and we can continue to explore all possible subsets of the nums array by recursively calling the backTrack function for each level of the tree
+            }
+            //say i = 1 is exclude
+            if(i == 1){
+                backTrack(nums, index + 1, currentXOR);
+            }
+        }
+    }
+    int subsetXORSum(vector<int>& nums) {
+        backTrack(nums, 0, 0);
+        return sum;
+    }
+};
+```
+
+## Partition to K Equal Sum Subsets LC 698
+
+<!-- notecardId: 1783658085569 -->
+
+Given an integer array nums and an integer k, return true if it is possible to divide this array into k non-empty subsets whose sums are all equal.
+
+ 
+
+Example 1:
+
+Input: nums = [4,3,2,3,5,2,1], k = 4
+Output: true
+Explanation: It is possible to divide it into 4 subsets (5), (1, 4), (2,3), (2,3) with equal sums.
+Example 2:
+
+Input: nums = [1,2,3,4], k = 3
+Output: false
+ 
+
+Constraints:
+
+1 <= k <= nums.length <= 16
+1 <= nums[i] <= 104
+The frequency of each element is in the range [1, 4].
+
+**Link**: [text](https://leetcode.com/problems/partition-to-k-equal-sum-subsets/)
+
+%
+
+**Pattern:** Backtracking, Bitmasking, DFS
+
+**Approach:** Use backtracking to try to fill k subsets with equal sum. First, calculate the total sum of the array and check if it is divisible by k. If not, return false. If it is divisible, the target sum for each subset is total_sum / k. Sort the array in descending order to optimize the backtracking process. Use a recursive function to try to place each number into one of the k subsets, keeping track of the current sum of each subset. If a number can be placed in a subset without exceeding the target sum, place it and recursively attempt to place the next number. If all numbers are placed successfully, return true. If not, backtrack by removing the number from the subset and trying the next possibility.
+
+**Key Insight:** The key insight is that by sorting the array in descending order, we can place larger numbers first, which helps to quickly reach the target sum for each subset and reduces the number of recursive calls needed. Additionally, by keeping track of the current sum of each subset, we can efficiently check if adding a number would exceed the target sum. This backtracking approach allows us to explore all possible combinations of numbers in subsets while ensuring that we do not exceed the target sum for any subset.
+
+**Gotchas:** Be careful with the case where the total sum is not divisible by k, as this immediately means that it is impossible to partition the array into k equal sum subsets. Additionally, ensure that you handle cases where a number cannot be placed in any subset without exceeding the target sum, as this will require backtracking to explore other possibilities. Finally, consider edge cases such as when k is equal to 1 (always true) or when k is equal to the length of the array (true if all elements are equal).
+
+**Complexity:** Time: O(k^n) in the worst case, where n is the number of elements in the array and k is the number of subsets, as we may need to explore all combinations of placing n elements into k subsets | Space: O(k) for storing the current sum of each subset and O(n) for the recursion stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Partition Equal Subset Sum — LC #416 | Two subsets not k subsets → DP bitset not backtracking | Partial — same partition family |
+| Matchsticks to Square — LC #473 | Partition into 4 equal sides → same backtracking k=4 fixed | Yes — direct variant |
+| Fair Distribution of Cookies — LC #2305 | Minimize maximum subset sum → same backtracking different optimization | Yes — same backtracking family |
+| Split Array into Equal Sum Subsets | Partition into k equal parts → exact restatement of LC #698 | Yes — same problem |
+| Bin Packing Problem | Pack items into minimum bins → same NP-hard backtracking structure | Partial — same family |
+| Maximum Students Taking Exam — LC #1349 | Bitmask DP on seating → same bitmask state idea different problem | Partial — same bitmask idea |
+| Partition Array into Disjoint Intervals — LC #915 | Partition array into two parts different condition → prefix max suffix min | No — different pattern |
+| Minimum Number of Work Sessions — LC #1986 | Partition tasks minimizing sessions → same backtracking bitmask DP | Yes — same pattern |
+
+**How this pattern scales:**
+- **Backtracking with pruning** is the core approach — try placing each number into one of k buckets. Recurse when placement is valid. Backtrack when no valid placement exists. Key pruning rules: (1) skip buckets with the same current sum as a previously tried bucket (avoid duplicate states) (2) sort descending first to fail fast on large elements (3) if current element equals target and bucket is empty placing it is equivalent to any other empty bucket — skip duplicates. O(k^n) worst case but pruning makes practical performance acceptable
+- **Bitmask DP alternative** — represent which elements have been used as a bitmask of size n. `dp[mask]` stores the current sum of the active bucket being filled. Transition: for each unused element try adding it to current bucket — if sum reaches target reset to 0 starting new bucket. O(n * 2^n) time O(2^n) space — better asymptotic than backtracking but harder to implement
+- **Sort descending for early termination** — placing larger elements first makes it easier to detect infeasible placements early. If the largest remaining element cannot fit in any bucket the search fails immediately rather than after many recursive calls
+- **Duplicate bucket pruning is critical** — if two buckets have the same current sum placing the current element in either produces identical future states. Skip all but the first such bucket. Without this pruning the algorithm explores exponentially many equivalent states causing TLE on inputs with many equal elements
+- **Matchsticks to Square connection** → LC #473 is LC #698 with k hardcoded to 4. Same backtracking same pruning rules same sort descending optimization. If you can solve LC #698 with k as a parameter LC #473 is a one line change
+
+```cpp
+//this question is very much like Matchsticks to square , we just need to check if we can fit the numbers into k subsets instead of 4 sides, 
+//and we need to check if the sum of each subset is equal to the target sum, which is the total sum of the numbers divided by k, and we can use backtracking to try to fit the numbers into the subsets, 
+//and if we can fit all the numbers into the subsets and reach the end of the numbers array, then we can return true, otherwise we can return false
+class Solution {
+public:
+    bool backtracking(vector<int>& nums, int index, vector<int>& subsets, int target){
+        if(index == nums.size()){ //if index is at the end of the numbers array, 
+        //we have successfully fit all the numbers into the subsets, so we can return true, because we just need to check if we have successfully fit all the numbers into the subsets,
+            return true;
+        }
+
+        for(int i = 0; i < subsets.size(); i++){
+            if(nums[index] + subsets[i] <= target){
+                subsets[i] += nums[index];
+                
+                if(backtracking(nums, index + 1, subsets, target)) return true; //move index up by one, check if we can fit the next number in the next recursive call,
+                // and if we have successfully fit all the numbers in the subsets and reached the end of the numbers array, then we can return true, otherwise we can continue to try to fit the next number
+
+                subsets[i] -= nums[index];
+                if(subsets[i] == 0) break; //if we have tried to fit the current number in an empty subset and it didnt work,
+                // then we know that there is no point in trying to fit the current number in another empty subset, because it will also not work, 
+                //so we can break out of the loop and return false, this will allow us to efficiently find a solution if one exists, and if we try to fit the current number 
+                //in another empty subset after trying it in the first empty subset, we will just be repeating the same process and it will lead to unnecessary backtracking and a longer runtime
+            }
+        }
+        return false;
+    }
+    bool canPartitionKSubsets(vector<int>& nums, int k) {
+        int totalSum = accumulate(nums.begin(), nums.end(), 0);
+        if(totalSum % k != 0) return false; //if not 0, cant be divided evenly into k subsets
+        int target = totalSum / k;
+        vector<int> subsets(k, 0); //need to create vector of size k to store the sum of each subset,
+        // we will try to fit the numbers into these subsets and check if we can reach the target sum for each subset, if we can, then we can return true, otherwise we can return false
+        sort(nums.rbegin(), nums.rend()); //sort because we want to try to fit the largest numbers first, 
+        //this will allow us to quickly determine if a number is too large to fit in any of the subsets, and if it is, we can skip it and move on to the next number, 
+        //this will allow us to efficiently find a solution if one exists, and if we try to fit the smaller numbers first, we may end up trying to fit a large number later 
+        //on that cannot fit in any of the subsets, which will lead to unnecessary backtracking and a longer runtime
+        return backtracking(nums, 0, subsets, target);
+
+        
+    }
+};
+```
+
+## Matchsticks to Square LC 473
+
+<!-- notecardId: 1783658295617 -->
+
+You are given an integer array matchsticks where matchsticks[i] is the length of the ith matchstick. You want to use all the matchsticks to make one square. You should not break any stick, but you can link them up, and each matchstick must be used exactly one time.
+
+Return true if you can make this square and false otherwise.
+
+ 
+
+Example 1:
+
+
+Input: matchsticks = [1,1,2,2,2]
+Output: true
+Explanation: You can form a square with length 2, one side of the square came two sticks with length 1.
+Example 2:
+
+Input: matchsticks = [3,3,3,3,4]
+Output: false
+Explanation: You cannot find a way to form a square with all the matchsticks.
+ 
+
+Constraints:
+
+1 <= matchsticks.length <= 15
+1 <= matchsticks[i] <= 108
+
+**Link**: [text](https://leetcode.com/problems/matchsticks-to-square/)
+
+%
+
+**Pattern:** Backtracking, DFS
+
+**Approach:** Use backtracking to try to form 4 equal sides of a square using the matchsticks. First, calculate the total length of all matchsticks and check if it is divisible by 4. If not, return false. If it is divisible, the target length for each side of the square is total_length / 4. Sort the matchsticks in descending order to optimize the backtracking process. Use a recursive function to try to place each matchstick into one of the 4 sides, keeping track of the current length of each side. If a matchstick can be placed in a side without exceeding the target length, place it and recursively attempt to place the next matchstick. If all matchsticks are placed successfully, return true. If not, backtrack by removing the matchstick from the side and trying the next possibility.
+
+**Key Insight:** The key insight is that by sorting the matchsticks in descending order, we can place larger matchsticks first, which helps to quickly reach the target length for each side and reduces the number of recursive calls needed. Additionally, by keeping track of the current length of each side, we can efficiently check if adding a matchstick would exceed the target length. This backtracking approach allows us to explore all possible combinations of matchsticks in sides while ensuring that we do not exceed the target length for any side.
+
+**Gotchas:** Be careful with the case where the total length is not divisible by 4, as this immediately means that it is impossible to form a square. Additionally, ensure that you handle cases where a matchstick cannot be placed in any side without exceeding the target length, as this will require backtracking to explore other possibilities. Finally, consider edge cases such as when all matchsticks are of equal length or when there is only one matchstick.
+
+**Complexity:** Time: O(4^n) in the worst case, where n is the number of matchsticks, as we may need to explore all combinations of placing n matchsticks into 4 sides | Space: O(4) for storing the current length of each side and O(n) for the recursion stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Partition to K Equal Sum Subsets — LC #698 | K equal subsets not 4 sides → same backtracking k as parameter | Yes — direct generalization |
+| Partition Equal Subset Sum — LC #416 | Two equal subsets not four → DP bitset simpler than backtracking | Partial — same partition family |
+| Fair Distribution of Cookies — LC #2305 | Minimize maximum subset sum → same backtracking different optimization goal | Yes — same backtracking family |
+| Minimum Number of Work Sessions — LC #1986 | Partition tasks minimizing sessions → same backtracking bitmask DP | Partial — same partition family |
+| Split Array into Equal Sum Subsets | Partition into equal parts → same backtracking restatement | Yes — same problem family |
+| Maximum Students Taking Exam — LC #1349 | Bitmask DP seating arrangement → same bitmask state space different problem | Partial — same bitmask idea |
+| Filling Bookcase Shelves — LC #1105 | Pack books onto shelves minimize height → DP not backtracking | No — different pattern |
+| Stone Game — LC #877 | Optimal game theory picking stones → DP not backtracking | No — different pattern |
+
+**How this pattern scales:**
+- **Backtracking with k=4 fixed** is the core approach — same algorithm as LC #698 with k hardcoded to 4. Try placing each matchstick into one of four sides. Recurse when placement keeps side sum within target. Backtrack when no valid placement exists. Target is `sum / 4` — return false immediately if sum is not divisible by 4. O(4^n) worst case with pruning
+- **Four pruning rules to lock in cold**:
+  1. Sum not divisible by 4 → return false immediately
+  2. Any matchstick longer than `sum / 4` → return false immediately
+  3. Sort descending → fail fast on large matchsticks
+  4. Skip sides with same current sum → avoid duplicate states
+- **Why k=4 not arbitrary** — fixing k=4 allows additional geometric intuitions. A square has four equal sides so the partition must produce exactly four groups of equal sum. No fewer no more. The fixed k also means the branching factor is always 4 making complexity analysis cleaner than general k
+- **Bitmask DP alternative** — `dp[mask]` represents current sum of active side being filled for the set of used matchsticks encoded as mask. O(n * 2^n) time O(2^n) space. Same structure as LC #698's bitmask DP — four sides means resetting current sum to 0 every time it hits target exactly three times (fourth completion means all sides done)
+- **LC #698 relationship** — LC #473 is LC #698 called with k=4. If you implement LC #698 correctly with k as a parameter LC #473 is literally `return canPartitionKSubsets(matchsticks, 4)`. The only LC #473 specific addition is the divisibility check and the single-matchstick-too-long early exit which should also be in LC #698 anyway
+
+```cpp
+class Solution {
+public:
+    bool backtracking(int index, vector<int>& sides, vector<int>& matchSticks, int target){
+        if(index == matchSticks.size()) return (sides[0] == target && sides[1] == target && sides[2] == target &&  sides[3] == target);
+        //if index is matchsticks.size, we have added all the matchsticks to the sides, so we just need to check if all sides are equal to the target, if they are, then we can return true, 
+        //otherwise we can return false
+
+        for(int i = 0; i < 4; i++){
+            if(matchSticks[index] + sides[i] <= target){ //we dont need to subtract from target like combination sum, because we are just checking if the current side is
+            // less than or equal to the target, if it is, then we can add the matchstick to that side and continue to the next matchstick,
+                sides[i] += matchSticks[index];
+                if (backtracking(index + 1, sides, matchSticks, target)) return true; //move up index by one, this is because we want to try to fit the next matchstick in the next recursive call, 
+                //and if we have successfully fit all matchsticks in the sides and reached the end of the matchsticks array, then we can return true, otherwise we can continue to try to fit the next matchstick
+                // in the current side or in the next side
+                sides[i] -= matchSticks[index];
+
+            }
+        }
+        return false;
+    }
+    
+    bool makesquare(vector<int>& matchsticks) {
+      int totalSum = accumulate(matchsticks.begin(), matchsticks.end(), 0);
+
+      if(totalSum % 4 != 0) return false; //early check, if not divisible by 4, square not possible
+    int target = totalSum / 4; 
+    vector<int> sides(4, 0);
+    sort(matchsticks.rbegin(), matchsticks.rend()); //need to sort, because we want to try to fit the longest matchsticks first, 
+    //this will allow us to quickly determine if a matchstick is too long to fit in any of the sides, and if it is, we can skip it 
+    //and move on to the next matchstick, this will allow us to efficiently find a solution if one exists, and if we try to fit the shorter matchsticks first, 
+    //we may end up trying to fit a long matchstick later on that cannot fit in any of the sides, which will lead to unnecessary backtracking and a longer runtime
+    return backtracking(0, sides, matchsticks, target);
+    
+    }
+};
+```
+
+## Word Break II LC 140
+
+<!-- notecardId: 1783658964757 -->
+
+Given a string s and a dictionary of strings wordDict, add spaces in s to construct a sentence where each word is a valid dictionary word. Return all such possible sentences in any order.
+
+Note that the same word in the dictionary may be reused multiple times in the segmentation.
+
+ 
+
+Example 1:
+
+Input: s = "catsanddog", wordDict = ["cat","cats","and","sand","dog"]
+Output: ["cats and dog","cat sand dog"]
+Example 2:
+
+Input: s = "pineapplepenapple", wordDict = ["apple","pen","applepen","pine","pineapple"]
+Output: ["pine apple pen apple","pineapple pen apple","pine applepen apple"]
+Explanation: Note that you are allowed to reuse a dictionary word.
+Example 3:
+
+Input: s = "catsandog", wordDict = ["cats","dog","sand","and","cat"]
+Output: []
+ 
+
+Constraints:
+
+1 <= s.length <= 20
+1 <= wordDict.length <= 1000
+1 <= wordDict[i].length <= 10
+s and wordDict[i] consist of only lowercase English letters.
+All the strings of wordDict are unique.
+Input is generated in a way that the length of the answer doesn't exceed 105.
+
+**Link**: [text](https://leetcode.com/problems/word-break-ii/)
+
+%
+
+**Pattern:** Backtracking, DFS, Memoization
+
+**Approach:** Use backtracking to explore all possible ways to break the string into valid words from the dictionary. Start from the beginning of the string and try to find all prefixes that are in the word dictionary. For each valid prefix, recursively attempt to break the remaining substring. Use memoization to store results for substrings that have already been computed to avoid redundant calculations. The base case for the recursion is when the entire string has been successfully segmented into valid words, at which point we can add the constructed sentence to the result list.
+
+**Key Insight:** The key insight is that you can store all the words in the dictionary in a hash set for O(1) lookups. By using backtracking, you can explore all possible segmentations of the string, and memoization helps to optimize the process by caching results for substrings that have already been processed. This prevents the algorithm from recalculating the same substring multiple times, significantly improving efficiency.
+
+**Gotchas:** Be careful with the base case of the recursion to ensure that you are adding the constructed sentence to the result list at the correct time. Additionally, ensure that you handle cases where no valid segmentation exists, as this will require returning an empty list. When implementing memoization, make sure to use a suitable data structure (like a dictionary) to store results for substrings, and check if a substring has already been computed before proceeding with further recursive calls.
+
+**Complexity:** Time: O(n^3) in the worst case, where n is the length of the string, as we may need to explore all possible segmentations and each segmentation can take O(n) time to construct the sentence | Space: O(n^2) for storing the memoization results and O(n) for the recursion stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Word Break — LC #139 | Check if string can be segmented not collect all paths → same DP boolean no backtracking | Yes — direct foundation |
+| Extra Characters in a String — LC #2707 | Minimize leftover characters → same DP partition different optimization | Yes — same DP family |
+| Concatenated Words — LC #472 | Find words formed entirely by other words → same DP segmentation different goal | Partial — same DP family |
+| Palindrome Partitioning — LC #131 | Collect all palindrome partitions → same backtracking collect paths different validity | Yes — same pattern |
+| Restore IP Addresses — LC #93 | Collect all valid IP segmentations → same backtracking collect paths fixed segments | Yes — same pattern |
+| Letter Combinations of Phone Number — LC #17 | Generate all combinations from digit map → same backtracking build and collect | Yes — same backtracking family |
+| Decode Ways II — LC #639 | Count decodings with wildcards → same DP different alphabet | Partial — same DP family |
+| Memoized DFS + backtracking | Combine DP validity with path collection → exact approach for LC #140 | Yes — core pattern |
+
+**How this pattern scales:**
+- **Memoized DFS + backtracking** is the core trick — first run DP (or memoized DFS) to determine which starting positions can reach the end successfully. Then backtrack only through valid positions collecting all paths. Avoids exploring dead-end branches that LC #139 would have already marked as unreachable. O(n² + output) time O(n²) space
+- **Two phase approach** — phase 1: `canReach[i]` marks whether `s[i:]` can be fully segmented. Phase 2: backtrack from index 0 only following transitions where `canReach[j]` is true. Without phase 1 the backtracking explores dead ends producing O(2^n) blowup on adversarial inputs
+- **Hash set for O(1) word lookup** — store dictionary in a hash set. For each position try all substrings checking membership in O(1). Without hash set each check is O(d) where d is dictionary size blowing up total complexity
+- **Trie optimization** — replace hash set with Trie and walk forward character by character from each position. Prunes non-dictionary prefixes immediately rather than generating all substrings. Same asymptotic improvement as in LC #2707
+- **Palindrome Partitioning connection** → LC #131 uses identical backtracking collect-paths structure but validity check is palindrome instead of dictionary membership. Same choose-recurse-unchoose skeleton same path accumulation — only the validity function differs
+
+```cpp
+class Solution {
+private:
+    unordered_set<string> dict;
+    vector<string> res;
+public:
+    void backtracking(int substrIdxStart, string& curr, string& s){
+        if(substrIdxStart == s.length()) {
+            res.push_back(curr);
+            return;
+        }
+
+
+        for(int substrIdxEnd = substrIdxStart; substrIdxEnd < s.length(); substrIdxEnd++){
+            string word = s.substr(substrIdxStart, substrIdxEnd - substrIdxStart + 1);
+
+
+            if(dict.find(word) != dict.end()){
+                int prevLength = curr.length();//need to know old string length so we can return to this state
+                if(curr.length() == 0){
+                    curr += word;
+                }
+                else{
+                    curr += " " + word;
+                }
+                backtracking(substrIdxEnd+ 1, curr, s);
+                curr = curr.substr(0, prevLength); //revert back to old curr string
+            }
+        }
+    }
+    vector<string> wordBreak(string s, vector<string>& wordDict) {
+        for(int i = 0; i < wordDict.size(); i++){
+            dict.insert(wordDict[i]);
+        }
+
+        string curr = "";
+        backtracking(0, curr, s);
+        return res;
+    }
+};
+```
+
+## Palindrome Partitioning LC 131
+
+<!-- notecardId: 1783659869708 -->
+
+Given a string s, partition s such that every substring of the partition is a palindrome. Return all possible palindrome partitioning of s.
+
+ 
+
+Example 1:
+
+Input: s = "aab"
+Output: [["a","a","b"],["aa","b"]]
+Example 2:
+
+Input: s = "a"
+Output: [["a"]]
+ 
+
+Constraints:
+
+1 <= s.length <= 16
+s contains only lowercase English letters.
+
+**Link**: [text](https://leetcode.com/problems/palindrome-partitioning/)
+
+%
+
+**Pattern:** Backtracking, DFS
+
+**Approach:** Use backtracking to explore all possible ways to partition the string into palindromic substrings. Start from the beginning of the string and try to find all prefixes that are palindromes. For each valid palindrome prefix, recursively attempt to partition the remaining substring. The base case for the recursion is when the entire string has been successfully partitioned into palindromic substrings, at which point we can add the constructed partition to the result list.
+
+**Key Insight:** The key insight is that you can check if a substring is a palindrome by comparing characters from the beginning and end of the substring moving towards the center. By using backtracking, you can explore all possible partitions of the string, and only add those partitions to the result list that consist entirely of palindromic substrings.
+
+**Gotchas:** Be careful with the base case of the recursion to ensure that you are adding the constructed partition to the result list at the correct time. Additionally, ensure that you handle cases where no valid partition exists, as this will require returning an empty list. When checking for palindromes, make sure to correctly handle single-character substrings and even-length substrings.
+
+**Complexity:** Time: O(n * 2^n) in the worst case, where n is the length of the string, as we may need to explore all possible partitions and each partition can take O(n) time to check for palindromic substrings | Space: O(n) for storing the current partition and O(n) for the recursion stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Palindrome Partitioning II — LC #132 | Minimum cuts not all partitions → DP not backtracking | Partial — same palindrome family |
+| Word Break II — LC #140 | All valid word segmentations → same backtracking collect paths dictionary validity | Yes — direct variant |
+| Restore IP Addresses — LC #93 | All valid IP segmentations → same backtracking fixed 4 segment constraint | Yes — same pattern |
+| Generate Parentheses — LC #22 | Generate all valid bracket combinations → same backtracking build and collect | Partial — same backtracking family |
+| Letter Combinations of Phone Number — LC #17 | All combinations from digit map → same backtracking collect paths | Yes — same backtracking family |
+| Count Substrings — LC #647 | Count palindromic substrings not partition → expand around center | Partial — same palindrome idea |
+| Longest Palindromic Substring — LC #5 | Find longest palindrome not partition → expand around center or Manacher | No — different pattern |
+| Partition to K Equal Sum Subsets — LC #698 | Partition array not string → same backtracking different validity | Partial — same partition family |
+
+**How this pattern scales:**
+- **Backtracking + palindrome check** is the core trick — at each index try all substrings starting there. If the substring is a palindrome add it to the current path and recurse from the next index. When index reaches end of string append current path to result. Unchoose (pop) after recursing. O(n * 2^n) time O(n) space for recursion stack
+- **Precompute palindrome table** — build a 2D boolean table `isPalin[i][j]` using DP in O(n²) before backtracking. Each palindrome check during backtracking becomes O(1) instead of O(n). Critical optimization for long strings — without it each check during backtracking is O(n) producing O(n² * 2^n) total
+- **DP palindrome table** — `isPalin[i][j] = s[i] == s[j] AND isPalin[i+1][j-1]`. Base cases: single character always palindrome, two equal characters always palindrome. Fill diagonally by increasing substring length
+- **Palindrome Partitioning II connection** → LC #132 asks for minimum cuts not all partitions. Same isPalin table but DP instead of backtracking. `dp[i]` = minimum cuts for `s[0:i]`. Transition: if `isPalin[j][i]` then `dp[i] = min(dp[i], dp[j-1] + 1)`. Same precomputation different phase 2
+- **Backtracking collect-paths family** → LC #131 → LC #140 → LC #93 all use identical choose-recurse-unchoose skeleton with different validity functions. LC #131 checks palindrome, LC #140 checks dictionary membership, LC #93 checks valid IP segment. Knowing any one makes all three derivable from the same template
+
+```cpp
+class Solution {
+    private:
+    vector<vector<string>> res;
+public:
+    bool isPalindrome(string &s, int start, int end){ //need a simple helper that checks if a substring is a palindrome or not
+        while(start < end){
+            if(s[start] != s[end]){
+                return false;
+            }
+            start++;
+            end--;
+        }
+        return true;
+    }
+
+    void backtracking(string& s, int index, vector<string>& curr){
+        if(index == s.length()){
+            res.push_back(curr);
+            return;
+        }
+
+        
+        for(int i = index; i < s.length(); i++){ //we want to check for all possible substrings starting from the index,
+        // so we can have a loop that goes from the index to the end of the string, and for each substring, we can check if it is a palindrome or not, 
+        //if it is a palindrome, then we can add it to the current partition and then recursively call the backtracking function with the next index after 
+        //the end of the substring, this will allow us to find all possible partitions of the string that are palindromes, and if we reach the end of the string, 
+        //then we can add the current partition to the result vector
+            if(isPalindrome(s,index, i)){
+                curr.push_back(s.substr(index, i - index + 1));
+                backtracking(s, i + 1, curr);
+                curr.pop_back();
+            }
+        }
+    }
+
+
+    vector<vector<string>> partition(string s) {
+        vector<string> curr;
+        backtracking(s, 0, curr);
+        return res;
+    }
+};
+```
+
+## Subsets II LC 90
+
+<!-- notecardId: 1783695724753 -->
+
+Given an integer array nums that may contain duplicates, return all possible subsets (the power set).
+
+The solution set must not contain duplicate subsets. Return the solution in any order.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,2]
+Output: [[],[1],[1,2],[1,2,2],[2],[2,2]]
+Example 2:
+
+Input: nums = [0]
+Output: [[],[0]]
+ 
+
+Constraints:
+
+1 <= nums.length <= 10
+-10 <= nums[i] <= 10
+
+**Link**: [text](https://leetcode.com/problems/subsets-ii/)
+
+%
+
+**Pattern:** Backtracking, DFS
+
+**Approach:** Use backtracking to explore all possible subsets of the array while avoiding duplicates. First, sort the array to group duplicate elements together. Then, use a recursive function to build subsets by including or excluding each element. To avoid duplicates, skip over elements that are the same as the previous element when they are at the same recursive depth. This ensures that only unique subsets are generated.
+
+**Key Insight:** The key insight is that by sorting the array, we can easily identify and skip duplicate elements during the backtracking process. This allows us to generate unique subsets without having to use additional data structures to track previously generated subsets.
+
+**Gotchas:** Be careful with the handling of duplicate elements. When skipping duplicates, ensure that you only skip them when they are at the same recursive depth (i.e., when they are consecutive in the sorted array). This prevents skipping valid subsets that include the first occurrence of a duplicate element. This is the main difference between Subsets I and Subsets II, as Subsets I does not have to handle duplicates.
+
+**Complexity:** Time: O(2^n) in the worst case, where n is the number of elements in the array, as we may need to explore all possible subsets | Space: O(n) for storing the current subset and O(n) for the recursion stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Subsets — LC #78 | No duplicates → same backtracking no skip logic needed | Yes — direct foundation |
+| Combination Sum II — LC #40 | Subsets summing to target with duplicates → same sort + skip backtracking | Yes — direct variant |
+| Permutations II — LC #47 | All permutations with duplicates → same sort + skip different branching | Partial — same dedup idea |
+| Palindrome Partitioning — LC #131 | All palindrome partitions → same backtracking different validity | Partial — same backtracking family |
+| Word Break II — LC #140 | All valid word segmentations → same backtracking collect paths | Partial — same backtracking family |
+| Letter Combinations — LC #17 | All combinations from digit map → same backtracking no duplicates | Partial — same backtracking family |
+| Find All Anagrams — LC #438 | Find anagram positions in string → sliding window not backtracking | No — different pattern |
+| Partition to K Equal Sum Subsets — LC #698 | Partition array into k equal groups → same backtracking pruning | Partial — same backtracking family |
+
+**How this pattern scales:**
+- **Sort + skip duplicates** is the core trick — sort array first so duplicates are adjacent. In the backtracking loop skip elements equal to the previous element at the same recursion level (`i > start && nums[i] == nums[i-1]`). This deduplication produces unique subsets without a hash set. O(n * 2^n) time O(n) space
+- **Skip condition precision** — `i > start` not `i > 0` is critical. Skipping when `i > 0` incorrectly skips valid elements at deeper recursion levels where the same value appears legitimately in a different position. The `i > start` condition only skips duplicates at the same recursion depth
+- **Sort is mandatory** — without sorting duplicates may not be adjacent making the skip condition unreliable. Sorting guarantees all identical elements are contiguous so the `nums[i] == nums[i-1]` check correctly identifies duplicates at the same level
+- **LC #40 connection** → Combination Sum II applies the exact same sort + skip deduplication but adds a target sum constraint — only append path to result when sum equals target instead of at every node. Same skeleton one additional pruning condition
+- **Deduplication pattern generalizes** → sort + skip appears in 3Sum (LC #15), Combination Sum II (LC #40), Permutations II (LC #47), and LC #90. Any backtracking problem with duplicate inputs uses this same sort first then skip adjacent duplicates at the same level pattern. Internalizing it once covers the entire family
+
+```cpp
+class Solution {
+private:
+    vector<vector<int>> res;
+public:
+    void backtracking(vector<int>& nums, vector<int>& curr, int index){
+        if(index == nums.size()){
+            res.push_back(curr);
+            return;
+        }
+        for(int i = 0; i < 2; i++){
+            if(i == 0){ //exclude, the next index cannot be a duplicate 
+                int next_index = index + 1; //need to make a new variable here so that for doing the i == 1 loop, we can still use the original index variable to include the duplicate number, 
+                //because if we update the index variable in the i == 0 loop, then we won't be able to include the duplicate number in the i == 1 loop, because the index variable will have been updated to skip over the duplicate number, so we need to make a new variable here to keep track of the next index that we need to backtrack from in the i == 0 loop, and we can use 
+                //the original index variable in the i == 1 loop to include the duplicate number
+                while(next_index < nums.size() && nums[next_index] == nums[index]){
+                    next_index++;
+                }
+            backtracking(nums, curr, next_index);
+            }
+            else{
+                curr.push_back(nums[index]);
+                backtracking(nums, curr, index + 1);
+                curr.pop_back();
+            }
+        }
+    }
+    vector<vector<int>> subsetsWithDup(vector<int>& nums) {
+        sort(nums.begin(), nums.end()); //still need to sort the array to make sure that duplicates are adjacent to each other, 
+        //this will allow us to easily skip over duplicate numbers in the backtracking process, because if we have duplicate numbers that are 
+        //not adjacent to each other, then we won't be able to easily skip over them in the backtracking process, because we won't be able to easily identify which numbers are 
+        //duplicates and which numbers are not duplicates, so we need to sort the array to make sure that duplicates are adjacent to each other, this will allow us to easily skip over duplicate 
+        //numbers in the backtracking process
+        vector<int> curr;
+        backtracking(nums, curr, 0);
+        return res;
+    }
+};
+```
+
+## Word Search LC 79
+
+<!-- notecardId: 1783696122848 -->
+
+Given an m x n grid of characters board and a string word, return true if word exists in the grid.
+
+The word can be constructed from letters of sequentially adjacent cells, where adjacent cells are horizontally or vertically neighboring. The same letter cell may not be used more than once.
+
+ 
+
+Example 1:
+
+
+Input: board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "ABCCED"
+Output: true
+Example 2:
+
+
+Input: board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "SEE"
+Output: true
+Example 3:
+
+
+Input: board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "ABCB"
+Output: false
+ 
+
+Constraints:
+
+m == board.length
+n = board[i].length
+1 <= m, n <= 6
+1 <= word.length <= 15
+board and word consists of only lowercase and uppercase English letters.
+ 
+
+Follow up: Could you use search pruning to make your solution faster with a larger board?
+
+**Link**: [text](https://leetcode.com/problems/word-search/)
+
+%
+
+**Pattern:** Backtracking, DFS
+
+**Approach:** Use backtracking to explore all possible paths in the grid to find the target word. Start from each cell in the grid and attempt to match the first character of the word. If it matches, recursively explore its adjacent cells (up, down, left, right) for the next character in the word. Mark cells as visited during the exploration to avoid revisiting them in the same path. If a path successfully matches all characters of the word, return true. If no path matches, return false after exploring all starting cells.
+
+**Key Insight:** The key insight is that you can use a depth-first search (DFS) approach to explore all possible paths in the grid. By marking cells as visited during the exploration, you can prevent cycles and ensure that each cell is only used once in a given path. Additionally, by starting the search from every cell in the grid, you can ensure that all potential starting points for the word are considered.
+
+**Gotchas:** Be careful with the bounds of the grid when exploring adjacent cells to avoid index out-of-bounds errors. Also, ensure that you correctly backtrack by unmarking cells as visited after exploring all paths from that cell. This allows other paths to use that cell in their exploration. Additionally, consider edge cases where the word is longer than the total number of cells in the grid, as this would make it impossible to find a match. To answer the follow up of the question, you can prune the search by checking if the frequency of each character in the word is less than or equal to the frequency of that character in the grid. If any character in the word has a higher frequency than in the grid, you can immediately return false without performing the backtracking search.
+
+**Complexity:** Time: O(m * n * 4^L) in the worst case, where m is the number of rows, n is the number of columns, and L is the length of the word, as we may need to explore all possible paths in the grid for each starting cell | Space: O(L) for the recursion stack, where L is the length of the word
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Word Search II — LC #212 | Search multiple words simultaneously → integrate a Trie with the grid DFS to prune search paths early | Yes — direct scale-up |
+| Path with Maximum Gold — LC #1219 | Find path collecting most gold → run grid DFS, backtracking (marking/unmarking visited) to track maximum path sum | Yes — direct variant |
+| Unique Paths III — LC #980 | Find paths visiting all empty cells exactly once → grid DFS + backtracking with strict coordinate/count condition | Yes — direct variant |
+| Number of Islands — LC #200 | Find connected components → permanent marking of visited cells (no backtracking/unmarking required) | Partial — grid DFS but no path state restoration |
+| N-Queens — LC #51 | Backtracking on a chess grid → column/diagonal constraint tracking rather than adjacent 4-directional moves | Partial — same backtracking family, different coordinate mechanics |
+| Flood Fill — LC #733 | Recurse to recolor a connected region → standard traversal, no path state to restore | No — pure traversal, no backtracking |
+
+**How this pattern scales:**
+- **In-place tracking (zero-space visited set)** is the core trick — modify the grid directly (e.g., `board[r][c] = '#'` or XOR with a mask) to mark the cell as visited. Upon returning from the recursive call, restore the cell's original character (`board[r][c] = word[index]`). This eliminates the need for an O(M * N) auxiliary boolean grid, keeping extra space usage at O(L) for the recursion stack (where L is the length of the word).
+- **State restoration is the hallmark of backtracking** — unlike connected component algorithms (like LC #200 Number of Islands) which permanently consume visited nodes, pathfinding requires cleaning up your tracks. The cell must be unmarked because a different path starting from a different neighbor might legitimately need to use this same cell later.
+- **Early pruning via defensive boundary checks** — check if the coordinates are out of bounds, if the cell has already been visited, or if the current character does not match `word[index]` at the very start of the recursive call. Rejecting invalid paths immediately prevents wasting time on deeper recursion levels, optimizing the search.
+- **LC #212 connection** → Word Search II applies the exact same grid DFS and backtracking template. However, to scale search efficiency across W words, a Prefix Tree (Trie) is passed along the recursion. Instead of checking a single word, the grid DFS steps into children nodes of the Trie, pruning search branches the moment a prefix is not found in the dictionary.
+- **Backtracking on grids generalizes** → This template is the industry standard for any grid problem requiring you to find a valid path, collect a maximum sequence (LC #1219), or solve a maze. Master the cycle of: 1) Verify boundary constraints, 2) Mark current state, 3) Explore all valid neighbors (4 directions), 4) Revert current state (backtrack).
+
+```cpp
+class Solution {
+public:
+    bool backtracking(vector<vector<char>>& board, int row, int col, string& word, int index){
+        if(index == word.length()) return true; //if index at word length, we are done because we have successfully found the entire word in the board, so we can return true
+        
+        if(row < 0 || row >= board.size() || col < 0 || col >= board[0].size()) return false; //if out of bounds, return false
+
+        if(board[row][col] != word[index]) return false; //if the current cell in the board does not match the current character 
+        //in the word that we are looking for, then we can return false, because there is no point in continuing to search for the rest of 
+        //the word in the board if the current cell does not match the current character in the word, this will allow us to optimize our backtracking process by avoiding unnecessary backtracking calls when we encounter a 
+        //cell in the board that does not match the current character in the word that we are looking for
+        
+        
+        char currChar = board[row][col];
+        board[row][col] = '#'; //mark current cell as visited, we can also use a separate visited array, but this is more space efficient,
+        // we just need to make sure to unmark it after the backtracking calls,
+        bool found = (
+            backtracking(board, row + 1, col, word, index + 1) ||
+            backtracking(board, row - 1, col, word, index + 1) ||
+            backtracking(board, row , col + 1, word, index + 1) ||
+            backtracking(board, row , col - 1, word, index + 1) 
+        ); //check all 4 directions, if any of them return true, 
+        //then we can return true for the backtracking function, 
+        //because that means that we have found the rest of the word in the board, 
+        //and we can return true for the backtracking function, otherwise we can return false for the backtracking function, because that means that we have not found the rest of the word in the board, 
+        //and we can return false for the backtracking function
+
+        board[row][col] = currChar; //revert back to original character, follows common backtracking pattern of making a change, then reverting it back after the recursive calls, this will
+        // allow us to explore all possible paths in the board without permanently modifying the board,
+        return found;
+    }
+    bool exist(vector<vector<char>>& board, string word) {
+        string curr = "";
+
+        for(int i = 0; i < board.size(); i++){
+            for(int j = 0; j < board[0].size(); j++){
+                if(board[i][j] == word[0]){ //have to find the first character of the word in the board to start 
+                //the backtracking process, this will allow us to only start the backtracking process from cells in the board 
+                //that match the first character of the word, which will help to optimize the backtracking process by reducing the number of unnecessary backtracking 
+                //calls that we need to make, because if we start the backtracking process from cells in the board that do not match the first character of the word, then we will end up making a lot of unnecessary backtracking calls that will 
+                //not lead to a solution, so we need to only start the backtracking process from cells in the board that match the first character of the word
+                                    if (backtracking(board, i, j, word, 0)){ //kick off backtracking here
+                                        return true; 
+                                    }
+                }
+            }
+        }
+        return false;
+    }
+};
+```
+
+## Subsets LC 78
+
+<!-- notecardId: 1783697040380 -->
+
+Given an integer array nums of unique elements, return all possible subsets (the power set).
+
+The solution set must not contain duplicate subsets. Return the solution in any order.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,3]
+Output: [[],[1],[2],[1,2],[3],[1,3],[2,3],[1,2,3]]
+Example 2:
+
+Input: nums = [0]
+Output: [[],[0]]
+ 
+
+Constraints:
+
+1 <= nums.length <= 10
+-10 <= nums[i] <= 10
+All the numbers of nums are unique.
+
+**Link**: [text](https://leetcode.com/problems/subsets/)
+
+%
+
+**Pattern:** Backtracking, DFS
+
+**Approach:** Use backtracking to explore all possible subsets of the array. Start with an empty subset and recursively decide for each element whether to include it in the current subset or not. This generates all combinations of elements, resulting in the power set. The base case for the recursion is when all elements have been considered, at which point the current subset is added to the result list.
+
+**Key Insight:** The key insight is that for each element in the array, there are two choices: either include it in the current subset or exclude it. By exploring both choices recursively, you can generate all possible subsets. This binary decision process leads to a total of 2^n subsets for an array of n unique elements.
+
+**Gotchas:** Be careful with the base case of the recursion to ensure that you are adding the current subset to the result list at the correct time. Additionally, ensure that you handle the empty subset correctly, as it is a valid subset and should be included in the result. Since all elements are unique, there is no need to worry about duplicate subsets.
+
+**Complexity:** Time: O(2^n) in the worst case, where n is the number of elements in the array, as we may need to explore all possible subsets | Space: O(n) for storing the current subset and O(n) for the recursion stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Subsets II — LC #90 | Array contains duplicates → sort first and add a skip condition (`i > start && nums[i] == nums[i-1]`) to avoid duplicate subsets | Yes — direct variant |
+| Combinations — LC #77 | Only return subsets of size $k$ → same backtracking skeleton but add a base case to collect paths only when `path.size() == k` | Yes — direct variant |
+| Combination Sum — LC #39 | Sum to target, elements can be reused infinitely → same template but pass `i` instead of `i + 1` to the next recursive call | Yes — direct variant |
+| Permutations — LC #46 | Order matters (e.g., [1,2] and [2,1] are distinct) → loop from index 0 instead of `start`, tracking visited elements using a boolean array | Partial — same backtracking family, different branching logic |
+| Letter Case Permutation — LC #784 | Toggle casing of letters → binary choice at each step (lowercase vs uppercase decision tree) | Partial — same backtracking family |
+| Generate Parentheses — LC #22 | Generate valid parenthetical combinations → backtracking constrained by open and close count bounds rather than array indices | Partial — same backtracking family |
+
+**How this pattern scales:**
+- **The "Start" index boundary** is the core trick — by passing `i + 1` to the next recursive step, you prevent the algorithm from ever looking backward at already-processed elements. This mathematically guarantees that combinations remain strictly ordered, preventing duplicate permutations (like treating `[1,2]` and `[2,1]` as distinct subsets) without needing an expensive lookup set.
+- **Pre-emptive accumulation at every node** — unlike many backtracking problems that only collect results at the leaf nodes (like LC #46 Permutations when `path.size() == N`), the Power Set pattern collects the current state of the path accumulator at *every single node* of the recursive decision tree. The very first step of the helper function is appending a copy of the current `path` to the final `result` list.
+- **Include vs. Exclude structural choice** — there are two ways to implement this:
+  1. *The Loop-Based Approach (Standard):* Loop from `start` to `N`, pushing elements and recursing. This scales cleanly to variations with duplicates (LC #90) and limit boundaries (LC #77).
+  2. *The Binary Choice Approach:* Directly branch twice at each index (either include `nums[index]` in the path or skip it). This is mathematically intuitive ($2^N$ decisions) but harder to prune or modify for duplicate handling.
+- **LC #90 connection** → Subsets II takes this exact skeleton and overlays a sorting prerequisite. Sorting aligns duplicate inputs contiguously, allowing the condition `if (i > start && nums[i] == nums[i-1]) continue;` to successfully bypass duplicate branches at the same recursion depth while still allowing duplicate values to exist at deeper, nested levels of the tree.
+- **Power Set generation generalizes** → This template is the industry standard for any problem requiring you to generate all possible combinations of a collection. Master the cycle of: 1) Record current state immediately, 2) Iterate from `start` to `N`, 3) Modify state (push), 4) Recurse with step-forward (`i + 1`), 5) Revert state (pop).
+
+```cpp
+class Solution {
+private:
+    vector<vector<int>> res;
+public:
+    void backtrack(vector<int>& nums, int index, vector<int>& curr){
+        if(index == nums.size()){
+            res.push_back(curr);
+            return;
+        }
+
+        for(int i = 0; i < 2; i++){
+            if(i == 0){ //exclude
+            backtrack(nums, index + 1, curr);
+            }
+
+            if(i == 1){ 
+            curr.push_back(nums[index]);
+            backtrack(nums, index + 1, curr);
+            std::erase(curr, nums[index]); //pop_back is better imo here
+            }
+        }
+    }
+    vector<vector<int>> subsets(vector<int>& nums) {
+        vector<int> curr;
+        backtrack(nums, 0, curr);
+        return res;
+    }
+};
+```
+
+## Combinations LC 77
+
+<!-- notecardId: 1783697537046 -->
+
+Given two integers n and k, return all possible combinations of k numbers chosen from the range [1, n].
+
+You may return the answer in any order.
+
+ 
+
+Example 1:
+
+Input: n = 4, k = 2
+Output: [[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]
+Explanation: There are 4 choose 2 = 6 total combinations.
+Note that combinations are unordered, i.e., [1,2] and [2,1] are considered to be the same combination.
+Example 2:
+
+Input: n = 1, k = 1
+Output: [[1]]
+Explanation: There is 1 choose 1 = 1 total combination.
+ 
+
+Constraints:
+
+1 <= n <= 20
+1 <= k <= n
+
+**Link**: [text](https://leetcode.com/problems/combinations/)
+
+%
+
+**Pattern:** Backtracking, DFS
+
+**Approach:** Use backtracking to explore all possible combinations of k numbers from the range [1, n]. Start with an empty combination and recursively add numbers to it, ensuring that each number is greater than the last added number to maintain order and avoid duplicates. The base case for the recursion is when the current combination reaches size k, at which point it is added to the result list.
+
+**Key Insight:** The key insight is that by maintaining the order of numbers in the combination (always adding numbers greater than the last added), you can avoid generating duplicate combinations. This allows you to systematically explore all valid combinations without needing additional data structures to track previously generated combinations.
+
+**Gotchas:** Be careful with the base case of the recursion to ensure that you are adding the current combination to the result list at the correct time. Additionally, ensure that you handle cases where n is less than k, as this would make it impossible to generate valid combinations. When iterating through the range, make sure to start from the last added number + 1 to maintain order and avoid duplicates.
+
+**Complexity:** Time: O(C(n, k)) in the worst case, where C(n, k) is the number of combinations of n items taken k at a time, as we may need to explore all possible combinations | Space: O(k) for storing the current combination and O(k) for the recursion stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Subsets — LC #78 | Return all possible subsets of any size → record the path at every single recursive step instead of filtering by size $k$ | Yes — foundational base |
+| Combination Sum III — LC #216 | Sum of $k$ numbers from 1 to 9 equals target → identical backtracking skeleton with size $k$ constraint, plus an added sum validation | Yes — direct variant |
+| Combination Sum — LC #39 | Sum to target, numbers can be reused → size of combination is variable, and we pass `i` instead of `i + 1` to allow element reuse | Yes — direct variant |
+| Letter Combinations of a Phone Number — LC #17 | Combinations driven by keypad map → index tracks the current digit being mapped rather than a numerical ranges | Partial — same backtracking family, different branching source |
+| Permutations — LC #46 | Order matters (e.g., [1,2] and [2,1] are distinct) → loop from index 0 instead of `start`, using a boolean array to skip already-used elements | Partial — same backtracking family, different branching logic |
+
+**How this pattern scales:**
+- **The Size $k$ Base Case (Leaf Node collection)** — Unlike LC #78 (Subsets) which collects paths at every single node of the recursion tree, combinations of a fixed size $k$ are only valid at the "leaves" of our pruned tree. The base case is strictly locked: when `path.size() == k`, we record the current path to the final result list and instantly return (backtrack).
+- **Pruning optimization (The Search-Space cut)** — This is the key scaling trick for LC #77. If the number of remaining elements in our pool is less than what we need to complete a combination of size $k$, we can stop recursing immediately. We optimize the loop condition:
+  $$\text{Loop limit} = n - (k - \text{path.size()}) + 1$$
+  Instead of looping up to `n`, we loop up to this limit. This mathematical prune prevents the algorithm from exploring dead-end branches that can never reach length $k$, drastically speeding up runtime for large $n$.
+- **No-backtrack tracking via `start`** — To avoid generating duplicate combinations with different orderings (e.g., generating `[1,2]` and then later `[2,1]`), we enforce a strict left-to-right progression. By passing `i + 1` as the `start` parameter to the next recursive call, we guarantee that the numbers in our path are always strictly increasing.
+- **LC #216 connection** → Combination Sum III is a direct evolution of this problem. It uses the exact same size $k$ template with numbers limited from 1 to 9, but overlays a secondary target sum requirement. You prune early if the current path sum exceeds the target, and only append to the result when both the size is $k$ and the sum matches the target.
+- **Fixed-size combination patterns generalize** → This template is the industry standard for generating selections of a exact size from a larger pool. Master the cycle of: 1) Base case check at size $k$ (with return), 2) Iterate with optimized pruning limit, 3) Modify state (push), 4) Recurse with step-forward (`i + 1`), 5) Revert state (pop).
+
+```cpp
+class Solution {
+private:
+    vector<vector<int>> res;
+public:
+    void backtrack(int index, vector<int>& curr, int n,   int k){
+        if(curr.size() == k){
+            res.push_back(curr);
+            return;
+        }
+
+        // for(int i = index; i <= n - (k - curr.size()) + 1 ; i++){ //pruning, if we have n = 5, k = 3, and curr.size() = 1,
+        // // then we need to have at least 2 more numbers to add to curr, so we need to start our loop at index and end it at n - (k - curr.size()) + 1, because if we start our loop at index and end it at n, then we might end up with a combination that is too long and 
+        // //we won't be able to add enough numbers to curr to reach k, so we need to prune our loop by ending it at n - (k - curr.size()) + 1, 
+        // //this way we can ensure that we have enough numbers left to add to curr to reach k
+        //         curr.push_back(i);
+        //         backtrack(n, curr, i + 1, k);
+        //         curr.pop_back();
+        // }
+
+        for(int i = index; i<= n; i++){
+            curr.push_back(i);
+            backtrack(i + 1, curr, n, k);
+            curr.pop_back();
+        }
+
+
+        
+    }
+    vector<vector<int>> combine(int n, int k) {
+        vector<int> curr;
+        //dont even need a candidates vector as you initially did, use method of pruning here
+        backtrack(1, curr, n, k);
+        return res;
+    }
+};
+```
+
+## N-Queens II LC 52
+
+<!-- notecardId: 1783697715438 -->
+
+The n-queens puzzle is the problem of placing n queens on an n x n chessboard such that no two queens attack each other.
+
+Given an integer n, return the number of distinct solutions to the n-queens puzzle.
+
+ 
+
+Example 1:
+
+
+Input: n = 4
+Output: 2
+Explanation: There are two distinct solutions to the 4-queens puzzle as shown.
+Example 2:
+
+Input: n = 1
+Output: 1
+ 
+Constraints:
+
+1 <= n <= 9
+
+**Link**: [text](https://leetcode.com/problems/n-queens-ii/)
+
+%
+
+**Pattern:** Backtracking, DFS
+
+**Approach:** Use backtracking to explore all possible placements of queens on the chessboard. Start with an empty board and recursively attempt to place a queen in each row, ensuring that no two queens threaten each other. This involves checking that no other queen is in the same column or on the same diagonal. If a valid placement is found for all rows, increment the solution count. Backtrack by removing the queen and trying the next column in the current row.
+
+**Key Insight:** The key insight is that by placing queens row by row and checking for conflicts in columns and diagonals, you can systematically explore all valid configurations. Using sets or boolean arrays to track occupied columns and diagonals allows for efficient conflict checking, enabling the algorithm to prune invalid placements early.
+
+**Gotchas:** Be careful with the diagonal checks, as they require calculating the indices based on the current row and column. Ensure that you correctly handle the backtracking by removing queens from the board and updating the tracking structures (columns and diagonals) accordingly. Additionally, consider edge cases where n is small (e.g., n = 1 or n = 2), as these may have trivial solutions or no solutions at all. The counter increments once we have checked all rows and found a valid configuration, not when we place a queen in a row.
+
+**Complexity:** Time: O(N!) in the worst case, where N is the number of queens (and the size of the board), as we may need to explore all possible placements of queens | Space: O(N) for the recursion stack and O(N) for tracking occupied columns and diagonals
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| N-Queens — LC #51 | Return all actual board layouts instead of just the count → same search but reconstructs the 2D board from placement state in base case | Yes — direct structural twin |
+| Sudoku Solver — LC #37 | Fill a 9x9 grid under row, column, and 3x3 box constraints → backtrack cell-by-cell rather than row-by-row, validating subgrids | Yes — direct variant |
+| Grid Illumination — LC #1001 | Query illuminated cells under similar column/diagonal rules → uses the same diagonal indexing math but without backtracking state changes | Partial — same mathematical lookup |
+| Unique Paths III — LC #980 | Visit all empty squares on a grid → 4-directional path traversal with visited state backtracking rather than global constraint checking | Partial — same backtracking family |
+
+**How this pattern scales:**
+- **Mathematical diagonal index mapping** is the core trick — you can track diagonal blockages in $O(1)$ time without scanning the board. For any cell `(r, c)` on an $N \times N$ chessboard:
+  1. All cells on the same **positive diagonal** (bottom-left to top-right) share the same sum: `r + c`.
+  2. All cells on the same **negative diagonal** (top-left to bottom-right) share the same difference: `r - c`.
+  Using three boolean arrays or hash sets (`cols`, `diag1`, `diag2`) allows you to validate placements in constant time.
+- **Implicit Row-by-Row state reduction** — By enforcing a strict row-by-row backtracking flow (only placing exactly one queen per row and advancing `row + 1`), you mathematically eliminate the need to track row conflicts. This reduces the search space from $O(N^2)$ to $O(N)$ branch decisions at each step.
+- **Bitmask optimization for raw performance** — As $N$ scales, boolean arrays can be replaced by three simple integers acting as bitmasks. Checking if a column or diagonal is occupied becomes a lightning-fast bitwise `AND` operation (`cols & (1 << c)`), and marking/unmarking is done using bitwise `XOR` or `OR`. This is the industry standard for high-performance constraint satisfaction algorithms.
+- **LC #51 connection** → N-Queens II is the exact same problem as N-Queens I, but it only asks for the final integer count of solutions. In N-Queens II, you bypass the expensive $O(N^2)$ string reconstruction process in the base case and simply increment a counter, revealing the raw speed of the backtracking traversal.
+- **Constraint Satisfaction Problems (CSP) generalize** → This template is the blueprint for solving complex, rule-heavy puzzle engines (like Sudoku, crosswords, or map coloring). Master the cycle of: 1) Base case check at `row == N`, 2) Loop through candidate positions (`cols`), 3) Fast-fail via mathematical constraint check, 4) Apply placement and update constraints, 5) Recurse, 6) Remove placement and reset constraints.
+
+```cpp
+class Solution {
+private:
+    int count;
+    vector<bool> occupiedCols;
+    vector<bool> occupiedPosDiag;
+    vector<bool> occupiedNegDiag;
+
+public:
+    
+    void backtracking(int row, int n){
+        if(row == n) {
+            count++;
+            return;
+        }
+
+
+        for(int col = 0; col < n; col++){
+            if(occupiedCols[col] || occupiedPosDiag[row + col] || occupiedNegDiag[row - col + n - 1]){
+                continue;
+            } //row - col -n + 1 is the negative index because 
+            //The minimum possible value of row - col is 0 - (n - 1) = -(n - 1). If we shift the index by adding n - 1 to every calculation, 
+            //the values will cleanly map from 0 to 2n - 2.
+
+            occupiedCols[col] = true;
+            occupiedPosDiag[row + col] = true;
+            occupiedNegDiag[row - col+ n - 1] = true;
+            backtracking(row + 1, n);
+            occupiedCols[col] = false;
+            occupiedPosDiag[row + col] = false;
+            occupiedNegDiag[row - col+ n - 1] = false;
+
+        }
+    }
+    int totalNQueens(int n) {
+        count = 0;
+        occupiedCols.resize(n, false);
+        occupiedPosDiag.resize(2*n, false);
+        occupiedNegDiag.resize(2*n, false);
+        backtracking(0, n);
+        return count;
+    }
+};
+```
+
+## N-Queens LC 51
+
+<!-- notecardId: 1783698032976 -->
+
+The n-queens puzzle is the problem of placing n queens on an n x n chessboard such that no two queens attack each other.
+
+Given an integer n, return all distinct solutions to the n-queens puzzle. You may return the answer in any order.
+
+Each solution contains a distinct board configuration of the n-queens' placement, where 'Q' and '.' both indicate a queen and an empty space, respectively.
+
+ 
+
+Example 1:
+
+
+Input: n = 4
+Output: [[".Q..","...Q","Q...","..Q."],["..Q.","Q...","...Q",".Q.."]]
+Explanation: There exist two distinct solutions to the 4-queens puzzle as shown above
+Example 2:
+
+Input: n = 1
+Output: [["Q"]]
+
+
+Constraints:
+
+1 <= n <= 9
+
+**Link**: [text](https://leetcode.com/problems/n-queens/)
+
+%
+
+**Pattern:** Backtracking, DFS
+
+**Approach:** Use backtracking to explore all possible placements of queens on the chessboard. Start with an empty board and recursively attempt to place a queen in each row, ensuring that no two queens threaten each other. This involves checking that no other queen is in the same column or on the same diagonal. If a valid placement is found for all rows, construct the board representation and add it to the result list. Backtrack by removing the queen and trying the next column in the current row.
+
+**Key Insight:** The key insight is that by placing queens row by row and checking for conflicts in columns and diagonals, you can systematically explore all valid configurations. Using sets or boolean arrays to track occupied columns and diagonals allows for efficient conflict checking, enabling the algorithm to prune invalid placements early. When a valid configuration is found, you can construct the board representation by iterating through the placement state.
+
+**Gotchas:** Be careful with the diagonal checks, as they require calculating the indices based on the current row and column. Ensure that you correctly handle the backtracking by removing queens from the board and updating the tracking structures (columns and diagonals) accordingly. Additionally, consider edge cases where n is small (e.g., n = 1 or n = 2), as these may have trivial solutions or no solutions at all. The board representation must be constructed correctly, with 'Q' indicating a queen and '.' indicating an empty space.
+
+**Complexity:** Time: O(N!) in the worst case, where N is the number of queens (and the size of the board), as we may need to explore all possible placements of queens | Space: O(N) for the recursion stack and O(N) for tracking occupied columns and diagonals, plus O(N^2) for storing the board representations in the result list
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| N-Queens II — LC #52 | Only return the total count of valid layouts → bypasses the $O(N^2)$ board string reconstruction step, only incrementing a global counter | Yes — direct structural twin |
+| Sudoku Solver — LC #37 | Fill a 9x9 grid under row, col, and 3x3 box constraints → backtracks cell-by-cell rather than row-by-row, validating subgrids | Yes — direct variant |
+| Grid Illumination — LC #1001 | Query illuminated cells under diagonal rules → uses the same diagonal indexing math but without the state-restoration backtracking loop | Partial — same mathematical lookup |
+| Word Search — LC #79 | Search for a word in a 2D grid → path-based backtracking (4-directional movement) rather than global board constraint satisfaction | Partial — same backtracking family |
+
+**How this pattern scales:**
+- **Mathematical diagonal tracking** is the core trick — you can check diagonal blockages in $O(1)$ time without scanning the board. For any cell `(r, c)` on an $N \times N$ chessboard:
+  1. All cells on the same **positive diagonal** (bottom-left to top-right) share the same sum: `r + c`.
+  2. All cells on the same **negative diagonal** (top-left to bottom-right) share the same difference: `r - c`.
+  Using three boolean arrays or hash sets (`cols`, `diag1`, `diag2`) allows you to validate placements in constant time.
+- **Board reconstruction in the base case** — Unlike LC #52 which simply increments an integer counter, LC #51 requires you to materialize the physical state of the board. The state is typically maintained as a list of integers representing queen column placements per row, which is then mapped into strings of `.` and `Q` only when `row == N`.
+- **Implicit Row-by-Row state reduction** — By enforcing a strict row-by-row backtracking flow (only placing exactly one queen per row and advancing `row + 1`), you mathematically eliminate the need to track row conflicts. This reduces the search space from $O(N^2)$ to $O(N)$ branch decisions at each step.
+- **LC #37 connection** → Sudoku Solver uses a similar constraint-satisfaction backtracking template. However, instead of placing one piece per row, it must iterate through empty cells sequentially. It checks three constraints simultaneously (row, column, and the local $3 \times 3$ box) before placing a digit and recursing.
+- **Constraint Satisfaction Problems (CSP) generalize** → This template is the blueprint for solving complex, rule-heavy puzzle engines (like Sudoku, crosswords, or map coloring). Master the cycle of: 1) Base case check at `row == N` (with string board construction), 2) Loop through candidate column positions, 3) Fast-fail via mathematical diagonal/column constraint checks, 4) Apply placement and update constraints, 5) Recurse, 6) Remove placement and reset constraints.
+
+```cpp
+//in this quesiton, we are going through every element in each row, know that in queens
+//queens can travel vertically, horizontally, and diagonally.
+//horizonally is handled already because we are backtracking by each row, so it is not possible to have two queens in the same row, 
+\//so we just need to check for vertical and diagonal conflicts when we are trying to place a queen in a row, we can use a hashset to keep track of which columns are occupied by queens, 
+//and we can also use two hashsets to keep track of which diagonals are occupied by queens, one for the positive slope diagonals and one for the negative slope diagonals, this way we can 
+//efficiently check for conflicts when we are trying to place a queen in a row, and if there are no conflicts, then we can place the queen and continue to the next row, if there are conflicts, 
+//then we can skip that column and try the next column in the same row
+class Solution {
+private:
+    vector<vector<string>> res;
+    unordered_set<int> occupiedCols;
+    unordered_set<int> occupiedPosDiag;
+    unordered_set<int> occupiedNegDiag;
+public:
+    void backtracking(int row, int n, vector<string>& board){
+        if(row == n){ //went through the whole row. we have successfully placed queens in all rows, 
+        //so we can add the current board configuration to the result vector, and return to backtrack and try other configurations
+            res.push_back(board);
+            return;
+        }
+        
+       for(int i = 0; i < n; i++){ //this is checking each column in a row, if there is something in the same col, or in same positive or negative diagonal, keep going, do not add a Q
+            if(occupiedCols.count(i) || occupiedPosDiag.count(row + i) || occupiedNegDiag.count(row - i)){
+            continue;
+        }
+
+        board[row][i] = 'Q';
+        occupiedCols.insert(i);
+        occupiedPosDiag.insert(row + i);
+        occupiedNegDiag.insert(row - i);
+        backtracking(row + 1, n, board);
+        board[row][i] = '.';
+        occupiedCols.erase(i);
+        occupiedPosDiag.erase(row + i);
+        occupiedNegDiag.erase(row - i);
+       }
+    }
+    vector<vector<string>> solveNQueens(int n) {
+        vector<string> curr(n, string(n, '.'));
+        backtracking(0, n, curr);
+        return res;
+    }
+};
+```
+
+## Permutations II LC 47
+
+<!-- notecardId: 1783698324199 -->
+
+Given a collection of numbers, nums, that might contain duplicates, return all possible unique permutations in any order.
+
+ 
+
+Example 1:
+
+Input: nums = [1,1,2]
+Output:
+[[1,1,2],
+ [1,2,1],
+ [2,1,1]]
+Example 2:
+
+Input: nums = [1,2,3]
+Output: [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]
+ 
+
+Constraints:
+
+1 <= nums.length <= 8
+-10 <= nums[i] <= 10
+
+**Link**: [text](https://leetcode.com/problems/permutations-ii/)
+
+%
+
+**Pattern:** Backtracking, DFS
+
+**Approach:** Use backtracking to explore all possible permutations of the array. Start with an empty permutation and recursively add elements to it, ensuring that each element is only used once per permutation. To handle duplicates, sort the input array and skip over duplicate elements during the recursive calls. The base case for the recursion is when the current permutation reaches the length of the input array, at which point it is added to the result list.
+
+**Key Insight:** The key insight is that by sorting the input array and skipping over duplicate elements during the recursive calls, you can avoid generating duplicate permutations. This allows you to systematically explore all valid permutations without needing additional data structures to track previously generated permutations.
+
+**Gotchas:** Be careful with the base case of the recursion to ensure that you are adding the current permutation to the result list at the correct time. Additionally, ensure that you handle cases where the input array contains duplicate elements, as this can lead to generating duplicate permutations if not handled correctly. When iterating through the array, make sure to skip over duplicate elements by checking if the current element is the same as the previous one and if it has already been used in the current permutation.
+
+**Complexity:** Time: O(N!) in the worst case, where N is the number of elements in the array, as we may need to explore all possible permutations | Space: O(N) for storing the current permutation and O(N) for the recursion stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Permutations — LC #46 | No duplicates in array → standard backtracking loop from 0 using a basic `used` array without prune conditions | Yes — direct foundation |
+| Subsets II — LC #90 | Subsets with duplicates → use sorting with `i > start && nums[i] == nums[i-1]` skip logic instead of a global `used` array | Yes — sibling variant |
+| Combination Sum II — LC #40 | Sum to target with duplicates → combination constraints (uses `start` index progress) rather than full length permutations | Yes — sibling variant |
+| Next Permutation — LC #31 | Find lexicographically next permutation in-place → single-pass mathematical manipulation (no backtracking) | No — mathematical array manipulation |
+
+**How this pattern scales:**
+- **The `used` tracker + stable duplicates prune** is the core trick — because order matters in permutations, we cannot use a `start` index to prevent looking backward. We must loop from `0` to `N` every time, tracking path inclusion with a boolean `used` array. To prevent duplicate permutations when elements are identical, we sort the array and apply the crucial skip condition:
+  `if (used[i] || (i > 0 && nums[i] == nums[i-1] && !used[i-1])) continue;`
+- **Why `!used[i-1]` is the magic pruning condition** — when we encounter a duplicate element `nums[i] == nums[i-1]`, we only allow it to be processed if its sibling to the left (`nums[i-1]`) is already active (`used[i-1] == true`). If the previous identical element is *not* used, it means we are trying to start a brand new branch with a duplicate value we have already completely explored at this level. Rejecting this branch prunes the recursion tree aggressively.
+- **Permutations vs Subsets structural split** — understanding the boundary between these two backtracking branches is essential:
+  1. *Subsets/Combinations:* Elements are picked in a relative left-to-right order. We use a sliding `start` parameter and recurse with `i + 1`. No boolean tracking is needed.
+  2. *Permutations:* Elements can be picked in any order. We must scan the entire array from `0` to `N` at every level, relying on a `used` array to skip already selected indices.
+- **LC #46 connection** → Permutations I is the exact same problem but lacks duplicate inputs. Because all inputs are unique, you use the identical loop-from-zero template with a `used` tracker, but completely omit the sort step and the `nums[i] == nums[i-1]` skip check.
+- **Deduplication on unconstrained arrays generalizes** → This template is the gold standard for ordering-sensitive backtracking problems containing duplicate inputs. Master the cycle of: 1) Sort array, 2) Loop from 0 to N, 3) Skip already-used indices, 4) Apply the sibling-order prune `!used[i-1]` to bypass duplicate permutations, 5) Backtrack cleanly.
+
+```cpp
+class Solution {
+private:
+    vector<vector<int>> res;
+public:
+    void backtracking(vector<int>& nums, vector<int>& curr, unordered_map<int, int>& visited){
+        if(curr.size() == nums.size()){
+            res.push_back(curr);
+            return;
+        }
+        for(auto num: visited){ //have to go through the visited map instead of the nums array,
+        // because we need to keep track of how many times we have used each number in the nums array, 
+        //and if we go through the nums array, we won't be able to keep track of how many times we have used each number,
+        // because there may be duplicates in the nums array, so we need to go through the visited map, which will allow us to keep track of how many times we have used each number in the nums array,
+        // and if we have used a number more times than it appears in the nums array, then we can skip that number in the backtracking process, this way we can avoid generating duplicate permutations
+
+        //its like if we used i = 0 to nums.size, we still start new branches with duplicates, 
+        //but if we use the visited map, then we can keep track of how many times we have used each number,
+        // and if we have used a number more times than it appears in the nums array, then we can skip that number in the backtracking process,
+        // this way we can avoid generating duplicate permutations
+            if(visited[num.first] == 0){ continue;}
+            visited[num.first]--;
+            curr.push_back(num.first);
+            backtracking(nums, curr, visited);
+            curr.pop_back();
+            visited[num.first]++;
+        }
+    }
+    vector<vector<int>> permuteUnique(vector<int>& nums) {
+      unordered_map<int, int> countMap;
+      for(int num:nums) countMap[num]++;
+        vector<int> curr;
+        sort(nums.begin(), nums.end());
+        backtracking(nums, curr, countMap);
+        return res;
+    }
+};
+```
+
+## Permutations LC 46
+
+<!-- notecardId: 1783698616730 -->
+
+Given an array nums of distinct integers, return all the possible permutations. You can return the answer in any order.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,3]
+Output: [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]
+Example 2:
+
+Input: nums = [0,1]
+Output: [[0,1],[1,0]]
+Example 3:
+
+Input: nums = [1]
+Output: [[1]]
+ 
+
+Constraints:
+
+1 <= nums.length <= 6
+-10 <= nums[i] <= 10
+All the integers of nums are unique.
+
+**Link**: [text](https://leetcode.com/problems/permutations/)
+
+%
+
+**Pattern:** Backtracking, DFS
+
+**Approach:** Use backtracking to explore all possible permutations of the array. Start with an empty permutation and recursively add elements to it, ensuring that each element is only used once per permutation. The base case for the recursion is when the current permutation reaches the length of the input array, at which point it is added to the result list.
+
+**Key Insight:** The key insight is that by tracking which elements have already been used in the current permutation, you can systematically explore all valid permutations without needing additional data structures to track previously generated permutations. Since the input array contains distinct integers, you do not need to handle duplicates. The only data structure needed is an unordered_set.
+
+**Gotchas:** Be careful with the base case of the recursion to ensure that you are adding the current permutation to the result list at the correct time. Additionally, ensure that you handle cases where the input array is empty or contains only one element, as these may have trivial solutions. When iterating through the array, make sure to skip over elements that have already been used in the current permutation.
+
+**Complexity:** Time: O(N!) in the worst case, where N is the number of elements in the array, as we may need to explore all possible permutations | Space: O(N) for storing the current permutation and O(N) for the recursion stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Permutations II — LC #47 | Array contains duplicates → sort the array first and add a duplicate pruning condition (`i > 0 && nums[i] == nums[i-1] && !used[i-1]`) | Yes — direct variant |
+| Subsets — LC #78 | Generate all subsets of any size where order doesn't matter → record paths at every node and use a sliding `start` index instead of a `used` array | Yes — sibling variant |
+| Combinations — LC #77 | Generate combinations of a fixed size $k$ where order doesn't matter → use a `start` index to prevent duplicates, and only collect paths of size $k$ | Yes — sibling variant |
+| Letter Case Permutation — LC #784 | Toggle character casing to generate strings → binary decision tree (lowercase vs. uppercase) at each character index | Partial — same backtracking family |
+| Next Permutation — LC #31 | Find the lexicographically next permutation in-place → non-backtracking, single-pass mathematical pattern | No — array manipulation |
+
+**How this pattern scales:**
+- **Looping from 0 with a `used` array** is the core trick — because order matters in permutations (e.g., `[1,2]` and `[2,1]` are both valid), you cannot use a `start` pointer to force a left-to-right flow. You must loop from index `0` to `N` at every single recursion level, tracking which elements have already been added to the current path using a boolean array or hash set.
+- **Base case at array capacity** — unlike Subsets (LC #78) where we record paths at every step, permutations must contain every single element from the input. Our base case is met when `path.size() == nums.size()`. Only then do we copy the path to our results and return.
+- **Backtracking state cycle** — because we reuse the same recursive stack space and a single path accumulator, we must cleanly revert our changes after each branch is explored. The cycle is strictly:
+  1. Skip current element if `used[i] == true`.
+  2. Mark index `used[i] = true` and append `nums[i]` to path.
+  3. Recurse.
+  4. Pop `nums[i]` off the path and reset `used[i] = false`.
+- **LC #47 connection** → Permutations II takes this identical template and scales it to handle duplicate numbers. To prevent identical numbers from spawning duplicate permutation branches, you sort the array and skip redundant passes at the same level of the tree using the state constraint: `if (used[i] || (i > 0 && nums[i] == nums[i-1] && !used[i-1])) continue;`
+- **Permutations pattern scale constraints** — Because generating permutations has a factorial time complexity $O(N \cdot N!)$, this backtracking approach is designed strictly for small datasets (typically $N \le 10$). If constraints are larger, you must shift away from backtracking to iterative patterns or greedy, step-by-step algorithms like lexicographical permutation tracking.
+
+```cpp
+class Solution {
+private:
+    vector<vector<int>> res; //use a set
+public:
+    void backtrack(vector<int>& nums, vector<int>& curr, unordered_set<int>& set){
+        if(set.size() == nums.size()){
+            res.push_back(curr);
+            return;
+        }
+
+
+        for(int i = 0; i < nums.size(); i++){
+            if(set.find(nums[i]) != set.end()) continue;
+            set.insert(nums[i]);
+            curr.push_back(nums[i]);
+            backtrack(nums, curr, set);
+            curr.pop_back();
+            set.erase(nums[i]);
+            
+        }
+    }
+    vector<vector<int>> permute(vector<int>& nums) {
+    unordered_set<int> inCheck;
+    vector<int> curr;
+    backtrack(nums, curr, inCheck);
+    return res;
+    }
+};
+```
+
+## Combination Sum II LC 40
+
+<!-- notecardId: 1783698965328 -->
+
+Given a collection of candidate numbers (candidates) and a target number (target), find all unique combinations in candidates where the candidate numbers sum to target.
+
+Each number in candidates may only be used once in the combination.
+
+Note: The solution set must not contain duplicate combinations.
+
+ 
+
+Example 1:
+
+Input: candidates = [10,1,2,7,6,1,5], target = 8
+Output: 
+[
+[1,1,6],
+[1,2,5],
+[1,7],
+[2,6]
+]
+Example 2:
+
+Input: candidates = [2,5,2,1,2], target = 5
+Output: 
+[
+[1,2,2],
+[5]
+]
+ 
+
+Constraints:
+
+1 <= candidates.length <= 100
+1 <= candidates[i] <= 50
+1 <= target <= 30
+
+**Link**: [text](https://leetcode.com/problems/combination-sum-ii/)
+
+%
+
+**Pattern:** Backtracking, DFS
+
+**Approach:** Use backtracking to explore all possible combinations of the candidate numbers. Start with an empty combination and recursively add elements to it, ensuring that each element is only used once per combination. To handle duplicates, sort the input array and skip over duplicate elements during the recursive calls. The base case for the recursion is when the current combination sums to the target, at which point it is added to the result list.
+
+**Key Insight:** The key insight is that by sorting the input array and skipping over duplicate elements during the recursive calls, you can avoid generating duplicate combinations. This allows you to systematically explore all valid combinations without needing additional data structures to track previously generated combinations. When the current combination exceeds the target sum, you can prune that branch of the recursion tree early.
+
+**Gotchas:** Be careful with the base case of the recursion to ensure that you are adding the current combination to the result list at the correct time. Additionally, ensure that you handle cases where the input array contains duplicate elements, as this can lead to generating duplicate combinations if not handled correctly. When iterating through the array, make sure to skip over duplicate elements by checking if the current element is the same as the previous one and if it has already been used in the current combination.
+
+**Complexity:** Time: O(2^N) in the worst case, where N is the number of elements in the array, as we may need to explore all possible combinations | Space: O(N) for storing the current combination and O(N) for the recursion stack  
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Combination Sum — LC #39 | Elements can be reused infinitely, and input contains no duplicates → pass `i` instead of `i + 1` to the next recursive call, and omit the duplicate skip check | Yes — direct sibling |
+| Subsets II — LC #90 | Find all unique subsets with duplicates → identical sort + skip deduplication structure, but collect paths at every step instead of filtering by target sum | Yes — direct structural twin |
+| Combination Sum III — LC #216 | Sum of k numbers from 1 to 9 equals target → similar backtracking with size constraint, but operates on a fixed, unique range without duplicate elements | Yes — direct variant |
+| Permutations II — LC #47 | All permutations with duplicates → loop from 0 instead of `start`, using a boolean `used` array paired with duplicate skipping | Partial — same dedup concept, different loop boundaries |
+
+**How this pattern scales:**
+- **The "Sort + Skip" deduplication formula** is the core trick — because the input array contains duplicate values, we must prevent identical branches from spawning at the same recursion depth. By sorting the array first, we group duplicates contiguously and skip redundant values with the condition:
+  `if (i > start && candidates[i] == candidates[i-1]) continue;`
+  This guarantees that we only initiate a branch with a specific value once per level, while still allowing the same value to be used at deeper levels.
+- **Strict single-use index progression** — unlike LC #39 where elements can be reused infinitely, each element in LC #40 may only be used once. To enforce this, when recursing, you pass `i + 1` as the new `start` index. This advances the window past the currently consumed element, preventing backward or self-referential selections.
+- **Double-Pruning optimization (The Sort Benefit)** — sorting the candidates unlocks two levels of optimization:
+  1. *Sub-tree Pruning:* If `target - candidates[i] < 0`, we return immediately (base pruning).
+  2. *Loop Breaking:* Because the array is sorted, if the current element `candidates[i]` is strictly greater than the remaining target, then every element *after* it in the loop will also be too large. Instead of using `continue`, we can safely `break` out of the loop entirely, saving massive amounts of redundant checks.
+- **LC #39 connection** — Combination Sum I and II are the two primary pillars of the combination sum family. While LC #39 handles infinite reuse of unique elements, LC #40 handles single-use of duplicate elements. Transitioning between them is as simple as switching the recursive step from `i` (allow reuse) to `i + 1` (prevent reuse), and toggling the sort-and-skip duplicate filter.
+- **The backtracking with duplicates template generalizes** — this exact workflow of sorting, checking base pruning targets, skipping adjacent duplicates using `i > start`, and popping the last state (backtracking) is the universal approach for handling duplicate elements across Subsets II (LC #90), Permutations II (LC #47), and 3Sum (LC #15).
+
+```cpp
+class Solution {
+private:    
+    vector<vector<int>> res;
+public:
+    void backtracking(vector<int>& candidates, int& target, vector<int>& curr, int startIdx){
+        if(target == 0){
+            res.push_back(curr);
+            return;
+        }
+
+        for(int i = startIdx; i < candidates.size(); i++){
+            if(target - candidates[i] < 0) break;
+            //we break here instead of continue,
+            // because the candidates array is sorted, so if we have already found a number 
+            //that is greater than the target, then we know that all the numbers that come after it will also be
+            // greater than the target, so there is no point in continuing to check those numbers,
+            // we can just break out of the loop and stop checking for combinations that include those numbers, this will allow us to optimize our 
+            //backtracking process and avoid unnecessary checks for combinations that will never sum up to the target
+
+            //i > start is the key to skipping duplicates,
+            // because we only want to skip duplicates that are in the same branch 
+            //of the backtracking tree, if we have already used a number in the current 
+            //branch of the backtracking tree, then we want to skip any duplicate numbers that come after it in the candidates array, because those duplicate numbers will be in the same branch of the backtracking tree and
+            // will lead to the same combination being generated multiple times, so we need to check if i > start to make sure
+            // that we are only skipping duplicates that are in the same branch of the backtracking tree, and then we can check if candidates[i] == candidates[i - 1] to check if the current number is a duplicate of the previous number, if it is, then we can skip it, because it will lead to the same 
+            //combination being generated multiple times
+            if(i > startIdx && candidates[i] == candidates[i - 1]) continue;
+
+            target -= candidates[i];
+            curr.push_back(candidates[i]);
+            backtracking(candidates, target, curr, i + 1); //i + 1 because we cannot reuse the same number,
+            // this is the key difference between this problem and the previous problem, in the previous problem we could reuse the same number,
+            //so we passed i as the next index to backtrack from, but in this problem we cannot reuse the same number, so we need to pass i + 1 as the next index to backtrack from, 
+            //this will ensure that we do not reuse the same number in the same combination, and it will also allow us to skip over duplicate numbers in the candidates array, because if we have
+            // duplicate numbers that are adjacent to each other in the candidates array, then we will skip over them in the backtracking process, because we will only check for combinations that include the first instance of the duplicate number, and we will skip over any subsequent instances of the duplicate number, this will allow us to avoid generating duplicate combinations
+            target += candidates[i];
+            curr.pop_back();
+        }
+    }
+    vector<vector<int>> combinationSum2(vector<int>& candidates, int target) {
+        vector<int> curr;
+        sort(candidates.begin(), candidates.end());
+        int start = 0;
+        backtracking(candidates, target, curr, start);
+        return res;
+    }
+};
+```
+
+## Combination Sum LC 39
+
+<!-- notecardId: 1783699269388 -->
+
+Given an array of distinct integers candidates and a target integer target, return a list of all unique combinations of candidates where the chosen numbers sum to target. You may return the combinations in any order.
+
+The same number may be chosen from candidates an unlimited number of times. Two combinations are unique if the frequency of at least one of the chosen numbers is different.
+
+The test cases are generated such that the number of unique combinations that sum up to target is less than 150 combinations for the given input.
+
+ 
+
+Example 1:
+
+Input: candidates = [2,3,6,7], target = 7
+Output: [[2,2,3],[7]]
+Explanation:
+2 and 3 are candidates, and 2 + 2 + 3 = 7. Note that 2 can be used multiple times.
+7 is a candidate, and 7 = 7.
+These are the only two combinations.
+Example 2:
+
+Input: candidates = [2,3,5], target = 8
+Output: [[2,2,2,2],[2,3,3],[3,5]]
+Example 3:
+
+Input: candidates = [2], target = 1
+Output: []
+ 
+
+Constraints:
+
+1 <= candidates.length <= 30
+2 <= candidates[i] <= 40
+All elements of candidates are distinct.
+1 <= target <= 40
+
+**Link**: [text](https://leetcode.com/problems/combination-sum/)
+
+%
+
+**Pattern:** Backtracking, DFS
+
+**Approach:** Use backtracking to explore all possible combinations of the candidate numbers. Start with an empty combination and recursively add elements to it, allowing each element to be used multiple times. The base case for the recursion is when the current combination sums to the target, at which point it is added to the result list. If the current combination exceeds the target, backtrack by removing the last added element and trying the next candidate.
+
+**Key Insight:** The key insight is that by allowing elements to be reused, you can systematically explore all valid combinations without needing additional data structures to track previously generated combinations. When the current combination exceeds the target sum, you can prune that branch of the recursion tree early.
+
+**Gotchas:** Be careful with the base case of the recursion to ensure that you are adding the current combination to the result list at the correct time. Additionally, ensure that you handle cases where the input array is empty or contains only one element, as these may have trivial solutions. When iterating through the array, make sure to allow for the reuse of elements by not advancing the index in the recursive call.
+
+**Complexity:** Time: O(2^N) in the worst case, where N is the number of elements in the array, as we may need to explore all possible combinations | Space: O(N) for storing the current combination and O(N) for the recursion stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Combination Sum II — LC #40 | Single-use elements with duplicates → sort candidates first and skip adjacent duplicates using `i > start`, and pass `i + 1` to prevent reuse | Yes — direct sibling |
+| Combination Sum III — LC #216 | Sum of $k$ numbers using digits 1 to 9 → identical backtracking with size constraint, using a fixed range with no duplicates | Yes — direct sibling |
+| Combination Sum IV — LC #377 | Order matters (permutations), returns count → DP/unbounded knapsack because backtracking would TLE on factorial combinations | No — DP/Memoization |
+| Subsets — LC #78 | Generate all subsets of any size → record path at every recursive level and always pass `i + 1` (no element reuse) | Yes — direct foundation |
+
+**How this pattern scales:**
+- **The Infinite Reuse Loop (Self-Loop)** is the core trick — unlike Subsets (LC #78) or Combinations (LC #77) where we pass `i + 1` to move to the next index, LC #39 allows you to reuse the same element infinitely. To implement this, you pass `i` (the current index) as the `start` parameter to the next recursive call. This keeps the current element in play for subsequent choices while still preventing the algorithm from looking *backward* to previous elements (which avoids duplicate combinations like `[2, 3]` and `[3, 2]`).
+- **Base Case subtraction matching** — instead of summing up path variables and comparing to target, it is cleaner to subtract the candidate value from `target` at each level. Your base cases simplify to:
+  1. `if (target == 0)`: Valid combination found, add to results and return.
+  2. `if (target < 0)`: Exceeded the target, backtrack immediately (prune branch).
+- **Sorting for Early Loop Termination** — although sorting is not strictly mandatory for correctness in LC #39, it acts as a massive optimization. If you sort the `candidates` array first, the moment you encounter an element where `target - candidates[i] < 0`, you can safely `break` out of the loop entirely instead of using `continue`. Because all subsequent elements are guaranteed to be larger, they will also fail.
+- **LC #40 connection** — The transition from LC #39 to LC #40 represents the two major ways to handle combination pools:
+  * *LC #39 (Infinite Reuse):* Pass current index `i` downward. No duplicate mitigation is needed because the input array has unique elements.
+  * *LC #40 (Single-Use with Duplicates):* Pass index `i + 1` downward. Sort the array and skip adjacent duplicates at the same level (`i > start && candidates[i] == candidates[i-1]`).
+- **Unbounded combination patterns generalize** → This template is the industry standard for coin change combinations or target sum breakdowns where supply is unlimited. Master the cycle of: 1) Evaluate target boundaries (0 or negative), 2) Iterate from `start` to `N`, 3) Subtract from target and push to path, 4) Recurse on the *same* index `i`, 5) Restore target state and pop from path.
+
+```cpp
+class Solution {
+private:
+    vector<vector<int>> res;
+public:
+    void backtrack(vector<int>& candidates, vector<int>& curr, int& target, int index){ //smart trick, decrement until target is 0
+        if(target == 0){
+            res.push_back(curr);
+            return;
+        } 
+        for(int i = index; i < candidates.size(); i++){
+            if(target - candidates[i] < 0){
+                break;
+            }
+        else{
+            target -= candidates[i];
+            curr.push_back(candidates[i]);
+            backtrack(candidates, curr, target, i);
+            target += candidates[i];
+            curr.pop_back();
+        }
+        }
+    }
+    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
+        vector<int> curr;
+        std::sort(candidates.begin(), candidates.end());
+        backtrack(candidates, curr, target, 0);
+        return res;
+    }
+};
+```
+
+## Letter Combination LC 17
+
+<!-- notecardId: 1783699442232 -->
+
+Given a string containing digits from 2-9 inclusive, return all possible letter combinations that the number could represent. Return the answer in any order.
+
+A mapping of digits to letters (just like on the telephone buttons) is given below. Note that 1 does not map to any letters.
+Example 1:
+
+Input: digits = "23"
+Output: ["ad","ae","af","bd","be","bf","cd","ce","cf"]
+Example 2:
+
+Input: digits = "2"
+Output: ["a","b","c"]
+ 
+
+Constraints:
+
+1 <= digits.length <= 4
+digits[i] is a digit in the range ['2', '9'].
+
+**Link**: [text](https://leetcode.com/problems/letter-combinations-of-a-phone-number/)
+
+%
+
+**Pattern:** Backtracking, DFS
+
+**Approach:** Use backtracking to explore all possible letter combinations that can be formed from the input digits. Start with an empty combination and recursively add letters corresponding to each digit. The base case for the recursion is when the current combination reaches the length of the input digits, at which point it is added to the result list.
+
+**Key Insight:** The key insight is that each digit maps to a set of letters, and by iterating through these sets in a depth-first manner, you can systematically explore all valid combinations. Since the input digits are limited to 2-9, the number of combinations is manageable even with a recursive approach.
+
+**Gotchas:** Be careful with the base case of the recursion to ensure that you are adding the current combination to the result list at the correct time. Additionally, ensure that you handle cases where the input string is empty, as this may have a trivial solution. When iterating through the letters corresponding to each digit, make sure to correctly map the digit to its letter set.
+
+**Complexity:** Time: O(3^N * 4^M) in the worst case, where N is the number of digits that map to 3 letters (2, 3, 4, 5, 6, 8) and M is the number of digits that map to 4 letters (7, 9). The total number of combinations is the product of the number of letters for each digit. | Space: O(N) for storing the current combination and O(N) for the recursion stack
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Letter Case Permutation — LC #784 | Toggle casing of string characters → binary decision tree (lowercase vs. uppercase) at each letter index instead of mapping from a keypad | Yes — direct sibling |
+| Generate Parentheses — LC #22 | Generate valid combinations of `(` and `)` → binary branching bounded by remaining open/close counts rather than index mapping | Yes — direct sibling |
+| Combinations — LC #77 | Generate combinations of size $k$ from a pool → branching is determined by a single contiguous numerical range rather than distinct character groups | Partial — same backtracking family |
+| Word Search — LC #79 | Backtrack coordinates in a 2D grid → pathfinding traversal with boundary constraints rather than building combinations from maps | Partial — same backtracking family |
+
+
+
+**How this pattern scales:**
+- **Cartesian Product via index mapping** is the core trick — unlike problems that search a single pool (like Subsets or Permutations), LC #17 builds combinations from completely distinct, independent groups. The backtracking state is driven by a simple `index` parameter tracking your progress through the input `digits` string. At each depth, the index points to a target digit, which maps to a group of candidate letters.
+- **Dynamic Branching Factor** — instead of looping from a sliding `start` boundary to `N`, the loop bounds at each step are dynamic and local. You iterate exclusively over the letters mapped to the current digit:
+  `for (char c : keypad[digits[index] - '0'])`
+  This dynamically adjusts the branching factor of the recursion tree (spawning 3 branches for '2' or 4 branches for '9').
+- **Base Case at maximum depth** — because every valid path must consume exactly one letter from each provided digit, your base case is met when the backtracking pointer equals the length of the input digits (`index == digits.length()`). At this leaf node, you append a copy of the path to the results and return.
+- **The Empty-Input Edge Case** — a critical detail when building combinations from distinct pools. If the input `digits` string is empty, the backtracking code might naturally append an empty string `""` to the result list. You must add an immediate defensive guard clause at the entry point: `if (digits.empty()) return {};` to avoid incorrect state capture.
+- **Distinct-group combinations generalize** → This template is the industry standard for any Cartesian-product scenario where you must choose exactly one option from sequence A, one from sequence B, and one from sequence C. Master the cycle of: 1) Initialize the lookup map, 2) Define base case at `index == input.length()`, 3) Retrieve the current group's choices, 4) Iterate, append, recurse (`index + 1`), and pop.
+
+```cpp
+class Solution {
+private:
+vector<string> combs;
+public:
+
+    void backtracking(string digits, int index, string& curr, unordered_map<char, string> &maps){
+        if (curr.length() == digits.length()){
+            combs.push_back(curr);
+            return;
+        }
+
+
+        char number = digits[index];
+        for(int i = 0; i < maps[number].length(); i++){
+            curr += maps[number][i];
+            backtracking(digits, index + 1, curr, maps);
+            curr.pop_back();
+        }
+    }
+    vector<string> letterCombinations(string digits) {
+        unordered_map<char, string> maps = {
+            {'2', "abc"},
+            {'3', "def"},
+            {'4', "ghi"},
+            {'5', "jkl"},
+            {'6', "mno"},
+            {'7', "pqrs"},
+            {'8', "tuv"},
+            {'9', "wxyz"}
+
+        };
+
+            string curr = "";
+            backtracking(digits, 0, curr, maps);
+            return combs;
+    }
+};
+```
