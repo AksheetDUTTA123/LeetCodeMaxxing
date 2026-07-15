@@ -11,23 +11,30 @@ using namespace std;
 class Solution {
 public:
     void rotate(vector<int>& nums, int k) {
-        if(k > nums.size()){
-            k = k % nums.size();
-        }
-        for(int i = 0; i < nums.size() / 2; i++){
-            swap(nums[i], nums[(nums.size() - 1) - i]);
-        }
-        //need to reverse for each half
-        for(int i = 0; i < k/2; i++){
-            swap(nums[i], nums[(k - 1) - i]);
-        }
-        int left = k;
-        int right = nums.size() - 1;
-        while(left < right){
-            swap(nums[left], nums[right]);
-            left++;
-            right--;
-        }
+        // if(k > nums.size()){
+        //     k = k % nums.size();
+        // }
+        // for(int i = 0; i < nums.size() / 2; i++){
+        //     swap(nums[i], nums[(nums.size() - 1) - i]);
+        // }
+        // //need to reverse for each half
+        // for(int i = 0; i < k/2; i++){
+        //     swap(nums[i], nums[(k - 1) - i]);
+        // }
+        // int left = k;
+        // int right = nums.size() - 1;
+        // while(left < right){
+        //     swap(nums[left], nums[right]);
+        //     left++;
+        //     right--;
+        // }
+
+        k = k % nums.size();
+        
+        std::reverse(nums.begin(), nums.end());             
+        std::reverse(nums.begin(), nums.begin() + k);        
+        std::reverse(nums.begin() + k, nums.end());
+        //this is a cleaner sol, the previous thing i did also works, just more code
     }
 };
 // @lc code=end

@@ -15443,3 +15443,493 @@ public:
     }
 };
 ```
+
+## Word Ladder LC 127
+
+<!-- notecardId: 1783910920426 -->
+
+A transformation sequence from word beginWord to word endWord using a dictionary wordList is a sequence of words beginWord -> s1 -> s2 -> ... -> sk such that:
+
+Every adjacent pair of words differs by a single letter.
+Every si for 1 <= i <= k is in wordList. Note that beginWord does not need to be in wordList.
+sk == endWord
+Given two words, beginWord and endWord, and a dictionary wordList, return the number of words in the shortest transformation sequence from beginWord to endWord, or 0 if no such sequence exists.
+
+ 
+
+Example 1:
+
+Input: beginWord = "hit", endWord = "cog", wordList = ["hot","dot","dog","lot","log","cog"]
+Output: 5
+Explanation: One shortest transformation sequence is "hit" -> "hot" -> "dot" -> "dog" -> cog", which is 5 words long.
+Example 2:
+
+Input: beginWord = "hit", endWord = "cog", wordList = ["hot","dot","dog","lot","log"]
+Output: 0
+Explanation: The endWord "cog" is not in wordList, therefore there is no valid transformation sequence.
+ 
+
+Constraints:
+
+1 <= beginWord.length <= 10
+endWord.length == beginWord.length
+1 <= wordList.length <= 5000
+wordList[i].length == beginWord.length
+beginWord, endWord, and wordList[i] consist of lowercase English letters.
+beginWord != endWord
+All the words in wordList are unique.
+
+**Link**: [text](https://leetcode.com/problems/word-ladder/)
+
+%
+
+**Pattern:** BFS, Graph Traversal
+
+**Approach:** Use breadth-first search (BFS) to explore the transformation sequences from the `beginWord` to the `endWord`. Treat each word as a node in a graph, where an edge exists between two words if they differ by exactly one letter. Start from the `beginWord`, and at each level of BFS, generate all possible one-letter transformations that exist in the `wordList`. Keep track of visited words to avoid cycles. The first time you reach the `endWord`, return the current depth of the BFS, which represents the length of the shortest transformation sequence.
+
+**Key Insight:** The key insight is that BFS is the optimal strategy for finding the shortest path in an unweighted graph. By exploring all possible transformations level by level, you ensure that the first time you reach the `endWord`, it is through the shortest possible sequence of transformations.
+
+**Gotchas:** Be careful with the generation of one-letter transformations. You need to iterate through each character position in the word and replace it with every letter from 'a' to 'z', checking if the new word exists in the `wordList`. Additionally, ensure that you handle cases where the `endWord` is not present in the `wordList`, as this means no valid transformation sequence exists.
+
+**Complexity:** Time: O(M * N * 26) in the worst case, where M is the length of each word and N is the number of words in the `wordList`. For each word, you generate 26 possible transformations for each of its M characters. | Space: O(N) for storing the visited words and the queue used in BFS.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Word Ladder II — LC #126 | Find *all* shortest transformation paths instead of just the minimum length → layer a backtracking/DFS path reconstruction on top of the BFS layer-by-layer step history | Yes — structural expansion |
+| Minimum Genetic Mutation — LC #433 | Transform a gene string (characters strictly limited to A, C, G, T) → identical BFS shortest path logic, but the branching factor is naturally smaller and fixed | Yes — direct structural twin |
+| Open the Lock — LC #752 | Find the minimum wheel turns to hit a target combo while avoiding deadends → level-by-layer BFS where each state spawns 8 fixed arithmetic neighbors | Yes — direct structural twin |
+| Snakes and Ladders — LC #909 | Find the least moves to reach the final square on a game board → standard shortest path grid BFS tracking unweighted step distances | Yes — direct variant |
+| Shortest Path in Binary Matrix — LC #1091 | Find shortest path through an 8-directional 2D grid cell matrix → standard shortest path layer-by-layer BFS using coordinates instead of string manipulations | Yes — foundational base |
+
+**How this pattern scales:**
+- **Shortest Path on an Unweighted Graph via BFS** is the absolute core rule — when a problem asks for the minimum steps, transformations, or actions to transition from a starting state to a target state, Breadth-First Search (BFS) is mandatory. Because BFS explores states radially and uniformly, the very first time you pop the `endWord` from the queue, you are mathematically guaranteed to have found the shortest possible path.
+- **Dynamic Neighbor Generation ($O(26 \cdot L)$ vs. $O(N)$)** — to find valid next states (words that differ by exactly one character), looping through the entire word list takes $O(N)$ per node, which triggers a TLE (Time Limit Exceeded) for large lists. The scaling trick is to loop through each character position of the current word (`L`) and swap it with letters `a` through `z`. If the mutated string exists in your fast-lookup hash set, it is a valid neighbor. This changes neighbor generation to a lightning-fast $O(26 \cdot L^2)$ operation.
+- **Immediate In-Set Deletion for Visited Tracking** — rather than allocating a separate `visited` hash set to track processed words, you can optimize your memory footprint by directly deleting words from your `wordList` hash set the exact moment they are pushed into the queue. This completely prevents other branches from redundantly exploring the same word later.
+- **Bidirectional BFS Optimization** — as the transformation distance grows, the standard BFS search tree expands exponentially like a cone ($B^D$). You can optimize this by running two simultaneous BFS traversals: one forward from `beginWord` and one backward from `endWord`. At each step, you expand the smaller of the two queues. When the two frontiers collide, the shortest path is found. This collapses the search space from $O(B^D)$ down to $O(B^{D/2})$.
+- **State-space transformation paths generalize** → This template is the industry blueprint for string mutations, lock combinations, sliding puzzles (like the 8-puzzle), or chess-piece move optimization. Master the cycle of: 1) Load dictionary into a fast-lookup Set, 2) Initialize queue with the starting state, 3) Loop through the current level size to enforce layer-by-layer distance tracking, 4) Mutate the current state systematically to discover valid neighbors, 5) Fast-fail or return distance upon reaching the target.
+
+```cpp
+class Solution {
+public:
+    int ladderLength(string beginWord, string endWord, vector<string>& wordList) {
+        unordered_set<string> wordSet;
+        unordered_set<string> visited;
+        for(auto word : wordList){
+            wordSet.insert(word);
+        }
+
+        if(!wordSet.count(endWord)) return 0;
+
+        queue<pair<string, int>> q;
+
+        q.push({beginWord, 1});
+        visited.insert(beginWord);
+        while(!q.empty()){
+            auto top = q.front();
+            q.pop();
+
+            if(top.first == endWord){
+                return top.second;
+            }
+            for(int i = 0; i < top.first.length(); i++){
+                char originalChar = top.first[i];
+
+                for(char c = 'a'; c <= 'z'; c++){
+                    if(c == originalChar) continue;
+
+                    top.first[i] = c;
+
+                    if(wordSet.find(top.first) != wordSet.end() && visited.find(top.first) == visited.end()){
+                        visited.insert(top.first);
+                        q.push({top.first,top.second + 1});
+                    }
+                }
+
+                top.first[i] = originalChar;
+            }
+        }
+        return 0;
+    }
+};
+```
+
+## Surrounded Regions LC 130
+
+<!-- notecardId: 1783911136308 -->
+
+You are given an m x n matrix board containing letters 'X' and 'O', capture regions that are surrounded:
+
+Connect: A cell is connected to adjacent cells horizontally or vertically.
+Region: To form a region connect every 'O' cell.
+Surround: A region is surrounded if none of the 'O' cells in that region are on the edge of the board. Such regions are completely enclosed by 'X' cells.
+To capture a surrounded region, replace all 'O's with 'X's in-place within the original board. You do not need to return anything.
+
+ 
+
+Example 1:
+
+Input: board = [["X","X","X","X"],["X","O","O","X"],["X","X","O","X"],["X","O","X","X"]]
+
+Output: [["X","X","X","X"],["X","X","X","X"],["X","X","X","X"],["X","O","X","X"]]
+
+Explanation:
+
+
+In the above diagram, the bottom region is not captured because it is on the edge of the board and cannot be surrounded.
+
+Example 2:
+
+Input: board = [["X"]]
+
+Output: [["X"]]
+
+ 
+
+Constraints:
+
+m == board.length
+n == board[i].length
+1 <= m, n <= 200
+board[i][j] is 'X' or 'O'.
+
+**Link**: [text](https://leetcode.com/problems/surrounded-regions/)
+
+%
+
+**Pattern:** DFS, BFS, Graph Traversal
+
+**Approach:** Use depth-first search (DFS) or breadth-first search (BFS) to identify and mark all 'O' cells that are connected to the border of the board. These 'O' cells cannot be captured. After marking, iterate through the board and replace all unmarked 'O' cells with 'X', while restoring the marked cells back to 'O'.
+
+**Key Insight:** The key insight is that any 'O' cell that is connected to the border cannot be surrounded. By marking these cells first, you can easily identify which 'O' cells are safe and which can be captured. This allows for a clear separation of the board into regions that can and cannot be flipped.
+
+**Gotchas:** Be careful with the boundaries of the board when performing DFS or BFS. Ensure that you do not go out of bounds when checking adjacent cells. Additionally, make sure to mark the 'O' cells that are connected to the border before flipping the surrounded regions.
+
+**Complexity:** Time: O(M * N) where M is the number of rows and N is the number of columns in the board, as each cell is visited at most once. | Space: O(M * N) for the recursion stack in DFS or for the queue in BFS, depending on the implementation.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Number of Islands — LC #200 | Find and sink *all* connected land masses anywhere on the grid → can initiate a standard DFS from any coordinate without filtering by boundary locations | Yes — foundational base |
+| Pacific Atlantic Water Flow — LC #417 | Find cells that can flow to both oceans → run multiple multi-source traversals strictly from the boundaries inward, tracking overlapping visited matrices | Yes — direct structural twin |
+| Number of Enclaves — LC #1020 | Count the total number of land cells unable to walk off the grid boundary → use the boundary-inward traversal trick to mark safe regions, then count remaining unvisited land cells | Yes — direct structural twin |
+| Walls and Gates — LC #286 | Fill each empty room with the shortest distance to a gate → multi-source BFS starting simultaneously from all gate coordinates outward | Partial — reverse boundary traversal concept |
+| Flood Fill — LC #733 | Recoloring a contiguous connected component starting from a single user-specified coordinate → basic localized graph flood fill, no global boundaries matter | Partial — same traversal logic, different scale |
+
+**How this pattern scales:**
+- **Boundary-Inward Traversal (Inversion) is the core trick** — A direct approach would find an internal 'O', run a traversal, and track if it hits an edge. This requires complex tracking. The scaling trick is to *invert the problem*: any 'O' connected to a border 'O' can never be captured. By running a graph traversal (DFS or BFS) strictly from the four edges of the grid, you locate and mark all protected 'O's first.
+- **Temporary State Masking** — To differentiate between "protected 'O's" and "surrounded 'O's" without allocating an auxiliary $O(M \cdot N)$ memory grid, you can use temporary state masking directly on the board. During the boundary traversal, rewrite every reachable 'O' to a placeholder character (e.g., `'#'`). 
+- **Post-Traversal Grid Resolution** — After completing the boundary marking phase, iterate through the entire matrix exactly once to resolve the grid to its final state using a simple scan:
+  1. If `board[r][c] == 'O'`, it was never reached by the boundary traversal, meaning it is completely surrounded → Flip it to `'X'`.
+  2. If `board[r][c] == '#'`, it was reached by a border path, meaning it is protected → Restore it back to `'O'`.
+- **LC #417 connection** → Pacific Atlantic Water Flow relies on this identical inversion pattern. Instead of starting from every internal cell to see if water can reach an ocean boundary, you start traversals directly *at* the ocean boundaries and move up into the continent. You find the cells where the boundary-outward flood zones intersect.
+- **Grid isolation patterns generalize** → This boundary-first approach is the gold standard for grid problems where properties are dictated by the outer edges or escape roots. Master the cycle of: 1) Loop over outer rows and columns, 2) Trigger standard 4-directional DFS/BFS if a boundary cell matches the target criteria, 3) Mutate reachable paths to a placeholder value, 4) Re-scan the full matrix to flip unvisited nodes and restore the placeholder values.
+
+```cpp
+class Solution {
+public:
+    void solve(vector<vector<char>>& board) {
+        queue<pair<int, int>> q;
+        int dRow[4] = {1, -1, 0, 0};
+        int dCol[4] = {0, 0, 1, -1};
+        for(int i = 0; i < board.size(); i++){
+            if(board[i][0] == 'O') {
+                q.push({i, 0});
+                board[i][0] = 'E';
+            }
+        }
+        for(int i = 0; i < board.size(); i++){
+            if(board[i][board[0].size()-1] == 'O') {
+                q.push({i, board[0].size() - 1});
+                 board[i][board[0].size()-1] = 'E';
+        }
+        }
+        for(int i = 0; i < board[0].size(); i++){
+            if(board[0][i] == 'O') {
+                q.push({0, i});
+                board[0][i] = 'E';
+            }
+        }
+        for(int i = 0; i < board[0].size(); i++){
+            if(board[board.size() - 1][i] == 'O'){
+                q.push({board.size() - 1, i});
+                board[board.size() - 1][i] = 'E';
+            } 
+        }
+
+        while(!q.empty()){
+            auto top = q.front();
+            q.pop();
+            for(int idx = 0; idx < 4; idx++){
+                int currRow = top.first + dRow[idx];
+                int currCol = top.second + dCol[idx];
+
+                while(currRow >= 0 && currRow < board.size() && currCol >= 0 && currCol < board[0].size() && board[currRow][currCol] == 'O'){
+                    q.push({currRow, currCol});
+                    board[currRow][currCol] = 'E';
+                }
+            }
+        }
+
+        for(int i = 0; i < board.size(); i++){
+            for (int j = 0; j < board[0].size(); j++){
+                if(board[i][j] == 'O') board[i][j] = 'X'; 
+            }
+        }
+        for(int i = 0; i < board.size(); i++){
+            for (int j = 0; j < board[0].size(); j++){
+                if(board[i][j] == 'E') board[i][j] = 'O'; 
+            }
+        }
+    }
+};
+```
+
+## Clone Graph LC 133
+
+<!-- notecardId: 1783911353153 -->
+
+Given a reference of a node in a connected undirected graph.
+
+Return a deep copy (clone) of the graph.
+
+Each node in the graph contains a value (int) and a list (List[Node]) of its neighbors.
+
+class Node {
+    public int val;
+    public List<Node> neighbors;
+}
+ 
+
+Test case format:
+
+For simplicity, each node's value is the same as the node's index (1-indexed). For example, the first node with val == 1, the second node with val == 2, and so on. The graph is represented in the test case using an adjacency list.
+
+An adjacency list is a collection of unordered lists used to represent a finite graph. Each list describes the set of neighbors of a node in the graph.
+
+The given node will always be the first node with val = 1. You must return the copy of the given node as a reference to the cloned graph.
+
+ 
+
+Example 1:
+
+
+Input: adjList = [[2,4],[1,3],[2,4],[1,3]]
+Output: [[2,4],[1,3],[2,4],[1,3]]
+Explanation: There are 4 nodes in the graph.
+1st node (val = 1)'s neighbors are 2nd node (val = 2) and 4th node (val = 4).
+2nd node (val = 2)'s neighbors are 1st node (val = 1) and 3rd node (val = 3).
+3rd node (val = 3)'s neighbors are 2nd node (val = 2) and 4th node (val = 4).
+4th node (val = 4)'s neighbors are 1st node (val = 1) and 3rd node (val = 3).
+Example 2:
+
+
+Input: adjList = [[]]
+Output: [[]]
+Explanation: Note that the input contains one empty list. The graph consists of only one node with val = 1 and it does not have any neighbors.
+Example 3:
+
+Input: adjList = []
+Output: []
+Explanation: This an empty graph, it does not have any nodes.
+ 
+
+Constraints:
+
+The number of nodes in the graph is in the range [0, 100].
+1 <= Node.val <= 100
+Node.val is unique for each node.
+There are no repeated edges and no self-loops in the graph.
+The Graph is connected and all nodes can be visited starting from the given node.
+
+**Link**: [text](https://leetcode.com/problems/clone-graph/)
+
+%
+
+**Pattern:** DFS, BFS, Graph Traversal
+
+**Approach:** Use depth-first search (DFS) or breadth-first search (BFS) to traverse the original graph and create a deep copy of each node. Maintain a mapping from original nodes to their corresponding cloned nodes to avoid duplicating nodes and to handle cycles in the graph. Start from the given node, clone it, and recursively clone its neighbors, using the mapping to check if a neighbor has already been cloned.
+
+**Key Insight:** The key insight is that graphs can contain cycles, so you need to keep track of which nodes have already been cloned to avoid infinite loops. By using a mapping (e.g., a hash map) from original nodes to cloned nodes, you can ensure that each node is cloned exactly once and that the neighbor relationships are preserved in the cloned graph.
+
+**Gotchas:** Be careful with the base case of the recursion to ensure that you are not cloning a node that has already been cloned. Additionally, ensure that you handle cases where the input graph is empty (i.e., the given node is null), as this may have a trivial solution.
+
+**Complexity:** Time: O(N + E) where N is the number of nodes and E is the number of edges in the graph, as each node and edge is visited once during the traversal. | Space: O(N) for storing the mapping of original nodes to cloned nodes and for the recursion stack in DFS or the queue in BFS.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Copy List with Random Pointer — LC #138 | Clone a linked list with arbitrary random pointers → identical node-to-clone hash map lookup, but traversal follows linear `.next` pointers instead of an adjacency list | Yes — direct structural twin |
+| Clone Binary Tree with Random Pointer — LC #1485 | Clone a binary tree with extra random node references → standard tree traversal tracking created clones in a map to reconcile random links | Yes — direct structural twin |
+| Clone N-ary Tree — LC #1490 | Clone a tree structure containing an array of child references → standard traversal, but since trees contain no cycles, the tracking map is optional | Yes — simplified variant |
+| All Nodes Distance K in Binary Tree — LC #863 | Find nodes at distance $k$ in a tree → requires converting a tree to a general graph using a parent map tracking system before executing a standard BFS | Partial — same graph lookup mapping |
+
+**How this pattern scales:**
+- **The Map as both a Clone Registry and Visited Set** is the absolute core trick — because general graphs can contain arbitrary cyclic structures, standard traversals will fall into infinite loops. By mapping old nodes to new nodes (`unordered_map<Node*, Node*> visited`), the lookup map dual-hats as your clone registry and your tracking safety net. If a node exists in the map, it has already been cloned and visited.
+- ** Decoupling Instantiation from Adjacency Construction** — When traversing an unvisited neighbor, you must immediately instantiate the new node shell *before* trying to populate its neighbors list. This prevents infinite recursion loops in cyclical paths. The cycle for a neighbor `nb` is:
+  1. If `nb` is not in the map, create `new Node(nb->val)` and store it in the map, then recurse on `nb`.
+  2. Append the mapped clone `visited[nb]` to the current clone's `neighbors` list.
+- **DFS vs. BFS execution choice** — This blueprint scales beautifully across both primary traversal approaches:
+  * *DFS Approach:* Cleaner implementation via recursion where the function returns the cloned node directly (`Node* dfs(Node* node)`).
+  * *BFS Approach:* Uses an explicit queue (`queue<Node*>`). It pushes the *original* nodes into the queue but accesses the map to wire up the neighbors of the *clones*.
+- **LC #138 connection** → Copy List with Random Pointer uses this exact deep-copy mapping logic. Because a random pointer can jump deep into unvisited territories or point backward creating a cyclic dependency, you map `old_node -> new_node` during linear construction to stitch the secondary links together safely.
+- **Deep-copying cyclic memory structures generalizes** → This template is the industry standard for serializing, deserializing, or cloning non-linear interconnected data layers (such as neural networks, state machine configurations, or memory heaps). Master the cycle of: 1) Handle empty input boundaries, 2) Maintain an `old -> new` pointer register, 3) Discover neighbors via traversal, 4) Lazy-initialize unmapped targets, 5) Wire up connections safely using mapped registry references.
+
+```cpp
+/*
+// Definition for a Node.
+class Node {
+public:
+    int val;
+    vector<Node*> neighbors;
+    Node() {
+        val = 0;
+        neighbors = vector<Node*>();
+    }
+    Node(int _val) {
+        val = _val;
+        neighbors = vector<Node*>();
+    }
+    Node(int _val, vector<Node*> _neighbors) {
+        val = _val;
+        neighbors = _neighbors;
+    }
+};
+*/
+
+class Solution {
+public:
+    Node* cloneGraph(Node* node) {
+        if(!node) return nullptr;
+        unordered_map<Node*, Node*> visited;
+        queue<Node*> q;
+        visited[node] = new Node(node -> val);
+        q.push(node); //need to push to start BFS traversal
+        while(!q.empty()){
+            auto top = q.front();
+            q.pop();
+            for(Node* neighbors : top->neighbors){ //this goes through all of the neighbors of the top element in the queue
+                if(visited.find(neighbors) == visited.end()){ //if neighbor not in visited, we need to make a new node for it
+                    visited[neighbors] = new Node(neighbors->val); //make a new node for the neighbor in the map
+                    q.push(neighbors); //push to queue, we will explore the neighbors neighbors later
+                }
+            visited[top]->neighbors.push_back(visited[neighbors]); //for the current node, push back the neighbor into the vector of neighbors for the current node we are at
+            }
+        }
+        return visited[node];
+    }
+};
+```
+
+## Number of Islands LC 200
+
+<!-- notecardId: 1783917661305 -->
+
+Given an m x n 2D binary grid grid which represents a map of '1's (land) and '0's (water), return the number of islands.
+
+An island is surrounded by water and is formed by connecting adjacent lands horizontally or vertically. You may assume all four edges of the grid are all surrounded by water.
+
+ 
+
+Example 1:
+
+Input: grid = [
+  ["1","1","1","1","0"],
+  ["1","1","0","1","0"],
+  ["1","1","0","0","0"],
+  ["0","0","0","0","0"]
+]
+Output: 1
+Example 2:
+
+Input: grid = [
+  ["1","1","0","0","0"],
+  ["1","1","0","0","0"],
+  ["0","0","1","0","0"],
+  ["0","0","0","1","1"]
+]
+Output: 3
+ 
+
+Constraints:
+
+m == grid.length
+n == grid[i].length
+1 <= m, n <= 300
+grid[i][j] is '0' or '1'.
+
+**Link**: [text](https://leetcode.com/problems/number-of-islands/)
+
+%
+
+**Pattern:** DFS, BFS, Graph Traversal
+
+**Approach:** Use depth-first search (DFS) or breadth-first search (BFS) to traverse the grid and count the number of islands. Iterate through each cell in the grid, and when a '1' (land) is found, increment the island count and perform a DFS or BFS to mark all connected '1's as visited (e.g., by changing them to '0'). This ensures that each island is counted only once. Union Find can also be used to group connected components, but DFS/BFS is more straightforward for this problem.
+
+**Key Insight:** The key insight is that an island is defined by connected '1's, and once you find a '1', you can explore all its connected land cells to mark them as visited. This prevents counting the same island multiple times.
+
+**Gotchas:** Be careful with the boundaries of the grid when performing DFS or BFS. Ensure that you do not go out of bounds when checking adjacent cells. Additionally, make sure to handle cases where the grid is empty or contains only water, as this may have a trivial solution.
+
+**Complexity:** Time: O(M * N) where M is the number of rows and N is the number of columns in the grid, as each cell is visited at most once. | Space: O(M * N) for the recursion stack in DFS or for the queue in BFS, depending on the implementation.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Max Area of Island — LC #695 | Find the size of the single largest island → count and return the cumulative node volume ($1 + \text{neighbors}$) from each individual traversal instead of a flat count | Yes — direct structural twin |
+| Surrounded Regions — LC #130 | Capture internal land regions → start traversals strictly from boundary coordinates inward to protect immune lands, then sweep the rest | Yes — direct variant |
+| Number of Closed Islands — LC #1254 | Find islands completely surrounded by water → run standard island traversals, but return 0 if any part of the island touches a grid edge | Yes — direct variant |
+| Flood Fill — LC #733 | Recoloring a single connected region from a starting pixel → localized traversal that targets a specific starting color value, no global component counting | Partial — same flood-fill engine |
+| Island Perimeter — LC #463 | Find the outer border length of a land mass → loop through all cells mathematically calculating coordinate boundaries rather than invoking full graph searches | No — iterative math/counting |
+
+**How this pattern scales:**
+- **"Sinking" nodes (In-place mutation)** is the core trick — to prevent the algorithm from re-visiting the same land coordinates and entering infinite recursion loops, modify the input grid directly. The moment a land cell `'1'` is encountered, flip it to `'0'` (or a marker like `'#'`) *before* spawning recursive calls to its 4-directional neighbors. This replaces the need for an $O(M \cdot N)$ auxiliary boolean tracking set, keeping extra space bounded to the recursive call stack.
+- **Global Component Scanning** — The master structure uses a nested double `for`-loop to evaluate every coordinate `(r, c)` across the entire grid. The traversal function is *only* triggered when the loop hits an unvisited land cell (`grid[r][c] == '1'`). The total island count matches the exact number of times a brand new traversal is successfully initiated.
+- **Traversal Engine Selection (DFS vs BFS)** — For standard connected-component counting, the choice between graph search methods does not change the time complexity, but impacts memory behavior:
+  * *DFS (Standard):* Leverages the implicit call stack. Highly concise code, but can throw a `StackOverflowError` if the grid is massive and contains a single, giant snake-like island.
+  * *BFS:* Uses an explicit `queue<pair<int, int>>`. Safer for deep memory graphs, but requires mutating the grid state *immediately upon pushing* to the queue to avoid redundant processing.
+- **LC #695 connection** → Max Area of Island uses the identical coordinate-scanning template. The only structural difference is that the traversal function shifts from a `void` type to an `int` type. Instead of just flipping land to water, it returns the total area of the sub-tree ($1 + \text{up} + \text{down} + \text{left} + \text{right}$), allowing the main loop to track a global running maximum.
+- **Connected Components in a 2D matrix generalize** → This template is the baseline architecture for structural image segmentation, optical character recognition (OCR) layouts, and cluster mapping in game development. Master the cycle of: 1) Run full row-by-column coordinate sweeps, 2) Filter for starting states, 3) Increment a global cluster tracker, 4) Flood-fill the immediate region to clear out nodes, 5) Fast-fail out-of-bounds or non-matching cell neighbors.
+
+```cpp
+class Solution {
+private:
+void islandCheck(vector<vector<char>>& grid, int i , int j){
+    int dRow[4] = {-1, 1, 0, 0}; //preload the row and column changes for the four directions (up, down, left, right)
+    int dCol[4] = {0, 0, -1, 1}; 
+queue<pair<int, int>> q; //use a BFS here, so a queue can be used to keep track of the current island's coordinates
+q.push({i , j}); //push the current point, this is the starting point of the island
+grid[i][j] = '0';
+while(!q.empty()){
+    auto top = q.front();
+    q.pop(); //pop from queue, now we check neighbors and we check if they are land, if they are land, we push them into the queue and mark them as water
+    for(int idx = 0; idx < 4; idx++){
+        int newRow = top.first + dRow[idx];
+        int newCol =  top.second + dCol[idx];
+
+        if(newRow >= 0 && newRow < grid.size() && newCol >= 0 && newCol < grid[0].size() && grid[newRow][newCol] == '1'){
+            q.push({newRow, newCol}); //push the new point into the queue, this is a neighbor of the current point and is land
+            grid[newRow][newCol] = '0'; //mark the new point as water, so we don't visit it again
+        }
+    }
+}
+}
+public:
+    int numIslands(vector<vector<char>>& grid) {
+        int islandCount = 0;
+        for(int i = 0; i < grid.size(); i++){
+            for(int j = 0; j < grid[0].size(); j++){
+                if(grid[i][j] == '1'){
+                    islandCount++;
+                    islandCheck(grid, i, j);
+                    //if the queue is empty, then we have finished checking the current island, and we can move on to the next point in the grid
+                }
+            }
+        }
+        return islandCount;
+    }
+};
+```
