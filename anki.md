@@ -15933,3 +15933,4184 @@ public:
     }
 };
 ```
+
+## Course Schedule LC 207
+
+<!-- notecardId: 1784520698748 -->
+
+There are a total of numCourses courses you have to take, labeled from 0 to numCourses - 1. You are given an array prerequisites where prerequisites[i] = [ai, bi] indicates that you must take course bi first if you want to take course ai.
+
+For example, the pair [0, 1], indicates that to take course 0 you have to first take course 1.
+Return true if you can finish all courses. Otherwise, return false.
+
+ 
+
+Example 1:
+
+Input: numCourses = 2, prerequisites = [[1,0]]
+Output: true
+Explanation: There are a total of 2 courses to take. 
+To take course 1 you should have finished course 0. So it is possible.
+Example 2:
+
+Input: numCourses = 2, prerequisites = [[1,0],[0,1]]
+Output: false
+Explanation: There are a total of 2 courses to take. 
+To take course 1 you should have finished course 0, and to take course 0 you should also have finished course 1. So it is impossible.
+ 
+
+Constraints:
+
+1 <= numCourses <= 2000
+0 <= prerequisites.length <= 5000
+prerequisites[i].length == 2
+0 <= ai, bi < numCourses
+All the pairs prerequisites[i] are unique.
+
+**Link**: [text](https://leetcode.com/problems/course-schedule/)
+
+%
+
+**Pattern:** DFS, BFS, Graph Traversal, Topological Sort
+
+**Approach:** Use depth-first search (DFS) or breadth-first search (BFS) to detect cycles in the directed graph formed by the courses and their prerequisites. Represent the courses as nodes and the prerequisites as directed edges. If a cycle is detected, it means that there is a circular dependency, and it is impossible to finish all courses. If no cycles are found, it is possible to complete all courses. The better approach is to use Kahn's algorithm (BFS) for topological sorting, which counts the number of courses that can be completed. If the count matches the total number of courses, return true; otherwise, return false. The way Kahn's algorithm works is by maintaining an in-degree count for each course and processing courses with zero in-degree, effectively simulating the order of course completion.
+
+**Key Insight:** The key insight is that the problem can be modeled as a directed graph, where courses are nodes and prerequisites are directed edges. A cycle in this graph indicates that there is no valid order to complete the courses, while an acyclic graph allows for a valid topological ordering of courses.
+
+**Gotchas:** Be careful with the representation of the graph and the in-degree counts. Ensure that you correctly update the in-degree of each course when processing its prerequisites. Additionally, handle cases where there are no prerequisites, as this means all courses can be completed without any dependencies.
+
+**Complexity:** Time: O(V + E) where V is the number of courses (vertices) and E is the number of prerequisites (edges), as each course and prerequisite is processed once. | Space: O(V + E) for storing the graph and the in-degree counts.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Course Schedule II — LC #210 | Return the actual valid ordering of courses → track and store the nodes as they are processed (either pop from queue in Kahn's or push to a stack post-DFS) | Yes — direct structural twin |
+| Course Schedule IV — LC #1462 | Check if course A is a prerequisite of course B for multiple queries → require computing the full transitive closure using Floyd-Warshall or BFS/DFS from every node | Yes — direct variant |
+| Alien Dictionary — LC #269 | Find alphabetical order of letters from a custom dictionary → build a directed graph from adjacent word comparisons, then apply topological sort to detect valid order | Yes — direct variant |
+| Minimum Height Trees — LC #310 | Find the root nodes that minimize tree height → run an undirected graph topological sort variation, stripping leaf nodes layer-by-layer inward | Partial — reverse topological sort logic |
+| Graph Valid Tree — LC #261 | Verify if an undirected graph is a tree → require cycle detection and single connected component check, using Union-Find or basic DFS rather than directed sorting | Partial — same cycle detection family |
+
+**How this pattern scales:**
+- **Topological Sort / Cycle Detection in Directed Graphs** is the absolute core rule — whenever you encounter a problem involving scheduling, dependencies, ordering priorities, or determining if a sequence of directed relationships is valid, you are looking for a Directed Acyclic Graph (DAG). If a cycle exists, a valid ordering is mathematically impossible.
+- **Architectural Implementation Choices (Kahn's vs. DFS)** — This pattern scales cleanly across two primary algorithms, both running in $O(V + E)$ time:
+  1. *Kahn’s Algorithm (BFS Indegree Approach):* Count incoming edges (`indegree`) for every node. Push nodes with `indegree == 0` into a queue. Pop nodes, decrement the indegree of their neighbors, and push any neighbor that hits `0`. If the total count of processed nodes matches $V$, no cycle exists.
+  2. *Three-State DFS Tracking:* Use a visited array with three distinct states: `0` (Unvisited), `1` (Visiting/On current path), and `2` (Fully processed). If a DFS traversal hits a node currently marked as `1`, a back-edge exists, confirming a cycle.
+- **Adjacency List Conversion Prerequisite** — Edge inputs are almost always provided as a flat array of pairs (e.g., `[[1, 0]]`). Trying to traverse this raw list directly will cause a TLE (Time Limit Exceeded). The mandatory first step is restructuring the raw array into a fast-lookup adjacency list (`vector<vector<int>>` or `Map<Integer, List<Integer>>`).
+- **LC #210 connection** → Course Schedule II uses the exact same topological framework. In Kahn's algorithm, instead of just tracking an integer count of processed courses, you append each course to a result array immediately after popping it from the queue. If your final array length equals the total number of courses, you return the array; otherwise, you return an empty list because a cycle blocked completion.
+- **Dependency resolution chains generalize** → This template is the industry blueprint for compiler build-dependency managers (like `make` or `npm install`), package management systems, spreadsheet formula recalculation trees, and tasks/workflow orchestration engines. Master the cycle of: 1) Build an adjacency list and compute indegrees, 2) Seed a queue with nodes having zero dependencies, 3) Process nodes layer-by-layer while tracking counts, 4) Decrement neighbor dependencies, 5) Declare a failure cycle if elements remain unexecuted.
+
+```cpp
+class Solution {
+public:
+    bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
+        vector<vector<int>> adj(numCourses); //need an adjency list here, kind of like a map
+        vector<int> degree(numCourses, 0);
+        int ctr = 0;
+        queue<int> q;
+        for(auto pair : prerequisites){
+            adj[pair[1]].push_back(pair[0]); //map prereq -> [list of courses that can be taken after]
+            degree[pair[0]]++; //course 0 depends on an additional course, need to keep track of how many courses course 0 needs
+        }
+
+        for(int i = 0; i < numCourses; i++){
+            if(degree[i] == 0) q.push(i);
+        }
+
+        while (!q.empty()){
+            auto front = q.front();
+            q.pop();
+            ctr++;
+        for(int neighbor : adj[front]){
+            degree[neighbor]--;
+            if(degree[neighbor] == 0){
+                q.push(neighbor);
+            }
+        }
+        }
+
+        return (ctr == numCourses);
+    }
+
+
+};
+```
+
+## Course Schedule II LC 210
+
+<!-- notecardId: 1784522619240 -->
+
+There are a total of numCourses courses you have to take, labeled from 0 to numCourses - 1. You are given an array prerequisites where prerequisites[i] = [ai, bi] indicates that you must take course bi first if you want to take course ai.
+
+For example, the pair [0, 1], indicates that to take course 0 you have to first take course 1.
+Return the ordering of courses you should take to finish all courses. If there are many valid answers, return any of them. If it is impossible to finish all courses, return an empty array.
+
+ 
+
+Example 1:
+
+Input: numCourses = 2, prerequisites = [[1,0]]
+Output: [0,1]
+Explanation: There are a total of 2 courses to take. To take course 1 you should have finished course 0. So the correct course order is [0,1].
+Example 2:
+
+Input: numCourses = 4, prerequisites = [[1,0],[2,0],[3,1],[3,2]]
+Output: [0,2,1,3]
+Explanation: There are a total of 4 courses to take. To take course 3 you should have finished both courses 1 and 2. Both courses 1 and 2 should be taken after you finished course 0.
+So one correct course order is [0,1,2,3]. Another correct ordering is [0,2,1,3].
+Example 3:
+
+Input: numCourses = 1, prerequisites = []
+Output: [0]
+ 
+
+Constraints:
+
+1 <= numCourses <= 2000
+0 <= prerequisites.length <= numCourses * (numCourses - 1)
+prerequisites[i].length == 2
+0 <= ai, bi < numCourses
+ai != bi
+All the pairs [ai, bi] are distinct.
+
+**Link**: [text](https://leetcode.com/problems/course-schedule-ii/)
+
+%
+
+**Pattern:** DFS, BFS, Graph Traversal, Topological Sort
+
+**Approach:** This is a good question for the use of Topological Sort. The way Kahn's algorithm works is by maintaining an in-degree count for each course and processing courses with zero in-degree, effectively simulating the order of course completion. Start by building an adjacency list to represent the graph of courses and their prerequisites. Then, initialize a queue with all courses that have no prerequisites (in-degree of zero). Process each course in the queue, adding it to the result list and decrementing the in-degree of its dependent courses. If any dependent course's in-degree reaches zero, add it to the queue. Finally, if the result list contains all courses, return it; otherwise, return an empty array indicating that it's impossible to finish all courses.
+
+**Key Insight:** The key insight is that the problem can be modeled as a directed graph, where courses are nodes and prerequisites are directed edges. A valid topological ordering of the graph represents a feasible order to complete the courses. If a cycle exists in the graph, it indicates that there is no valid order to complete the courses.
+
+**Gotchas:** Be careful with the representation of the graph and the in-degree counts. Ensure that you correctly update the in-degree of each course when processing its prerequisites. Additionally, handle cases where there are no prerequisites, as this means all courses can be completed without any dependencies.
+
+**Complexity:** Time: O(V + E) where V is the number of courses (vertices) and E is the number of prerequisites (edges), as each course and prerequisite is processed once. | Space: O(V + E) for storing the graph and the in-degree counts.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Course Schedule — LC #207 | Only return if a valid schedule is possible (boolean) → identical cycle detection logic, but tracks a flat node count rather than recording the path array | Yes — direct structural twin |
+| Alien Dictionary — LC #269 | Find alphabetical order of letters from a custom dictionary → extract character precedence rules from a list of sorted words to build the graph, then run topological sort | Yes — direct variant |
+| Sequence Reconstruction — LC #444 | Check if a unique sequence can be rebuilt from a subset of sequences → perform Kahn's algorithm and verify that the queue size *never* exceeds 1 at any point | Yes — direct variant |
+| Course Schedule IV — LC #1462 | Answer reachability queries between courses → require computing the full reachability path matrix (transitive closure) via Floyd-Warshall or multi-source traversals | Yes — direct variant |
+| Minimum Height Trees — LC #310 | Find roots that minimize tree height → run an undirected graph topological sort variation, systematically peeling away outer leaf nodes layer-by-layer | Partial — reverse topological sort logic |
+
+**How this pattern scales:**
+- **Linear Path Generation in Directed Acyclic Graphs (DAG)** is the core trick — while LC #207 only requires finding *if* a valid configuration exists, LC #210 requires returning a concrete execution order. If the graph contains any cycle, a topological sort cannot resolve, and you must return an empty array `[]`.
+- **Collecting the Sort Array (Kahn's vs. DFS)** — This scales across both standard topological search paradigms:
+  1. *Kahn’s BFS Approach:* Maintain an `indegree` array tracking prerequisite counts. Populate a queue with all nodes where `indegree == 0`. Every time a node is popped from the queue, append it directly to your `order` array. As you visit neighbors, decrement their indegree; if a neighbor's indegree hits `0`, push it to the queue.
+  2. *DFS Post-Order Stack Approach:* Track node exploration using three states: `0` (Unvisited), `1` (Visiting), and `2` (Processed). When a node finishes exploring all its sub-branches without hitting a cycle, push it onto a stack or array. The final topological order is the reverse of this post-order finish sequence.
+- **The Unique Solution Verification Rule** — Kahn's algorithm provides a hidden capability: if your queue ever contains more than one element simultaneously, it mathematically proves that multiple valid topological orders exist. If a problem asks you to verify if a schedule is *uniquely* determined, assert that the queue size always stays exactly equal to 1.
+- **LC #207 connection** → The graph construction (adjacency list) and constraint validation mechanisms are perfectly identical. The transition between the two problems is simply switching your collector from a primitive counter (`count++`) to a linear data structure (`order.push_back(node)`), combined with an integrity check at the end (`order.size() == numCourses`).
+- **Linear execution planning generalizes** → This template is the industry blueprint for modern task runners (like Airflow or Celery DAGs), front-end asset compilation pipelines, build-system dependency trees, and database migration sequences. Master the cycle of: 1) Convert edge pairs into an adjacency list and count indegrees, 2) Seed a queue with all independent nodes, 3) Pop and record nodes to a path collector, 4) Decrement neighbor constraints, 5) Return the path if all items are resolved, otherwise return a clear/empty collection to flag a cycle error.
+
+```cpp
+class Solution {
+public:
+    vector<int> findOrder(int numCourses, vector<vector<int>>& prerequisites) {
+        vector<int> res;
+        vector<vector<int>> adj(numCourses);
+        vector<int> degree(numCourses, 0);
+        int ctr = 0;
+        queue<int> q;
+        for(auto pair : prerequisites){
+            adj[pair[1]].push_back(pair[0]);
+            degree[pair[0]]++;
+        }
+        for(int i = 0; i < numCourses; i++){
+            if(degree[i] == 0) q.push(i);
+        }
+
+        while (!q.empty()){
+            auto front = q.front();
+            q.pop();
+            res.push_back(front);
+            ctr++;
+            for(int neighbor : adj[front]){
+                degree[neighbor]--;
+                if(degree[neighbor] == 0){
+                    q.push(neighbor);
+                }
+            }
+        }
+        vector<int> empty;
+        if(ctr != numCourses){
+            return empty;
+        }
+        else{
+            return res;
+        }
+    }
+};
+```
+
+## Graph Valid Tree LC 261
+
+<!-- notecardId: 1784523193254 -->
+
+You have a graph of n nodes labeled from 0 to n - 1. You are given an integer n and a list of edges where edges[i] = [ai, bi] indicates that there is an undirected edge between nodes ai and bi in the graph.
+
+Return true if the edges of the given graph make up a valid tree, and false otherwise.
+
+ 
+
+Example 1:
+
+
+Input: n = 5, edges = [[0,1],[0,2],[0,3],[1,4]]
+Output: true
+Example 2:
+
+
+Input: n = 5, edges = [[0,1],[1,2],[2,3],[1,3],[1,4]]
+Output: false
+ 
+
+Constraints:
+
+1 <= n <= 2000
+0 <= edges.length <= 5000
+edges[i].length == 2
+0 <= ai, bi < n
+ai != bi
+There are no self-loops or repeated edges.
+
+**Link**: [text](https://leetcode.com/problems/graph-valid-tree/)
+
+%
+
+**Pattern:** DFS, BFS, Graph Traversal, Cycle Detection
+
+**Approach:** Use depth-first search (DFS) or breadth-first search (BFS) to traverse the graph and check for cycles. A valid tree must be connected and acyclic. Start by building an adjacency list to represent the graph. Then, perform a DFS or BFS traversal from any node, keeping track of visited nodes. If you encounter a node that has already been visited and is not the parent of the current node, a cycle exists, and the graph is not a valid tree. Additionally, after the traversal, check if all nodes have been visited to ensure the graph is connected.
+
+**Key Insight:** The key insight is that a valid tree must satisfy two conditions: it must be connected (all nodes are reachable from any starting node) and it must be acyclic (no cycles exist). If either condition fails, the graph cannot be a valid tree.
+
+**Gotchas:** Be careful with the representation of the graph and the traversal logic. Ensure that you correctly track visited nodes and handle the parent-child relationship to avoid false cycle detection. Additionally, check if the number of edges is equal to n - 1, as a valid tree with n nodes must have exactly n - 1 edges.
+
+**Complexity:** Time: O(V + E) where V is the number of nodes (vertices) and E is the number of edges, as each node and edge is processed once during the traversal. | Space: O(V + E) for storing the graph and the visited nodes.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Number of Connected Components in an Undirected Graph — LC #323 | Count total individual graph clusters → uses identical traversal or Union-Find, but tracks count instead of failing on cycles or component counts $\neq 1$ | Yes — direct structural twin |
+| Redundant Connection — LC #684 | Find the specific edge causing a cycle in a graph → identical Union-Find structure, returning the exact edge where `find(u) == find(v)` | Yes — direct structural twin |
+| Course Schedule — LC #207 | Detect cycles in a directed graph → requires tracking three-state visited arrays or indegrees because parent-skipping rules don't apply to directed edges | Partial — directed vs. undirected cycle math |
+| Clone Graph — LC #133 | Deep copy a network graph → traversal-based state reproduction focused on dictionary allocation rather than structural property validation | Partial — same graph traversal foundation |
+
+**How this pattern scales:**
+- **The Mathematical Tree Definition** is the absolute core rule — for any graph to be classified as a valid tree, it must fulfill exactly two mathematical constraints:
+  1. It must be **fully connected** (there is a path between every single pair of nodes).
+  2. It must be **acyclic** (it contains absolutely no loops/cycles).
+- **The $E = V - 1$ Fast-Fail Guard** — By definition, a valid tree with $N$ nodes *must* contain exactly $N - 1$ edges. If `edges.size() != n - 1`, you can instantly return `false` before allocating any memory for traversals or parent tracking. This optimization completely handles cases with redundant cyclic edges or disjoint floating components.
+- **Parent-Tracking during Undirected Cycle Detection** — If you choose to validate connectivity using DFS or BFS instead of Union-Find, you must track the `parent` node you just traveled from. Because undirected edges are bidirectional, traveling from node `A` to node `B` means node `B` will see node `A` as a neighbor. If you don't explicitly pass the parent node to your skip condition (`if (neighbor == parent) continue;`), your traversal will misinterpret this backward link as a cycle.
+- **Union-Find (Disjoint Set Union) Scaling** — This problem acts as the ultimate showcase for the Union-Find data structure. You initialize $N$ distinct components. For each edge `(u, v)`, you call `union(u, v)`. If `find(u) == find(v)` before the union occurs, it means $u$ and $v$ are already connected via an alternative path, proving a cycle exists. If no cycles are hit and the total number of connected components is reduced to exactly 1, your graph is a tree.
+- **LC #323 connection** → Number of Connected Components uses the exact same setup. While LC #261 fails immediately if components are split or a cycle occurs, LC #323 initializes a counter to $N$, decrements it by 1 for each successful non-cyclic edge union, and returns the final counter total without throwing an error when multiple components exist.
+- **Acyclic topology and cluster boundaries generalize** → This template is the industry blueprint for network routing spanning-tree algorithms (like STP), circuit board trace routing loop prevention, file system directory indexing validity, and cluster segmentation tracking. Master the cycle of: 1) Verify basic edge count constraints ($V - 1$), 2) Build a tracking state (Union-Find arrays or Adjacency lists), 3) Execute link evaluation while tracking source parent states, 4) Fast-fail if an active node intersection or premature component closure occurs, 5) Verify global reachability maps.
+
+```cpp
+class Solution {
+public:
+    bool validTree(int n, vector<vector<int>>& edges) {
+        if(edges.size() != n - 1) return false;
+
+        stack<pair<int, int>> st;
+        vector<vector<int>> adj(n);
+        for(auto edge : edges){
+            adj[edge[0]].push_back(edge[1]);
+            adj[edge[1]].push_back(edge[0]);
+            
+        }
+        
+        unordered_set<int> visited;
+        st.push({0, -1}); //store as {curr pos, parent pos}
+        visited.insert(0);
+        while(!st.empty()){
+            auto top = st.top();
+            st.pop();
+            for(int neighbor : adj[top.first]){
+                if(top.second == neighbor) continue;
+                if(visited.count(neighbor)) return false;
+                visited.insert(neighbor);
+                st.push({neighbor, top.first});
+            }
+
+        }
+        return visited.size() == n;
+    }
+};
+```
+
+## Walls and Gates LC 286
+
+<!-- notecardId: 1784524198089 -->
+
+You are given an m x n grid rooms initialized with these three possible values.
+
+-1 A wall or an obstacle.
+0 A gate.
+INF Infinity means an empty room. We use the value 231 - 1 = 2147483647 to represent INF as you may assume that the distance to a gate is less than 2147483647.
+Fill each empty room with the distance to its nearest gate. If it is impossible to reach a gate, it should be filled with INF.
+
+ 
+
+Example 1:
+
+
+Input: rooms = [[2147483647,-1,0,2147483647],[2147483647,2147483647,2147483647,-1],[2147483647,-1,2147483647,-1],[0,-1,2147483647,2147483647]]
+Output: [[3,-1,0,1],[2,2,1,-1],[1,-1,2,-1],[0,-1,3,4]]
+Example 2:
+
+Input: rooms = [[-1]]
+Output: [[-1]]
+ 
+
+Constraints:
+
+m == rooms.length
+n == rooms[i].length
+1 <= m, n <= 250
+rooms[i][j] is -1, 0, or 231 - 1.
+
+**Link**: [text](https://leetcode.com/problems/walls-and-gates/)
+
+%
+
+**Pattern:** BFS, Graph Traversal, Multi-Source BFS
+
+**Approach:** Use breadth-first search (BFS) starting from all gates simultaneously. First, identify all the gates (cells with value 0) and add their coordinates to a queue. Then, perform BFS from these gates, updating the distance for each empty room (cells with value INF) as you traverse. For each cell processed, check its four adjacent cells (up, down, left, right). If an adjacent cell is an empty room, update its distance to be one more than the current cell's distance and add it to the queue for further processing. Continue this process until all reachable empty rooms have been updated with their nearest gate distances.
+
+**Key Insight:** The key insight is that by starting BFS from all gates simultaneously, you can efficiently propagate the minimum distance to each empty room. This ensures that each empty room is filled with the shortest distance to any gate, as BFS explores all neighbors level by level.
+
+**Gotchas:** Be careful with the boundaries of the grid when checking adjacent cells. Ensure that you do not go out of bounds when accessing neighboring cells. Additionally, make sure to only update empty rooms (INF) and not walls or gates.
+
+**Complexity:** Time: O(M * N) where M is the number of rows and N is the number of columns in the grid, as each cell is processed at most once. | Space: O(M * N) for the queue used in BFS, which can hold all gates and their reachable empty rooms.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| 01 Matrix — LC #542 | Find distance to nearest 0 cell for all cells → identical multi-source BFS template, initializing the queue with all 0-value cells instead of gates | Yes — direct structural twin |
+| Rotting Oranges — LC #994 | Find minimum time to rot all fresh oranges → multi-source BFS tracking a running step layer count, failing if any target remains unvisited | Yes — direct structural twin |
+| Shortest Path in Binary Matrix — LC #1091 | Shortest path from top-left to bottom-right cell → single-source coordinate BFS tracking cell layers rather than distributing from multiple origins | Yes — foundational base |
+| Surrounded Regions — LC #130 | Capture internal land regions → boundary-inward grid traversal designed to isolate outer properties rather than computing layered metrics | Partial — boundary/origin filtering strategy |
+
+**How this pattern scales:**
+- **Multi-Source BFS (Simultaneous Expansion)** is the absolute core rule — running an isolated single-source BFS from each separate gate coordinate results in an unacceptable $O(G \cdot M \cdot N)$ time complexity, triggering a TLE (Time Limit Exceeded). The scaling trick is to scan the full grid once, locate **all gates simultaneously**, and push them all into a single shared queue before beginning the traversal loops. 
+- **Uniform Ripple Layer Propagation** — Because a Breadth-First Search radiates outward uniformly layer-by-layer, when multiple starting positions expand at the exact same pace, the first wave to wash over an empty room is mathematically guaranteed to have arrived via the absolute shortest path. 
+- **In-Place Progress as a Visited Set** — You do not need an auxiliary tracking matrix to map visited cells. Because empty rooms are initialized to `INF` (`2147483647`), you can check your boundary step state directly: only step onto a neighbor if `grid[next_r][next_c] == INF`. The moment you queue that neighbor, mutate its value to `grid[r][c] + 1`. This values update prevents other paths from redundantly re-processing the cell.
+- **LC #542 connection** → 01 Matrix is the exact same problem wrapped in alternative phrasing. Instead of gates (`0`) and empty rooms (`INF`), you have target cells (`0`) and empty matrix slots (`1`). You copy this template word-for-word: push all `0` coordinates into the queue, initialize empty spots to a placeholder max value, and run the multi-source wave.
+- **Multi-origin metric distributions generalize** → This template is the industry architecture for physical pathfinding optimizations such as tracking wildfire expansion rates across terrain maps, calculating cellular network signal propagation vectors from multiple towers, or optimizing logistics warehouse distance layouts. Master the cycle of: 1) Scan the matrix to load all source origins into a queue, 2) Set up 4-directional coordinate offsets, 3) Process layers iteratively, 4) Update infinite cell values directly with progressive values (`current + 1`), 5) Bypass boundary blockages and obstacles automatically.
+
+```cpp
+class Solution {
+public:
+    void wallsAndGates(vector<vector<int>>& rooms) {
+        queue<pair<int, int>> q;
+
+        for(int i = 0; i < rooms.size(); i++){
+            for(int j = 0; j < rooms[0].size(); j++){
+                if(rooms[i][j] == 0){
+                    q.push({i, j}); //in this question, just find all of the gates and push them into the queue, 
+                    //then we will do a BFS from all of the gates at the same time, and update the distance to the nearest gate for each room
+                }
+            }
+        }
+    int dRow[4] = {-1, 1, 0, 0};
+   int dCol[4] = {0, 0, -1, 1};
+    while(!q.empty()){
+       auto top = q.front();
+       q.pop();
+       for(int idx = 0; idx < 4; idx++){
+        int currRow = top.first + dRow[idx];
+        int currCol = top.second + dCol[idx];
+
+        if(currRow >= 0 && currRow < rooms.size() && currCol>= 0 && currCol < rooms[0].size() && rooms[currRow][currCol] == 2147483647){
+            //the key point is that if rooms[currRow][currCol] == 2147483647, then we know that the gate we popped off the queue is the closest gate to that room, 
+            //because we are doing a BFS, so we are exploring all of the rooms that are 1 step away from the gate first, then all of the rooms that are 2 steps away from the gate, and so on. 
+            //So if we find a room that is 2147483647, then we know that the gate we popped off the queue is the closest gate to that room, because we have already explored all of the rooms that are closer to the gate.
+            rooms[currRow][currCol] = rooms[top.first][top.second] + 1; //distance will be the location you came from + 1
+            q.push({currRow, currCol}); //need to now push the current location and continue BFS
+        }
+       }
+
+    }
+    }
+};
+```
+
+## Minumum Height Trees LC 310
+
+<!-- notecardId: 1784565814345 -->
+
+A tree is an undirected graph in which any two vertices are connected by exactly one path. In other words, any connected graph without simple cycles is a tree.
+
+Given a tree of n nodes labelled from 0 to n - 1, and an array of n - 1 edges where edges[i] = [ai, bi] indicates that there is an undirected edge between the two nodes ai and bi in the tree, you can choose any node of the tree as the root. When you select a node x as the root, the result tree has height h. Among all possible rooted trees, those with minimum height (i.e. min(h))  are called minimum height trees (MHTs).
+
+Return a list of all MHTs' root labels. You can return the answer in any order.
+
+The height of a rooted tree is the number of edges on the longest downward path between the root and a leaf.
+
+ 
+
+Example 1:
+
+
+Input: n = 4, edges = [[1,0],[1,2],[1,3]]
+Output: [1]
+Explanation: As shown, the height of the tree is 1 when the root is the node with label 1 which is the only MHT.
+Example 2:
+
+
+Input: n = 6, edges = [[3,0],[3,1],[3,2],[3,4],[5,4]]
+Output: [3,4]
+ 
+
+Constraints:
+
+1 <= n <= 2 * 104
+edges.length == n - 1
+0 <= ai, bi < n
+ai != bi
+All the pairs (ai, bi) are distinct.
+The given input is guaranteed to be a tree and there will be no repeated edges.
+
+**Link**: [text](https://leetcode.com/problems/minimum-height-trees/)
+
+%
+
+**Pattern:** BFS, Graph Traversal, Topological Sort, Tree Center Finding
+
+**Approach:** Use a topological sort-like approach to iteratively remove leaf nodes from the tree until only the central nodes remain. Start by building an adjacency list to represent the tree. Identify all leaf nodes (nodes with only one connection) and add them to a queue. Then, repeatedly remove the leaf nodes from the tree, updating the degrees of their neighbors. If any neighbor becomes a leaf node (degree becomes 1), add it to the queue for processing in the next iteration. Continue this process until there are at most two nodes left in the tree, which will be the roots of the minimum height trees.
+
+**Key Insight:** The key insight is that the roots of minimum height trees are located at the center of the tree. By iteratively removing leaf nodes, you effectively "peel" the tree layer by layer, converging towards the central nodes. The last remaining nodes after all leaves have been removed will be the optimal roots for minimum height trees. The key thing to know is if the degree for the node is 1, then it is a leaf node. If the degree for the node is 2 or more, then it is not a leaf node.
+
+**Gotchas:** Be careful with the representation of the graph and the degree counts. Ensure that you correctly update the degree of each node when removing leaf nodes. Additionally, handle cases where the tree has only one or two nodes, as these are special cases where the minimum height trees are simply the nodes themselves.
+
+**Complexity:** Time: O(V + E) where V is the number of nodes (vertices) and E is the number of edges, as each node and edge is processed once during the leaf removal process. | Space: O(V + E) for storing the graph and the degree counts.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Course Schedule II — LC #210 | Find standard topological ordering in a directed graph → standard Kahn's algorithm peeling down `indegree == 0` nodes from source to sink | Yes — topological twin |
+| Graph Valid Tree — LC #261 | Check if graph has exactly one connected component and no cycles → focus on structural global validation rather than trimming boundary leaf layers | Partial — same tree structural constraints |
+| Find Distance in a Binary Tree — LC #1740 | Calculate the distance between two nodes in a tree → standard tree traversal or Lowest Common Ancestor (LCA) tracking rather than centroid peeling | No — node distance tree traversal |
+| Tree Diameter — LC #1245 | Find the longest path length between any two nodes in a tree → requires two passes of standard DFS/BFS to find the longest path endpoints | No — path diameter search |
+
+**How this pattern scales:**
+- **Topological Onion-Peeling (Centroid Stripping)** is the absolute core rule — a naive approach of running a BFS/DFS from every single node to compute heights takes an unacceptably slow $O(V \cdot (V + E))$ time. The scaling trick is to *work from the outside in*. A tree's minimum height roots are mathematically guaranteed to be its centroids. By finding all leaf nodes (`degree == 1`) and stripping them layer-by-layer, you narrow down the tree to its central coordinates.
+- **The Maximum Centroid Capacity Rule** — Mathematically, any valid tree structure can have **at most 2 centroids**. If you try to trim down past this, you will destroy the center links. Therefore, your layer processing loop must run strictly while the total number of remaining nodes is greater than 2 (`n > 2`).
+- **Dynamic Degree Array Tracking** — Just like Kahn's algorithm tracks incoming edges, this pattern tracks total connections inside a `degree` array. You seed your queue with all starting nodes where `degree[i] == 1`. When processing a node, you decrement `n`, loop through its neighbors to remove the current node's edge, and if any neighbor's degree drops to `1`, you push that neighbor into the next layer's queue.
+- **Handling the Single-Node Tree Edge Case** — Because leaf nodes are defined as having `degree == 1`, a tree consisting of exactly one isolated node (`n = 1`) has a degree of `0`. It will bypass your initial leaf collection loops entirely. You must implement an immediate entry-level defensive guard clause: `if (n == 1) return {0};`.
+- **LC #210 connection** → Minimum Height Trees takes the standard Kahn's algorithm structure and applies it to an undirected acyclic graph from the outside inwards. Instead of tracking a directed pipeline from `indegree == 0`, you track undirected borders with `degree == 1`. The queue management and degree decrement patterns are conceptually identical.
+- **Centroid reduction and topological thinning generalize** → This template is the industry blueprint for network topology synchronization hubs, optimizing distributed file system mirror roots, calculating geographic infrastructure hubs across sparse pipeline routes, and structural graph simplification engines. Master the cycle of: 1) Return early if single node structures exist, 2) Build an adjacency list and calculate element degrees, 3) Queue up all base leaf elements, 4) Execute layer-by-layer outer-tier peeling until the remaining balance drops to 1 or 2 nodes, 5) Return the final remaining queue contents as the root centroids.
+
+```cpp
+class Solution {
+public:
+    vector<int> findMinHeightTrees(int n, vector<vector<int>>& edges) {
+        if(n == 1) return {0};
+        vector<vector<int>> adj(n); //adjacency list, need it to find the neighbors of each node
+        vector<int> degree(n, 0); //degree counts for each node, need it for the topological sort, 
+        //because we will be removing the leaves of the tree, and we need to know when a node becomes a leaf
+        queue<int> q;
+
+        for(auto edge : edges){
+            adj[edge[0]].push_back(edge[1]);
+            adj[edge[1]].push_back(edge[0]);
+            degree[edge[0]]++;
+            degree[edge[1]]++;
+        }
+        for(int i = 0; i < degree.size() ; i++){
+            if(degree[i] == 1){
+                q.push(i); //we only push the leaves of the tree into the queue, 
+                //because we will be removing them in the topological sort, if degree of a ndoe is 1, it is a leaf,
+                // and we will be removing it in the topological sort
+            }
+        }
+
+        int remainingNodes = n;
+        while(remainingNodes > 2){
+            int currCt = q.size();
+            remainingNodes -= currCt;
+            for(int i = 0; i < currCt; i++){
+                auto top = q.front();
+                q.pop();
+
+                for(auto neighbor : adj[top]){
+                    degree[neighbor]--; //remove the node, so we have to update the degree of its neighbors,
+                    // because we are removing the node from the tree, so its neighbors will have one less edge
+
+                    if(degree[neighbor] == 1) q.push(neighbor); //becomes a new leaf so this will be added to the queue
+                }
+            }
+        }
+
+        vector<int> res;
+        while(!q.empty()){ //the stuff in the queue is the remaining nodes, 
+        //which are the roots of the minimum height trees
+            res.push_back(q.front());
+            q.pop();
+        }
+        return res;
+    }
+};
+```
+
+## Number of Connected Components in an Undirected Graph LC 323
+
+<!-- notecardId: 1784566019723 -->
+
+You have a graph of n nodes. You are given an integer n and an array edges where edges[i] = [ai, bi] indicates that there is an edge between ai and bi in the graph.
+
+Return the number of connected components in the graph.
+
+ 
+
+Example 1:
+
+
+Input: n = 5, edges = [[0,1],[1,2],[3,4]]
+Output: 2
+Example 2:
+
+
+Input: n = 5, edges = [[0,1],[1,2],[2,3],[3,4]]
+Output: 1
+ 
+
+Constraints:
+
+1 <= n <= 2000
+1 <= edges.length <= 5000
+edges[i] = [ai, bi]
+ai != bi
+There are no repeated edges.
+
+**Link**: [text](https://leetcode.com/problems/number-of-connected-components-in-an-undirected-graph/)
+
+%
+
+**Pattern:** DFS, BFS, Graph Traversal, Union-Find
+
+**Approach:** Use depth-first search (DFS) or breadth-first search (BFS) to traverse the graph and count the number of connected components. Start by building an adjacency list to represent the graph. Initialize a visited set to keep track of visited nodes. Iterate through each node, and if it has not been visited, perform a DFS or BFS from that node, marking all reachable nodes as visited. Increment the connected component count for each unvisited node that initiates a traversal. In my opinion, this question is far more straightforward with an Union-Find implementation. When using UF, all you need to do is initialize a parent array, and for each edge, union the two nodes. At the end, count how many unique parents there are, which will give you the number of connected components.
+
+**Key Insight:** The key insight is that a connected component is a subset of nodes in which every pair of nodes is connected by a path. By traversing the graph and marking visited nodes, you can effectively identify and count these distinct subsets. Union-Find provides an efficient way to manage and merge these subsets as edges are processed.
+
+**Gotchas:** Be careful with the representation of the graph and the traversal logic. Ensure that you correctly track visited nodes and handle the adjacency list properly. When using Union-Find, make sure to implement path compression and union by rank to optimize the performance of the union and find operations.
+
+**Complexity:** Time: O(V + E) where V is the number of nodes (vertices) and E is the number of edges, as each node and edge is processed once during the traversal. | Space: O(V + E) for storing the graph and the visited nodes or parent array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Graph Valid Tree — LC #261 | Verify if a graph is a tree → identical core tracking, but throws a failure immediately if a cycle is found or if the component count $\neq 1$ | Yes — direct structural twin |
+| Number of Islands — LC #200 | Count contiguous land masses in a 2D matrix → cells act as implicit graph nodes; uses directional array offsets instead of an explicit edge list | Yes — direct structural twin |
+| Redundant Connection — LC #684 | Find the edge that forms a cycle in an unweighted graph → uses the exact same Union-Find boilerplate, returning the first edge where `find(u) == find(v)` | Yes — direct structural twin |
+| Friend Circles (Provinces) — LC #547 | Find clusters in a social network → nodes are provided as an adjacency matrix representation rather than an edge pair list | Yes — direct variant |
+
+**How this pattern scales:**
+- **Component Counting via Disjoint Sets (Union-Find)** is the absolute gold standard for tracking connectivity in undirected graphs. While you can solve this using standard traversals (DFS/BFS) by keeping a global `visited` array and kicking off a search from each unvisited node, Union-Find handles dynamic edge additions incrementally with near-constant time complexity.
+- **The Decremental Counter Trick** — Instead of calculating connected sets at the end of the algorithm, initialize your global component tracking counter directly to the total number of nodes (`count = n`). Every time you process an edge `(u, v)` and successfully merge two separate components (`union(u, v) == true`), you decrement the counter by exactly `1`.
+- **Path Compression + Union by Rank ($O(\alpha(N))$)** — To prevent the disjoint set tree branches from degrading into long, linear chains under skewed inputs, implement two optimizations:
+  1. *Path Compression:* Inside the `find(i)` method, recursively assign the node's parent directly to its root (`parent[i] = find(parent[i])`). This flattens the tree dynamically.
+  2. *Union by Rank/Size:* Attach the shallower tree under the root of the deeper tree during a merge operation.
+- **LC #261 connection** → Graph Valid Tree relies on this exact component counting framework. The transition is straightforward: a valid tree must have an edge count of exactly `n - 1`, must contain zero cycles during the union phase, and must finish with a final component counter equal to exactly `1`.
+- **Connectivity clustering and disjoint partitioning generalize** → This template is the industry blueprint for dynamic network tracking, tracking contiguous pixels in computer vision threshold filters, managing database shard clustering, and evaluating social network circle divisions. Master the cycle of: 1) Initialize parent array tracking paths to self, 2) Set component counter to maximum node capacity, 3) Process edge streams sequentially, 4) Use path compression to isolate root markers, 5) Flatten component subsets on matching connections while updating the global tracking counter.
+
+```cpp
+class UnionFind{
+    private:
+        vector<int> parent;
+        vector<int> rank;
+    public:
+        UnionFind(int n){
+            parent.resize(n);
+            rank.resize(n, 0);
+            iota(parent.begin(), parent.end(), 0);
+        }
+
+        int find(int i){
+            //path compression
+            if(parent[i] == i) return i;
+            return parent[i] = find(parent[i]);
+        }
+
+        bool unite(int i , int j){
+            int rootI = find(i);
+            int rootJ = find(j);
+
+            if(rootI == rootJ) return false; //alr in same component
+
+            if(rank[rootI] < rank[rootJ]){
+                parent[rootI] = rootJ;
+            }
+            else if(rank[rootI] > rank[rootJ]){
+                parent[rootJ] = rootI;
+            }
+            else{
+                parent[rootJ] = rootI;
+                rank[rootI]++;
+            }
+            return true;
+        }
+
+};
+class Solution {
+
+    //this is the dfs solution, but can be optimized by doing Union Find
+// private: 
+//     unordered_set<int> seen;
+//     void dfs(int i, vector<vector<int>>& adj){
+//             seen.insert(i);
+//             for(int neighbor : adj[i]){
+//                 if(!seen.count(neighbor)){
+//                     dfs(neighbor, adj);
+//                 }
+//             }
+//     }
+// public:
+//     int countComponents(int n, vector<vector<int>>& edges) {
+//         int currCount = 0;
+//         vector<vector<int>> adj(n);
+//         for(auto edge : edges){
+//             adj[edge[0]].push_back(edge[1]);
+//             adj[edge[1]].push_back(edge[0]);
+//         }
+//         for(int i= 0; i < n; i++){
+//             if(!seen.count(i)){
+//                 currCount++;
+//                 dfs(i, adj);
+//             }
+//         }
+//         return currCount;
+//     }
+
+public:
+    int countComponents(int n, vector<vector<int>>& edges) {
+        UnionFind dsu(n);
+        int components = n;
+
+        for(auto edge : edges){
+            int u = edge[0];
+            int v = edge[1];
+            if(dsu.unite(u,v)) components--;
+        }
+        return components;
+    }
+};
+```
+
+## Evaluate Division LC 399
+
+<!-- notecardId: 1784566201119 -->
+
+You are given an array of variable pairs equations and an array of real numbers values, where equations[i] = [Ai, Bi] and values[i] represent the equation Ai / Bi = values[i]. Each Ai or Bi is a string that represents a single variable.
+
+You are also given some queries, where queries[j] = [Cj, Dj] represents the jth query where you must find the answer for Cj / Dj = ?.
+
+Return the answers to all queries. If a single answer cannot be determined, return -1.0.
+
+Note: The input is always valid. You may assume that evaluating the queries will not result in division by zero and that there is no contradiction.
+
+Note: The variables that do not occur in the list of equations are undefined, so the answer cannot be determined for them.
+
+ 
+
+Example 1:
+
+Input: equations = [["a","b"],["b","c"]], values = [2.0,3.0], queries = [["a","c"],["b","a"],["a","e"],["a","a"],["x","x"]]
+Output: [6.00000,0.50000,-1.00000,1.00000,-1.00000]
+Explanation: 
+Given: a / b = 2.0, b / c = 3.0
+queries are: a / c = ?, b / a = ?, a / e = ?, a / a = ?, x / x = ? 
+return: [6.0, 0.5, -1.0, 1.0, -1.0 ]
+note: x is undefined => -1.0
+Example 2:
+
+Input: equations = [["a","b"],["b","c"],["bc","cd"]], values = [1.5,2.5,5.0], queries = [["a","c"],["c","b"],["bc","cd"],["cd","bc"]]
+Output: [3.75000,0.40000,5.00000,0.20000]
+Example 3:
+
+Input: equations = [["a","b"]], values = [0.5], queries = [["a","b"],["b","a"],["a","c"],["x","y"]]
+Output: [0.50000,2.00000,-1.00000,-1.00000]
+ 
+
+Constraints:
+
+1 <= equations.length <= 20
+equations[i].length == 2
+1 <= Ai.length, Bi.length <= 5
+values.length == equations.length
+0.0 < values[i] <= 20.0
+1 <= queries.length <= 20
+queries[i].length == 2
+1 <= Cj.length, Dj.length <= 5
+Ai, Bi, Cj, Dj consist of lower case English letters and digits.
+
+**Link**: [text](https://leetcode.com/problems/evaluate-division/)
+
+%
+
+**Pattern:** DFS, BFS, Graph Traversal, Weighted Graph
+
+**Approach:** Use depth-first search (DFS) or breadth-first search (BFS) to traverse the graph and evaluate the division queries. Start by building a weighted directed graph where each variable is a node, and the edges represent the division relationships with their corresponding values. For each query, perform a DFS or BFS from the numerator variable to the denominator variable, multiplying the edge weights along the path. If a path exists, return the product of the weights; if no path exists, return -1.0.
+
+**Key Insight:** The key insight is that the division relationships can be represented as a graph, where each variable is a node and the division values are the weights of the edges. By traversing the graph, you can find the relationship between any two variables by multiplying the weights along the path connecting them. If no path exists, it indicates that the relationship cannot be determined.
+
+**Gotchas:** Be careful with the representation of the graph and the traversal logic. Ensure that you correctly handle cases where variables are not present in the graph or when there is no path between the queried variables. Additionally, be cautious with floating-point precision when multiplying weights. The confusinng part is that the graph is actually 2 way, because when you multiply by something, the division is essentially multiplying by the reciprocal. So if you have a / b = 2, then b / a = 1/2. You need to add both edges to the graph. In addition, we need to track visited nodes, as we want to avoid cycles and infinite loops. If we have a / b = 2, b / c = 3, and c / a = 0.5, then we can go from a to b to c to a, which is a cycle. We need to track visited nodes to avoid this.
+
+**Complexity:** Time: O(Q * (V + E)) where Q is the number of queries, V is the number of nodes (variables), and E is the number of edges (division relationships). Each query may require a traversal of the graph. | Space: O(V + E) for storing the graph and the visited nodes during traversal.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Course Schedule — LC #207 | Validate dependency orderings → unweighted directed graph cycle detection rather than path cost multiplicative product computation | Partial — same graph lookup scaffolding |
+| Network Delay Time — LC #743 | Find the minimum time for a signal to reach all nodes → additive edge weights using Dijkstra's algorithm rather than multiplicative equation steps | Partial — directed path finding with math |
+| Is Graph Bipartite? — LC #785 | Divide nodes into two independent sets → standard graph coloring verification rather than numerical ratio propagation | Partial — same node state tracking logic |
+| Currency Exchange (Typical Interview) | Find the best exchange rate between two currencies with fees → identical multiplicative edge graph mapping requiring a max-product path traversal | Yes — direct production equivalent |
+
+**How this pattern scales:**
+- **Equations as a Directed Weighted Graph** is the absolute core rule — a mathematical division relationship like $a / b = 2.0$ can be modeled as a directed edge from node `a` to node `b` with a weight of `2.0`. Simultaneously, you must store the reciprocal relationship: a directed edge from `b` to `a` with a weight of $1 / 2.0 = 0.5$. Tracking variables as nodes and ratios as weights transforms an algebraic problem into a graph traversal task.
+- **Path Product Accumulation** — To evaluate an unprovided division query like $a / c$, you trace a path from node `a` to node `c` through intermediate nodes (e.g., $a \to b \to c$). The final answer is the cumulative **product** of the edge weights along that path: $(a / b) \cdot (b / c) = a / c$. You can resolve each individual query using a standard DFS or BFS traversal.
+- **The String-to-Index Map Prerequisite** — Because variables are provided as strings (e.g., `"a"`, `"b"`), you cannot map them directly to simple array indices. The scaling trick is to use an adjacency list backed by hash maps: `unordered_map<string, vector<pair<string, double>>> adj`.
+- **Handling Invalid/Missing Variable Boundaries** — There are two distinct failure conditions that must immediately return `-1.0` during the query phase:
+  1. *Missing Nodes:* If either variable in the query does not exist anywhere in your graph registry, fail immediately.
+  2. *Disjoint Components:* If both nodes exist but a path between them cannot be established (they belong to isolated variable clusters), the traversal will complete without hitting the target, returning `-1.0`.
+- **Alternative Scaling via Union-Find or Floyd-Warshall** — While a query-by-query DFS/BFS runs in $O(Q \cdot (V + E))$ time, this pattern scales across alternative implementations based on requirements:
+  * *Floyd-Warshall:* Precomputes paths between all pairs up front in $O(V^3)$, optimizing queries to a lightning-fast $O(1)$. Highly efficient if the query count $Q$ is massive.
+  * *Union-Find with Weights:* Dynamically computes node ratios relative to their parent tracking components during path compression.
+- **Multiplicative ratio propagation networks generalize** → This template is the industry blueprint for currency conversion trading systems, physical unit conversion tools (e.g., converting meters to inches through centimeters), asset portfolio valuation models, and nested manufacturing material multiplier breakdowns. Master the cycle of: 1) Build a bidirectional map-backed adjacency list with reciprocal weights, 2) Validate node existence upon query entry, 3) Track visited nodes inside a local hash set per query to avoid infinite feedback loops, 4) Accumulate products across neighbor paths, 5) Return product results or default to standard fallback metrics on disconnected routes.
+
+```cpp
+class Solution {
+public:
+    vector<double> calcEquation(vector<vector<string>>& equations, vector<double>& values, vector<vector<string>>& queries) {
+        unordered_map<string, vector<pair<string, double>>> graph; //this will store the graph of equations, 
+        //where the key is the variable, and the value is a vector of pairs, where each pair is a variable and the value of the equation
+        for(int i = 0; i < equations.size(); i++){
+            string u = equations[i][0];
+            string v = equations[i][1];
+            double val = values[i];
+            graph[u].push_back({v, val});
+            graph[v].push_back({u, 1.0/val}); //this is the inverse of the equation, because if u / v = val, then v / u = 1/val
+        }
+
+        vector<double> res;
+        for(auto query : queries){
+        queue<pair<string, double>> q;
+        unordered_set<string> visited;
+            string start = query[0];
+            string end = query[1];
+            if(graph.find(start) == graph.end() || graph.find(end) == graph.end()){  //if either the start or end variable is not in the graph, then we cannot evaluate the equation, so we return -1.0
+                res.push_back(-1.0);
+                continue;
+            }
+            if(start == end){  //if the start and end variable are the same, then we can evaluate the equation, so we return 1.0
+                res.push_back(1.0);
+                continue;
+            }
+
+            q.push({start, 1.0}); //this is the starting point of the BFS, where we start with the start variable and a value of 1.0, because we are evaluating the equation start / start = 1.0
+            visited.insert(start);
+            bool found = false;
+            while(!q.empty()){
+                auto top = q.front();
+                q.pop();
+
+                if(top.first == end){
+                    res.push_back(top.second);
+                    found = true;
+                    break;
+                }
+
+                for(auto num : graph[top.first]){
+                    string newNode = num.first;
+                    double nextWeight = num.second;
+
+                    if(visited.find(newNode) == visited.end()){
+                        visited.insert(newNode);
+                        q.push({newNode, top.second * nextWeight});
+                    }
+                }
+            }
+
+            if(!found){
+                res.push_back(-1.0);
+            }
+
+        }
+
+        return res;
+    }
+};
+```
+
+## Pacific Atlantic Water Flow LC 417
+
+<!-- notecardId: 1784566474718 -->
+
+There is an m x n rectangular island that borders both the Pacific Ocean and Atlantic Ocean. The Pacific Ocean touches the island's left and top edges, and the Atlantic Ocean touches the island's right and bottom edges.
+
+The island is partitioned into a grid of square cells. You are given an m x n integer matrix heights where heights[r][c] represents the height above sea level of the cell at coordinate (r, c).
+
+The island receives a lot of rain, and the rain water can flow to neighboring cells directly north, south, east, and west if the neighboring cell's height is less than or equal to the current cell's height. Water can flow from any cell adjacent to an ocean into the ocean.
+
+Return a 2D list of grid coordinates result where result[i] = [ri, ci] denotes that rain water can flow from cell (ri, ci) to both the Pacific and Atlantic oceans.
+
+ 
+
+Example 1:
+
+
+Input: heights = [[1,2,2,3,5],[3,2,3,4,4],[2,4,5,3,1],[6,7,1,4,5],[5,1,1,2,4]]
+Output: [[0,4],[1,3],[1,4],[2,2],[3,0],[3,1],[4,0]]
+Explanation: The following cells can flow to the Pacific and Atlantic oceans, as shown below:
+[0,4]: [0,4] -> Pacific Ocean 
+       [0,4] -> Atlantic Ocean
+[1,3]: [1,3] -> [0,3] -> Pacific Ocean 
+       [1,3] -> [1,4] -> Atlantic Ocean
+[1,4]: [1,4] -> [1,3] -> [0,3] -> Pacific Ocean 
+       [1,4] -> Atlantic Ocean
+[2,2]: [2,2] -> [1,2] -> [0,2] -> Pacific Ocean 
+       [2,2] -> [2,3] -> [2,4] -> Atlantic Ocean
+[3,0]: [3,0] -> Pacific Ocean 
+       [3,0] -> [4,0] -> Atlantic Ocean
+[3,1]: [3,1] -> [3,0] -> Pacific Ocean 
+       [3,1] -> [4,1] -> Atlantic Ocean
+[4,0]: [4,0] -> Pacific Ocean 
+       [4,0] -> Atlantic Ocean
+Note that there are other possible paths for these cells to flow to the Pacific and Atlantic oceans.
+Example 2:
+
+Input: heights = [[1]]
+Output: [[0,0]]
+Explanation: The water can flow from the only cell to the Pacific and Atlantic oceans.
+ 
+
+Constraints:
+
+m == heights.length
+n == heights[r].length
+1 <= m, n <= 200
+0 <= heights[r][c] <= 105
+
+**Link**: [text](https://leetcode.com/problems/pacific-atlantic-water-flow/)
+
+%
+
+**Pattern:** DFS, BFS, Graph Traversal, Matrix Traversal
+
+**Approach:** Use depth-first search (DFS) or breadth-first search (BFS) to traverse the matrix and determine which cells can flow to both the Pacific and Atlantic oceans. Start by initializing two boolean matrices, one for each ocean, to track which cells can reach each ocean. Perform a DFS or BFS from all cells adjacent to the Pacific Ocean (top row and left column) and mark reachable cells in the Pacific matrix. Repeat the process for the Atlantic Ocean (bottom row and right column) and mark reachable cells in the Atlantic matrix. Finally, iterate through the entire matrix and collect the coordinates of cells that are marked as reachable in both matrices. Push corner edges first and then do BFS is the key strategy here.
+
+**Key Insight:** The key insight is that water can flow from a cell to an ocean if it can reach the ocean through neighboring cells with equal or lower heights. By performing separate traversals for each ocean and marking reachable cells, you can efficiently determine which cells can flow to both oceans by checking the intersection of the two boolean matrices.
+
+**Gotchas:** Be careful with the traversal logic and ensure that you correctly handle the boundaries of the matrix. Make sure to only traverse to neighboring cells that have equal or lower heights than the current cell. Additionally, be cautious with the order of traversal and ensure that you start from the correct edges for each ocean.
+
+**Complexity:** Time: O(m * n) where m is the number of rows and n is the number of columns in the matrix, as each cell is processed once during the traversals. | Space: O(m * n) for storing the boolean matrices for each ocean and the recursion stack or queue used during traversal.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Surrounded Regions — LC #130 | Mark cells that can escape to the edge → single-source boundary traversal that uses a flat placeholder mask instead of analyzing overlapping intersection arrays | Yes — direct structural twin |
+| Number of Enclaves — LC #1020 | Count un-escapable land mass chunks → boundary-inward flood fill to mark safe path zones, then count remaining unvisited inner cells | Yes — direct structural twin |
+| Longest Increasing Path in a Matrix — LC #329 | Find the longest path moving strictly uphill → requires combining standard grid traversals with dynamic programming memoization or topological sorting | Partial — same height-conditional grid step logic |
+| Number of Islands — LC #200 | Count disconnected land clusters → global matrix sweep that sinks land pieces down line-by-line rather than tracing inwards from the outer edge lines | Partial — same matrix traversal foundation |
+
+**How this pattern scales:**
+- **Inverted Boundary-Inward Flooding (Uphill Flow)** is the absolute core rule — trying to simulate downstream flow by running an individual traversal from every single internal grid cell takes an incredibly inefficient $O((M \cdot N)^2)$ time, which immediately results in a TLE (Time Limit Exceeded). The scaling trick is to *reverse the flow logic*. Instead of checking if water can flow down from the mountains to the oceans, check if water can flow **up** from the oceans into the mountains.
+- **Dual Independent Traversal Registries** — Allocate two independent 2D boolean tracking sets: `pacific_visited` and `atlantic_visited`. You launch independent traversals (DFS or BFS) strictly from the ocean boundary lines:
+  1. *Pacific Ocean:* Run traversals starting from all cells along the top row and left column.
+  2. *Atlantic Ocean:* Run traversals starting from all cells along the bottom row and right column.
+- **Strict Inverted Height Validation Step** — Because you are navigating backward from the oceans up into the terrain continent, your neighbor validation logic must change direction. You can only step from a current coordinate `(r, c)` onto a neighbor cell `(next_r, next_c)` if the neighbor's height is **greater than or equal to** the current cell's height:
+  `if (heights[next_r][next_c] < heights[r][c]) continue;`
+- **Matrix Intersection Resolution** — Once both the Pacific and Atlantic flood boundaries have finished expanding as far uphill as mathematically possible, scan through the entire matrix exactly once using a nested double loop. Any coordinate where `pacific_visited[r][c] && atlantic_visited[r][c]` is true is capable of draining to both oceans and is appended directly to your final output collection.
+- **LC #130 connection** → Surrounded Regions uses this exact same boundary-inward optimization rule. The key evolution here is that while LC #130 tracks a single unified boundary property (can it touch *any* edge?), LC #417 splits the boundary into two distinct logical zones and searches specifically for the geometric intersection where those two separate flood zones overlap.
+- **Multi-shoreline reachability problems generalize** → This template is the industry standard for evaluating geographic water drainage basin maps, tracking cell-tower signal overlap zones across irregular topographies, determining optimal commercial logistics center layouts relative to dual shipping hubs, and oil/gas pressure field pipeline simulations. Master the cycle of: 1) Allocate separate boolean tracking grids for each distinct destination boundary, 2) Seed your traversals exclusively from their matching edge perimeters, 3) Advance through nodes using an inverted constraint tracking state (uphill vs. downhill), 4) Re-scan the full coordinate layout space post-traversal, 5) Intersect matching boolean states to filter out the final target positions.
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> pacificAtlantic(vector<vector<int>>& heights) {
+        queue<pair<int, int>> atlanticQueue; //need two queues, will be BFS'ing from left top corner and bottom right corner and the edges, REMEMBER THE EDGES
+        queue<pair<int, int>> pacificQueue;
+        vector<vector<int>> res; //store the positions where water can flow to either atlantic or pacific
+        vector<vector<bool>> pacificVisited(heights.size(), vector<bool>(heights[0].size(), false)); //these are all values that can flow to the pacific
+        vector<vector<bool>> atlanticVisited(heights.size(), vector<bool>(heights[0].size(), false)); //these are all values that can flow to the atlantic
+        int dRow[4] = {-1, 1, 0, 0};
+        int dCol[4] = {0, 0, -1, 1};
+
+        //do 4 loops here, have to push the corner edges into the queues and mark them as visited, we will be starting our BFS from here
+        for(int i = 0; i < heights.size(); i++){
+            pacificQueue.push({i, 0});
+            pacificVisited[i][0] = true;
+        }
+        for(int i = 0; i < heights[0].size(); i++){
+            pacificQueue.push({0, i});
+            pacificVisited[0][i] = true;
+        }
+        for(int i = 0; i < heights.size(); i++){
+            atlanticQueue.push({i, heights[0].size() - 1});
+            atlanticVisited[i][heights[0].size() - 1] = true;
+        }
+        for(int i = 0; i < heights[0].size(); i++){
+            atlanticQueue.push({heights.size() - 1, i});
+            atlanticVisited[heights.size() - 1][i] = true;
+        }
+
+        //start with pacific, pop, do bfs, push to queue and visit if the surrounding vals are greater(flow from high to low),
+        //we havent visited yet, and we are in bounds
+        while(!pacificQueue.empty()){
+            auto curr = pacificQueue.front();
+            pacificQueue.pop();
+            for(int idx = 0; idx < 4; idx++){
+                int currRow = curr.first + dRow[idx];
+                int currCol = curr.second + dCol[idx];
+
+
+                if(currRow >= 0 && currRow < heights.size() && currCol >= 0 && currCol < heights[0].size() &&
+                heights[currRow][currCol] >= heights[curr.first][curr.second] && !pacificVisited[currRow][currCol]){
+                    pacificQueue.push({currRow, currCol});
+                    pacificVisited[currRow][currCol] = true;
+                }
+            }
+        }
+
+        //do the same for atlantic, pop, do bfs, push to queue and visit if the surrounding vals are greater(flow from high to low),
+        //we havent visited yet, and we are in bounds
+        while(!atlanticQueue.empty()){
+            auto curr = atlanticQueue.front();
+            atlanticQueue.pop();
+            for(int idx = 0; idx < 4; idx++){
+                int currRow = curr.first + dRow[idx];
+                int currCol = curr.second + dCol[idx];
+
+
+                if(currRow >= 0 && currRow < heights.size() && currCol >= 0 && currCol < heights[0].size() &&
+                heights[currRow][currCol] >= heights[curr.first][curr.second] && !atlanticVisited[currRow][currCol]){
+                    atlanticQueue.push({currRow, currCol});
+                    atlanticVisited[currRow][currCol] = true;
+                }
+            }
+        }
+
+        //in this question, push to result if we visited in both pacific and atlantic, this means that the water can flow to either, we determined this from our BFS operations
+        for(int i = 0; i < heights.size(); i++){
+            for(int j = 0; j < heights[0].size(); j++){
+                if(pacificVisited[i][j] && atlanticVisited[i][j]) res.push_back({i,j});
+            }
+        }
+        return res;
+    }
+};
+```
+
+## Island Perimeter LC 463
+
+<!-- notecardId: 1784566884328 -->
+
+You are given row x col grid representing a map where grid[i][j] = 1 represents land and grid[i][j] = 0 represents water.
+
+Grid cells are connected horizontally/vertically (not diagonally). The grid is completely surrounded by water, and there is exactly one island (i.e., one or more connected land cells).
+
+The island doesn't have "lakes", meaning the water inside isn't connected to the water around the island. One cell is a square with side length 1. The grid is rectangular, width and height don't exceed 100. Determine the perimeter of the island.
+
+ 
+
+Example 1:
+
+
+Input: grid = [[0,1,0,0],[1,1,1,0],[0,1,0,0],[1,1,0,0]]
+Output: 16
+Explanation: The perimeter is the 16 yellow stripes in the image above.
+Example 2:
+
+Input: grid = [[1]]
+Output: 4
+Example 3:
+
+Input: grid = [[1,0]]
+Output: 4
+ 
+
+Constraints:
+
+row == grid.length
+col == grid[i].length
+1 <= row, col <= 100
+grid[i][j] is 0 or 1.
+There is exactly one island in grid.
+
+**Link**: [text](https://leetcode.com/problems/island-perimeter/)
+
+%
+
+**Pattern:** DFS, BFS, Graph Traversal, Matrix Traversal
+
+**Approach:** Use depth-first search (DFS) or breadth-first search (BFS) to traverse the grid and calculate the perimeter of the island. Start by iterating through the grid to find a land cell (1). Once a land cell is found, initiate a DFS or BFS from that cell. For each land cell visited, check its four neighboring cells (up, down, left, right). If a neighboring cell is water (0) or out of bounds, increment the perimeter count. Continue the traversal until all connected land cells are visited. The final perimeter count will represent the total perimeter of the island.
+
+**Key Insight:** The key insight is that the perimeter of the island can be calculated by counting the number of edges that are adjacent to water or the boundary of the grid. Each land cell contributes to the perimeter based on its neighboring cells. By traversing the island and checking each land cell's neighbors, you can accurately compute the total perimeter.
+
+**Gotchas:** Be careful with the traversal logic and ensure that you correctly handle the boundaries of the grid. Make sure to only increment the perimeter count when a neighboring cell is water or out of bounds. Additionally, be cautious with the order of traversal and ensure that you start from a valid land cell.
+
+**Complexity:** Time: O(m * n) where m is the number of rows and n is the number of columns in the grid, as each cell is processed once during the traversal. | Space: O(m * n) for storing the visited cells during traversal, or O(1) if using an iterative approach without additional storage.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Number of Islands — LC #200 | Count completely isolated land masses → full graph traversal required to explore and sink components instead of executing a flat mathematical cell lookup | Partial — same grid matrix layout |
+| Max Area of Island — LC #695 | Measure the size of internal contiguous land regions → accumulate a volume counter via recursive or iterative search instead of counting exposed boundary edges | Partial — same grid matrix layout |
+| Flood Fill — LC #733 | Recolor a single connected region from an origin point → localized traversal modifying state cell-by-cell without measuring external border footprints | No — localized fill traversal |
+| Surface Area of 3D Shapes — LC #892 | Calculate total external grid area including height columns → 3D cell math where vertical stack overlaps must be subtracted alongside adjacent grid boundaries | Yes — direct geometric expansion |
+
+**How this pattern scales:**
+- **The Linear Scan with Overlap Subtraction is the absolute gold standard** — While you *can* solve this problem using standard graph traversals (DFS/BFS) by sinking the island and counting the times a path runs out of bounds or hits water, graph traversals introduce unneeded memory overhead ($O(M \cdot N)$ stack space). The scaling trick is to treat the problem as a purely deterministic **iterative counting math** puzzle that scales in $O(1)$ auxiliary space.
+- **The Core Geometric Deduction Formula** — Every isolated land square (`1`) natively contributes exactly **4 edges** to the total perimeter. However, whenever two land squares share an edge, that shared edge is no longer exposed to water or the grid boundary. It vanishes from the outer perimeter for *both* blocks. Thus, your global formula becomes:
+  $$\text{Total Perimeter} = (\text{Total Islands} \times 4) - (\text{Total Neighboring Pairs} \times 2)$$
+- **Forward-Looking Adjacency Optimization** — To avoid counting the exact same shared connection twice (which would break your subtraction math), you only check in two directions instead of four. As you scan left-to-right, top-to-bottom through a nested loop, you look exclusively **down** and **right**. If your current cell is land, look right; if the right cell is also land, increment your `neighbors` counter by 1. Do the same looking down.
+- **The Graph Traversal Alternative Boundary Condition** — If an interviewer forces you to write a DFS/BFS solution anyway, the traversal logic changes into an edge detector. If a recursive call steps **out of bounds** OR steps onto a **water cell** (`grid[r][c] == 0`), that exact transition path represents a valid exposed outer boundary edge, so you return `1`. If it steps onto an already visited land cell, you return `0`.
+- **LC #200 connection** → While Number of Islands uses a 2D matrix structure to track graph components where adjacent nodes are linked together dynamically, LC #463 demonstrates that not all grid problems require deep path traversals. Knowing when to bypass a heavy search stack in favor of an iterative grid sweep separates junior coders from experts.
+- **Edge boundary exposure metrics generalize** → This template is the industry baseline blueprint for rendering calculations such as calculating material surface areas in 3D CAD modeling software, calculating the exposed wall requirements for architectural heat-loss maps, and identifying perimeter security boundaries in automated image mapping masks. Master the cycle of: 1) Initialize global island and neighbor tracking variables, 2) Run a clean row-by-column nested sweep, 3) Catch matching active elements to increment base properties, 4) Execute directional look-aheads to evaluate joint intersection paths, 5) Compute the finalized balance with localized subtraction multipliers.
+
+```cpp
+class Solution {
+private:
+    int perimeter = 0;
+
+    void perimeterCheck(vector<vector<int>>& grid, int i, int j){
+        if(i < 0 || i >= grid.size() || j < 0 || j >= grid[0].size()){
+            perimeter++;
+            return;
+        } 
+        if(grid[i][j] == 0){
+            perimeter++;
+        }
+    }
+public:
+    int islandPerimeter(vector<vector<int>>& grid) {
+        for(int i = 0; i < grid.size(); i++){
+            for(int j = 0; j < grid[0].size(); j++){
+                if(grid[i][j] == 1){
+                    perimeterCheck(grid, i+1, j);
+                    perimeterCheck(grid, i-1, j);
+                    perimeterCheck(grid, i, j+1);
+                    perimeterCheck(grid, i, j - 1);
+                }
+            }
+        }
+        return perimeter;
+    }
+};
+```
+
+## Redundant Connection LC 684
+
+<!-- notecardId: 1784568551321 -->
+
+In this problem, a tree is an undirected graph that is connected and has no cycles.
+
+You are given a graph that started as a tree with n nodes labeled from 1 to n, with one additional edge added. The added edge has two different vertices chosen from 1 to n, and was not an edge that already existed. The graph is represented as an array edges of length n where edges[i] = [ai, bi] indicates that there is an edge between nodes ai and bi in the graph.
+
+Return an edge that can be removed so that the resulting graph is a tree of n nodes. If there are multiple answers, return the answer that occurs last in the input.
+
+ 
+
+Example 1:
+
+
+Input: edges = [[1,2],[1,3],[2,3]]
+Output: [2,3]
+Example 2:
+
+
+Input: edges = [[1,2],[2,3],[3,4],[1,4],[1,5]]
+Output: [1,4]
+ 
+
+Constraints:
+
+n == edges.length
+3 <= n <= 1000
+edges[i].length == 2
+1 <= ai < bi <= edges.length
+ai != bi
+There are no repeated edges.
+The given graph is connected.
+
+**Link**: [text](https://leetcode.com/problems/redundant-connection/)
+
+%
+
+**Pattern:** Union-Find, Disjoint Set Union (DSU), Graph Cycle Detection
+
+**Approach:** Use the Union-Find (Disjoint Set Union) data structure to detect cycles in the graph. Initialize a Union-Find structure with n nodes. Iterate through each edge in the input list. For each edge, check if the two nodes are already connected (i.e., they have the same root in the Union-Find structure). If they are connected, it means adding this edge would create a cycle, so return this edge as the redundant connection. If they are not connected, unite them in the Union-Find structure. Continue this process until all edges have been processed.
+
+**Key Insight:** The key insight is that in a tree, there are no cycles, and adding an edge between two already connected nodes will create a cycle. By using the Union-Find structure, you can efficiently check if two nodes are connected and manage the connected components of the graph.
+
+**Gotchas:** Be careful with the implementation of the Union-Find structure, especially with path compression and union by rank optimizations. Ensure that you correctly handle the case where multiple edges could be redundant, and return the last one in the input list.
+
+**Complexity:** Time: O(n * α(n)) where n is the number of edges and α is the inverse Ackermann function, which is very slow-growing and can be considered nearly constant for practical input sizes. | Space: O(n) for storing the parent and rank arrays in the Union-Find structure.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Redundant Connection II — LC #685 | Find a cycle-causing edge in a *directed* graph → significantly more complex; requires tracking two alternative edge parents and separating root invalidations from classic cycles | Yes — advanced structural twin |
+| Number of Connected Components — LC #323 | Count total individual graph clusters → uses the identical Union-Find baseline, decrementing a component count instead of tracking and returning a specific invalid edge | Yes — direct structural twin |
+| Graph Valid Tree — LC #261 | Check if a graph forms a valid tree structure → applies the exact same loop-detection union engine, but immediately fails if a single cycle is triggered or final components $\neq 1$ | Yes — direct structural twin |
+| Accounts Merge — LC #721 | Group overlapping email datasets under unique names → strings must be mapped to unique index IDs before applying classic path-compressed Union-Find groupings | Yes — application variant |
+
+**How this pattern scales:**
+- **Cycle Detection via Union-Find (Disjoint Set Union)** is the absolute core rule — when an undirected graph starts with individual components and receives extra edges incrementally, Union-Find is the optimal tool. Instead of converting edges into an adjacency list and running a slow $O(V \cdot (V + E))$ DFS search loop to find cycles, Union-Find dynamically tracks subset roots in near $O(1)$ time per lookup.
+- **The Union-Failure Cycle Flag** — You initialize $N$ distinct components, where each node points to itself as its own parent (`parent[i] = i`). You then sweep linearly through the provided `edges` list. For each edge connection `(u, v)`, you extract their structural roots using `find(u)` and `find(v)`. If their roots are **already identical**, it mathematically proves that $u$ and $v$ are already connected via an alternative path. The current edge is redundant and creates a cycle, so you immediately return it.
+- **Path Compression Optimization ($O(\alpha(N))$)** — To maintain an incredibly fast, near-linear operational runtime across a dense graph layout, implement recursive path compression inside your `find(i)` method:
+  `parent[i] = find(parent[i])`
+  This flattens the tree depth structure instantly by pointing every single explored node directly to its ultimate parent root, preventing performance degradation into linear chains.
+- **LC #261 connection** → Graph Valid Tree relies on this exact same structural foundation. The key progression here is that while LC #261 fails immediately on *any* edge anomaly and requires tracking a global component counter, LC #684 assumes a single extra edge was appended to a valid tree skeleton, relying on a linear stream processing sweep to capture and return the precise culprit edge.
+- **Dynamic connectivity validation and edge reductions generalize** → This template is the industry baseline blueprint for network spanning tree loop-prevention protocols (like STP in ethernet routing tables), garbage collection reference ring detection engines, cluster tracking protocols in mesh networks, and dead-end validation systems. Master the cycle of: 1) Initialize a flat component tracker assigning nodes to themselves, 2) Stream process incoming edge arrays sequentially, 3) Track root origins using compressed path routing lookups, 4) Detect if unified roots intersect prior to executing a new merge, 5) Return the exact matching stream elements that trigger structural collisions.
+
+```cpp
+class UnionFind{
+    private:
+        vector<int> parent;
+        vector<int> rank;
+
+    public:
+        UnionFind(int n){
+            parent.resize(n);
+            rank.resize(n, 0);
+            iota(parent.begin(), parent.end(), 0);
+        }
+
+        int find(int i){
+            if(parent[i] == i) return i;
+            return parent[i] = find(parent[i]);
+        }
+
+        bool unite(int i, int j){
+            int rootI = find(i);
+            int rootJ = find(j);
+
+            if(rootI == rootJ) return false;//alr same component
+
+            if(rank[rootI] < rank[rootJ]){
+                parent[rootI] = rootJ;
+            }
+            else if(rank[rootJ] < rank[rootI]){
+                parent[rootJ] = rootI;
+            }
+            else{
+                parent[rootJ] = rootI;
+                rank[rootI]++;
+            }
+            return true;
+        }
+};
+class Solution {
+public:
+    vector<int> findRedundantConnection(vector<vector<int>>& edges) {
+        UnionFind dsu(edges.size() + 1);
+        vector<int> res;
+        for(auto edge : edges){
+            int u = edge[0];
+            int v = edge[1];
+            if(!dsu.unite(u,v)){
+                return edge;
+            }
+        }
+        return res;
+    }
+};
+```
+
+## Max Area of Island LC 695
+
+<!-- notecardId: 1784569123201 -->
+
+You are given an m x n binary matrix grid. An island is a group of 1's (representing land) connected 4-directionally (horizontal or vertical.) You may assume all four edges of the grid are surrounded by water.
+
+The area of an island is the number of cells with a value 1 in the island.
+
+Return the maximum area of an island in grid. If there is no island, return 0.
+
+ 
+
+Example 1:
+
+
+Input: grid = [[0,0,1,0,0,0,0,1,0,0,0,0,0],[0,0,0,0,0,0,0,1,1,1,0,0,0],[0,1,1,0,1,0,0,0,0,0,0,0,0],[0,1,0,0,1,1,0,0,1,0,1,0,0],[0,1,0,0,1,1,0,0,1,1,1,0,0],[0,0,0,0,0,0,0,0,0,0,1,0,0],[0,0,0,0,0,0,0,1,1,1,0,0,0],[0,0,0,0,0,0,0,1,1,0,0,0,0]]
+Output: 6
+Explanation: The answer is not 11, because the island must be connected 4-directionally.
+Example 2:
+
+Input: grid = [[0,0,0,0,0,0,0,0]]
+Output: 0
+ 
+
+Constraints:
+
+m == grid.length
+n == grid[i].length
+1 <= m, n <= 50
+grid[i][j] is either 0 or 1.
+
+**Link**: [text](https://leetcode.com/problems/max-area-of-island/)
+
+%
+
+**Pattern:** DFS, BFS, Graph Traversal, Matrix Traversal
+
+**Approach:** Use depth-first search (DFS) or breadth-first search (BFS) to traverse the grid and calculate the area of each island. Start by iterating through the grid to find a land cell (1). Once a land cell is found, initiate a DFS or BFS from that cell. For each land cell visited, mark it as visited (e.g., change its value to 0) and increment an area counter. Continue the traversal until all connected land cells are visited. Keep track of the maximum area encountered during the process. The final result will be the maximum area of any island found in the grid.
+
+**Key Insight:** The key insight is that the area of an island can be calculated by counting the number of connected land cells. By traversing the island and marking visited cells, you can accurately compute the area without double-counting any cells.
+
+**Gotchas:** Be careful with the traversal logic and ensure that you correctly handle the boundaries of the grid. Make sure to only traverse to neighboring cells that are land (1) and have not been visited yet. Additionally, be cautious with the order of traversal and ensure that you start from a valid land cell.
+
+**Complexity:** Time: O(m * n) where m is the number of rows and n is the number of columns in the grid, as each cell is processed once during the traversal. | Space: O(m * n) for storing the visited cells during traversal, or O(1) if using an iterative approach without additional storage.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Number of Islands — LC #200 | Count total distinct island bodies → increments a flat structural cluster counter rather than accumulating and comparing sub-tree cell volumes | Yes — direct structural twin |
+| Surrounded Regions — LC #130 | Capture internal land regions → boundary-inward grid sweeps filter edge-immune spaces instead of evaluating the sizing weight of clusters | Yes — direct variant |
+| Number of Enclaves — LC #1020 | Count total cells unable to escape the grid → strips out boundary land paths first, then returns a simple summation of remaining unvisited cells | Yes — direct variant |
+| Flood Fill — LC #733 | Re-color a target connected component from a single pixel source → localized search modifying coordinate color values without tracking global dimensions | Partial — same flood-fill engine |
+
+**How this pattern scales:**
+- **Accumulated Sub-tree Volume Returns** is the absolute core rule — while LC #200 merely uses traversals to clear out nodes (`void`), LC #695 converts the traversal function into a value-returning engine (`int`). When a new land node is triggered, it recursively pools the sizing metrics of its 4-directional neighbors, returning a combined score:
+  $$\text{Area} = 1 + \text{up} + \text{down} + \text{left} + \text{right}$$
+- **In-Place Mutation As Visited Tracking** — To achieve $O(1)$ auxiliary space outside the execution stack frame, mutate the original array state. Flip `grid[r][c] = 0` (or a placeholder symbol like `'#'`) the exact moment you step onto a coordinate. This immediate alteration guarantees that neither parallel recursive calls nor subsequent loop scans will ever re-process this cell, safely preventing cyclic stack loops.
+- **Global Running Maximum Optimization** — The primary loop sweeps systematically through every row and column combination. Each time it hits an active land cell (`grid[r][c] == 1`), it initiates a fresh graph traversal. The resulting cluster area is immediately compared against a global max variable (`max_area = max(max_area, current_island_area)`).
+- **BFS Alternative Layer Accumulation** — If an explicit BFS is preferred over DFS recursion to avoid system stack overhead, the area accumulation shifts from recursive return chains to localized tracking. Maintain a running local counter initialized to `0`. Every time a valid coordinate is successfully popped from the queue, increment the counter by `1` while adding its unvisited neighbors to the processing pipeline.
+- **LC #200 connection** → The structural grid parsing architecture, boundary defensive checks, and directional coordinate arrays match perfectly. The core evolutionary step is shifting your design paradigm from a *qualitative* presence check (does this island exist?) to a *quantitative* sizing calculation (how large is this specific island?).
+- **Connected component sizing metrics generalize** → This template is the industry baseline blueprint for medical image analysis calculating tumor volume sizes from pixel grids, geographical satellite terrain mapping clusters, digital paint-bucket volume constraints, and computer vision hotspot segmentation systems. Master the cycle of: 1) Run an exhaustive row-by-column coordinate sweep, 2) Filter for targets matching unvisited entry states, 3) Execute recursive or queue-based lookups that pass volume counts back up the tree, 4) Neutralize active grids instantly to sink visited coordinates, 5) Compare clustered balances against global maximum trackers.
+
+```cpp
+class Solution {
+private:
+int maxIslandSize = 0;
+int currIslandSize(vector<vector<int>>& grid, int i, int j){
+    int sizeCurr = 1; //come back to this, have to count the starting as size 1
+    grid[i][j] = 0; //and now we also have to set it to 0 so we dont double count it/infinite loop
+    int dRow[4] = {-1, 1, 0, 0};
+    int dCol[4] = {0, 0, -1, 1};
+    queue<pair<int, int>> q;
+    q.push({i, j});
+    while(!q.empty()){
+        auto top = q.front();
+        q.pop();
+        for(int idx = 0; idx < 4; idx++){
+            int currRow = top.first + dRow[idx];
+            int currCol = top.second + dCol[idx];
+
+            if(currRow >= 0 && currRow < grid.size() && currCol >= 0 && currCol < grid[0].size() && grid[currRow][currCol] == 1){
+                q.push({currRow, currCol});
+                grid[currRow][currCol] = 0;
+                sizeCurr++;
+            }
+        }
+    }
+    return sizeCurr;
+}
+public:
+    int maxAreaOfIsland(vector<vector<int>>& grid) {
+        for(int i = 0; i < grid.size(); i++){
+            for (int j = 0; j < grid[0].size(); j++){
+                if(grid[i][j] == 1){
+                    maxIslandSize = max(maxIslandSize, currIslandSize(grid, i, j));
+                }
+            }
+        }
+        return maxIslandSize;
+    }
+};
+```
+
+## Accounts Merge LC 721
+
+<!-- notecardId: 1784569282683 -->
+
+Given a list of accounts where each element accounts[i] is a list of strings, where the first element accounts[i][0] is a name, and the rest of the elements are emails representing emails of the account.
+
+Now, we would like to merge these accounts. Two accounts definitely belong to the same person if there is some common email to both accounts. Note that even if two accounts have the same name, they may belong to different people as people could have the same name. A person can have any number of accounts initially, but all of their accounts definitely have the same name.
+
+After merging the accounts, return the accounts in the following format: the first element of each account is the name, and the rest of the elements are emails in sorted order. The accounts themselves can be returned in any order.
+
+ 
+
+Example 1:
+
+Input: accounts = [["John","johnsmith@mail.com","john_newyork@mail.com"],["John","johnsmith@mail.com","john00@mail.com"],["Mary","mary@mail.com"],["John","johnnybravo@mail.com"]]
+Output: [["John","john00@mail.com","john_newyork@mail.com","johnsmith@mail.com"],["Mary","mary@mail.com"],["John","johnnybravo@mail.com"]]
+Explanation:
+The first and second John's are the same person as they have the common email "johnsmith@mail.com".
+The third John and Mary are different people as none of their email addresses are used by other accounts.
+We could return these lists in any order, for example the answer [['Mary', 'mary@mail.com'], ['John', 'johnnybravo@mail.com'], 
+['John', 'john00@mail.com', 'john_newyork@mail.com', 'johnsmith@mail.com']] would still be accepted.
+Example 2:
+
+Input: accounts = [["Gabe","Gabe0@m.co","Gabe3@m.co","Gabe1@m.co"],["Kevin","Kevin3@m.co","Kevin5@m.co","Kevin0@m.co"],["Ethan","Ethan5@m.co","Ethan4@m.co","Ethan0@m.co"],["Hanzo","Hanzo3@m.co","Hanzo1@m.co","Hanzo0@m.co"],["Fern","Fern5@m.co","Fern1@m.co","Fern0@m.co"]]
+Output: [["Ethan","Ethan0@m.co","Ethan4@m.co","Ethan5@m.co"],["Gabe","Gabe0@m.co","Gabe1@m.co","Gabe3@m.co"],["Hanzo","Hanzo0@m.co","Hanzo1@m.co","Hanzo3@m.co"],["Kevin","Kevin0@m.co","Kevin3@m.co","Kevin5@m.co"],["Fern","Fern0@m.co","Fern1@m.co","Fern5@m.co"]]
+ 
+
+Constraints:
+
+1 <= accounts.length <= 1000
+2 <= accounts[i].length <= 10
+1 <= accounts[i][j].length <= 30
+accounts[i][0] consists of English letters.
+accounts[i][j] (for j > 0) is a valid email.
+
+**Link**: [text](https://leetcode.com/problems/accounts-merge/)
+
+%
+
+**Pattern:** Union-Find, Disjoint Set Union (DSU), Graph Cycle Detection, Connected Components
+
+**Approach:** Use the Union-Find (Disjoint Set Union) data structure to group emails that belong to the same person. Create a mapping from each email to its corresponding account index. Iterate through each account and for each email, union it with the first email of that account. After processing all accounts, iterate through the emails again to find the root of each email and group them by their root. Finally, for each group of emails, sort them and prepend the account name before returning the result.
+
+**Key Insight:** The key insight is that emails can be treated as nodes in a graph, and accounts can be treated as edges connecting those nodes. By using Union-Find, you can efficiently group emails that are connected through shared accounts, allowing you to merge accounts that belong to the same person.
+
+**Gotchas:** Be careful with the implementation of the Union-Find structure, especially with path compression and union by rank optimizations. Ensure that you correctly handle the mapping of emails to account indices and that you sort the emails before returning the final result. Additionally, be cautious with duplicate emails and ensure that each email is only processed once.
+
+**Complexity:** Time: O(A * log A) where A is the total number of emails across all accounts, due to sorting the emails in each group. The Union-Find operations are nearly constant time due to path compression and union by rank. | Space: O(A) for storing the parent and rank arrays in the Union-Find structure, as well as the mapping of emails to account indices.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Number of Connected Components — LC #323 | Count isolated node groupings → operates directly on numeric primitive pairs without needing to parse and bind string properties | Yes — foundational base |
+| Redundant Connection — LC #684 | Intercept cycle-causing linkages → processes numeric arrays linearly to flag redundant connections instead of cataloging group contents | Yes — direct structural twin |
+| Group Anagrams — LC #49 | Group string keys into matching subsets → solved entirely via sorting or character-frequency hashing; lacks complex relational node chaining | No — flat hash matching |
+| Graph Valid Tree — LC #261 | Validate mathematical tree integrity → assesses cyclic behavior and uniform component counts instead of grouping distributed text sets | Partial — same Union-Find engine |
+
+**How this pattern scales:**
+- **String Mapping to Integer Identifiers** is the absolute core prerequisite trick — classic Union-Find tracking operates strictly on array indices or numeric primitives. Because you are handling arbitrary string properties (emails), you must create a uniform coordinate numbering scheme. Map each unique email to a unique integer ID (`0` to $K-1$) dynamically, while simultaneously maintaining a secondary map linking every email back to its structural account owner name.
+- **Bi-Directional Relational Interconnection** — The emails within a single account index are implicitly linked. To union them, pick the first email of the current list as the "anchor node," then iteratively call `union(first_email_id, current_email_id)` for every subsequent email in that specific row. If any email has already been mapped to an alternative account row earlier in the processing loop, the Union-Find engine will instantly merge the entire historic subset together under a shared component parent root.
+- **Component Component Bucket Consolidation** — After running all merges, you cannot simply output the tracking arrays. You must gather the components into their final groupings:
+  1. Scan through every unique email in your mapping registry.
+  2. Call `find(email_id)` to isolate its ultimate root ID.
+  3. Append the raw email string into a map bucket keyed by that specific root ID: `unordered_map<int, vector<string>> components`.
+- **Lexicographical Output Resolution Requirements** — The final problem boundary states that the output lists must be sorted. Iterate through your consolidated `components` map, pull out the array of strings, sort them alphabetically, prepend the account owner name (retrieved via your secondary name dictionary), and push the completed array into the final output collection.
+- **LC #323 connection** → Accounts Merge takes the pure mathematical network engine of Number of Connected Components and wraps it inside an industrial string-parsing layer. The underlying Union-Find logic containing path compression and rank matching is identical; the challenge is orchestrating the lookup tables needed to feed the string data into the index-driven union array.
+- **String property clustering and identity resolution networks generalize** → This template is the industry baseline blueprint for customer data platform (CDP) deduplication engines, merging split social network profile aliases, tracking tracking cookies across web data silos, and fraud detection link analysis systems. Master the cycle of: 1) Assign distinct sequential tracking IDs to string targets, 2) Map targets to their core categorical owners, 3) Execute component unions across elements that share an entry context, 4) Map items to their compressed ultimate root keys, 5) Process bucket outputs with required sorting and structural labeling rules.
+
+```cpp
+class UnionFind{
+    private:
+        vector<int> rank;
+        vector<int> parent;
+
+    public:
+        UnionFind(int n){
+            rank.resize(n, 0);
+            parent.resize(n);
+            iota(parent.begin(), parent.end(), 0);
+        }
+
+        int find(int i){
+                if(parent[i] == i){
+                    return i;
+                }
+                return parent[i] = find(parent[i]);
+        }
+
+        bool unite(int i, int j){
+            int rootI = find(i);
+            int rootJ = find(j);
+
+            if(rootI == rootJ) return false;
+
+            if(rank[rootI] < rank[rootJ]){
+                parent[rootI] = rootJ;
+            }
+            else if (rank[rootI] > rank[rootJ]){
+                parent[rootJ] = rootI;
+            }
+            else{
+                parent[rootJ] = rootI;
+                rank[rootI]++;
+            }
+            return true;
+        }
+};
+//need union find to group emails together, 
+//and then sort the emails in each group and add the name to the front of the list of emails for that group.
+class Solution {
+public:
+    vector<vector<string>> accountsMerge(vector<vector<string>>& accounts) {
+        unordered_map<string, int> emailToId; //need to map emails to ids, 
+        //because we need to use the ids in the union find data structure, 
+        //and we need to use the emails to get the name of the account
+        unordered_map<string, string> emailToName;
+        //need to map emails to names, 
+        //because we need to get the name of the account from the email,
+        int idCt = 0;
+        for(auto account : accounts){
+            string name = account[0];
+            for(int i = 1; i < account.size(); i++){
+                string email = account[i];
+                if(emailToId.find(email) == emailToId.end()){
+                    emailToId[email] = idCt++;
+                    emailToName[email] = name;
+                }
+            }
+        }
+
+        UnionFind dsu(idCt); //DSU the total number of emails found
+
+
+        for(auto account : accounts){ //for each account,
+        // we will union the first email with all the other emails in that account. 
+            string firstEmail = account[1];
+            int firstId = emailToId[firstEmail];
+
+            for(int i = 2; i < account.size(); i++){
+                string nextEmail = account[i];
+                int nextId = emailToId[nextEmail];
+                dsu.unite(firstId, nextId);
+            }
+        }
+
+        unordered_map<int, vector<string>> connectedComps; //here, we will map the root id of 
+        //each connected component to the list of emails in that component
+        //the rootID is the representative of the connected component, 
+        //and all emails that have the same rootID are in the same connected component. In other words, the rootID associates all emails that are connected to each other through the union find structure, which is by the name of the account they belong to. 
+        //So, if two emails have the same rootID, it means they are connected through the union find structure and belong to the same account.
+        for (auto pair : emailToId){
+            string email = pair.first;
+            int id = pair.second;
+            int rootID = dsu.find(id);
+            connectedComps[rootID].push_back(email);
+        }
+
+        vector<vector<string>> mergedActs;
+        for (auto& pair : connectedComps){
+            auto& emails = pair.second;
+            sort(emails.begin(), emails.end()); //sort vector in lexicographical order
+            vector<string> account;
+
+            string name = emailToName[emails[0]]; //get the name of the account from the first email in the sorted list of emails, because all emails in the same connected component have the same name, 
+            //so we can just use the first email to get the name of the account.
+            account.push_back(name);
+            account.insert(account.end(), emails.begin(), emails.end());
+            mergedActs.push_back(account);
+        }
+    return mergedActs;
+
+    }
+};
+```
+
+## Open the Lock LC 752
+
+<!-- notecardId: 1784569474058 -->
+
+You have a lock in front of you with 4 circular wheels. Each wheel has 10 slots: '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'. The wheels can rotate freely and wrap around: for example we can turn '9' to be '0', or '0' to be '9'. Each move consists of turning one wheel one slot.
+
+The lock initially starts at '0000', a string representing the state of the 4 wheels.
+
+You are given a list of deadends dead ends, meaning if the lock displays any of these codes, the wheels of the lock will stop turning and you will be unable to open it.
+
+Given a target representing the value of the wheels that will unlock the lock, return the minimum total number of turns required to open the lock, or -1 if it is impossible.
+
+ 
+
+Example 1:
+
+Input: deadends = ["0201","0101","0102","1212","2002"], target = "0202"
+Output: 6
+Explanation: 
+A sequence of valid moves would be "0000" -> "1000" -> "1100" -> "1200" -> "1201" -> "1202" -> "0202".
+Note that a sequence like "0000" -> "0001" -> "0002" -> "0102" -> "0202" would be invalid,
+because the wheels of the lock become stuck after the display becomes the dead end "0102".
+Example 2:
+
+Input: deadends = ["8888"], target = "0009"
+Output: 1
+Explanation: We can turn the last wheel in reverse to move from "0000" -> "0009".
+Example 3:
+
+Input: deadends = ["8887","8889","8878","8898","8788","8988","7888","9888"], target = "8888"
+Output: -1
+Explanation: We cannot reach the target without getting stuck.
+ 
+
+Constraints:
+
+1 <= deadends.length <= 500
+deadends[i].length == 4
+target.length == 4
+target will not be in the list deadends.
+target and deadends[i] consist of digits only.
+
+**Link**: [text](https://leetcode.com/problems/open-the-lock/)
+
+%
+
+**Pattern:** BFS, Graph Traversal, Shortest Path in Unweighted Graph
+
+**Approach:** Use breadth-first search (BFS) to explore all possible combinations of the lock. Start from the initial state "0000" and generate all possible next states by turning each wheel one slot forward or backward. Keep track of visited states to avoid cycles and use a queue to process states level by level. If the target state is reached, return the number of moves taken. If all possibilities are exhausted without reaching the target, return -1.
+
+**Key Insight:** The key insight is that the lock can be represented as a graph where each state is a node and each valid move (turning a wheel) is an edge. BFS is suitable for finding the shortest path in an unweighted graph, which corresponds to the minimum number of moves required to reach the target state.
+
+**Gotchas:** Be careful with the deadends. If the initial state "0000" is in the deadends, you should return -1 immediately. Also, ensure that you correctly generate the next states by wrapping around the digits (e.g., '9' to '0' and '0' to '9'). Keep track of visited states to prevent infinite loops. The wrapping around works by using mod and ensuring that the next digit is calculated correctly.
+
+**Complexity:** Time: O(10^4) since there are 10,000 possible combinations of the lock (from "0000" to "9999"). Each state can generate up to 8 new states (2 for each of the 4 wheels). | Space: O(10^4) for storing visited states and the queue.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Word Ladder — LC #127 | Find the shortest mutation path from a start word to an end word → identical state-space graph structure, but neighbors are dictated by matching dictionary words rather than circular mathematical digit steps | Yes — direct structural twin |
+| Minimum Genetic Mutation — LC #433 | Find the shortest mutation sequence between DNA strands → identical state-space framework with an 8-character string length limitation and a static 4-character alphabet choice | Yes — direct structural twin |
+| Sliding Puzzle — LC #773 | Solve a board layout in the fewest moves → state shifts are restricted by matrix coordinates and space swaps rather than uniform string increments | Yes — direct variant |
+| Walls and Gates — LC #286 | Map shortest steps across a 2D matrix → grid paths are static, pre-existing physical paths rather than dynamically generated abstract node combinations | Partial — same layered step expansion logic |
+
+**How this pattern scales:**
+- **Implicit State-Space Construction via Layered BFS** is the absolute core rule — whenever you are asked to find the **minimum number of steps or operations** to transform an initial configuration into a target goal, you are looking at an unweighted shortest path problem. You do not build a concrete graph explicitly up front. Instead, the graph is *generated dynamically* on the fly. Each unique lock combination string acts as a unique node, and its 8 adjacent single-wheel rotations function as its graph edges.
+- **The $O(1)$ Hash Lookup Dead-End Guard** — Converting the `deadends` string array into a high-speed lookup hash set (`unordered_set<string>`) before beginning your search is mandatory. If the starting position `"0000"` or the `target` sequence is present inside this dead-end collection, it forms an immediate blocker, and you must instantly return `-1`. During the BFS expansion, treat any neighbor that exists in the dead-end set exactly like a visited node, skipping it entirely to drop invalid paths.
+- **Circular Alphabet Modular Arithmetic** — To generate the neighboring nodes cleanly, iterate through all 4 character slots of the current string. For each slot, calculate both a forward step (`+1`) and a backward step (`-1`). To handle the wrap-around boundary logic seamlessly (spinning from `9` back to `0` or from `0` back to `9`), perform character-based math calculations:
+  * *Forward:* `(c - '0' + 1) % 10 + '0'`
+  * *Backward:* `(c - '0' + 9) % 10 + '0'`
+- **Bidirectional BFS Performance Optimization** — For massive state-space networks where the search radius expands rapidly, a standard single-ended BFS can run into memory limits. You can dramatically optimize processing speed by running a **Bidirectional BFS**. Maintain two active sets: one expanding forward from `"0000"` and one expanding backward from `target`. At each layer step, choose to expand the smaller of the two sets. The moment the forward expansion path intersects with the backward tracking set, the shortest path is found.
+- **LC #127 connection** → Word Ladder relies on this exact state-space search blueprint. The architectural engine transition is purely a change in neighbor discovery rules: while LC #752 loops over 4 string slots to shift digits mathematically, LC #127 loops over text characters to evaluate alphabetical permutations against an external dictionary set.
+- **Dynamic state mutation pipelines and puzzle configurations generalize** → This template is the industry baseline blueprint for game state solver engines (like solving a Rubik's cube or chess configurations), automated password vulnerability combinations analysis, cryptographic sequence verification steps, and robotic trace planning maneuvers. Master the cycle of: 1) Convert blocklists into high-speed evaluation sets, 2) Seed a tracking structure with starting configuration nodes, 3) Execute layered expansions while maintaining step counters, 4) Compute valid localized transition state strings, 5) Bypass duplicate layouts instantly while monitoring target intersection thresholds.
+
+```cpp
+class Solution {
+public:
+    int openLock(vector<string>& deadends, string target) {
+        unordered_set<string> visited;
+        
+        for(string s : deadends) visited.insert(s);
+        if(visited.find("0000") != visited.end()) return -1;
+        queue<pair<string, int>> q; //int is the number of moves needed to reach that combo
+        q.push({"0000", 0});
+        while(!q.empty()){
+            auto top = q.front();
+            q.pop();
+            string currCombo = top.first;
+            int currMoves = top.second;
+            if(top.first == target) return top.second;
+            for(int i = 0; i < 4; i++){
+                for(int delta : {-1, 1}){ // we move by 1 digit up/down
+                    int newDigit = (currCombo[i] - '0' + delta + 10) % 10; //need the + 10 so -1 becomes a 9
+                    string newCombo = currCombo;
+                    newCombo[i] = '0' + newDigit;
+
+                    if(visited.find(newCombo) == visited.end()){
+                        visited.insert(newCombo);
+                        q.push({newCombo, currMoves + 1});
+                    }
+
+                }
+            }
+
+
+        }
+        return -1;
+
+
+
+
+    }
+};
+```
+
+## Verifying an Alien Dictionary LC 953
+
+<!-- notecardId: 1784569689024 -->
+
+In an alien language, surprisingly, they also use English lowercase letters, but possibly in a different order. The order of the alphabet is some permutation of lowercase letters.
+
+Given a sequence of words written in the alien language, and the order of the alphabet, return true if and only if the given words are sorted lexicographically in this alien language.
+
+ 
+
+Example 1:
+
+Input: words = ["hello","leetcode"], order = "hlabcdefgijkmnopqrstuvwxyz"
+Output: true
+Explanation: As 'h' comes before 'l' in this language, then the sequence is sorted.
+Example 2:
+
+Input: words = ["word","world","row"], order = "worldabcefghijkmnpqstuvxyz"
+Output: false
+Explanation: As 'd' comes after 'l' in this language, then words[0] > words[1], hence the sequence is unsorted.
+Example 3:
+
+Input: words = ["apple","app"], order = "abcdefghijklmnopqrstuvwxyz"
+Output: false
+Explanation: The first three characters "app" match, and the second string is shorter (in size.) According to lexicographical rules "apple" > "app", because 'l' > '∅', where '∅' is defined as the blank character which is less than any other character (More info).
+ 
+
+Constraints:
+
+1 <= words.length <= 100
+1 <= words[i].length <= 20
+order.length == 26
+All characters in words[i] and order are English lowercase letters.
+
+**Link**: [text](https://leetcode.com/problems/verifying-an-alien-dictionary/)
+
+%
+
+**Pattern:** String Comparison, Custom Sorting, Lexicographical Order
+
+**Approach:** Create a mapping of each character in the alien language to its corresponding index based on the given order. Then, iterate through the list of words and compare each word with the next one using the custom order. For each pair of words, compare their characters one by one according to the alien order until a difference is found or one word is exhausted. If any word is found to be greater than the next word according to the alien order, return false. If all pairs are in order, return true.
+
+**Key Insight:** The key insight is that you can represent the alien language's order as a mapping from characters to their indices. This allows you to compare words based on their characters' positions in the alien order rather than the standard English order.
+
+**Gotchas:** Be careful with the case where one word is a prefix of another. In such cases, the shorter word should come first. Also, ensure that you handle all characters in the words and the order string correctly, and that you do not go out of bounds when comparing characters.
+
+**Complexity:** Time: O(N * M) where N is the number of words and M is the average length of the words, as each character in each word may need to be compared. | Space: O(1) for the mapping of characters to indices, as it uses a fixed-size array of 26 elements.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Alien Dictionary — LC #269 | Deduce the actual character ordering from a sorted word list → requires building a directed graph and running topological sort cycle detection instead of simple verification | Yes — reverse relational twin |
+| Custom Sort String — LC #791 | Sort a string based on a custom character permutation → custom index map lookup used to drive a sorting comparator rather than validating a pre-existing sequence | Yes — direct variant |
+| Is Subsequence — LC #392 | Check if one string matches character positions inside another → two-pointer traversal tracking relative letter indexing rather than strict dictionary comparisons | No — two-pointer pointer tracking |
+| Merge Sorted Array — LC #88 | Combine arrays in place → simple two-pointer value tracking without custom alphabet precedence modifications | No — linear value placement |
+
+**How this pattern scales:**
+- **Custom Alphabet Transposition Mapping** is the absolute core rule — standard string comparison operators natively evaluate characters using standard ASCII encodings (where `'a'` < `'b'`). To scale this efficiently to arbitrary custom alphabets without rewriting complex comparison mechanisms, project the custom order into a fast $O(1)$ look-up array or map: `int order_map[26]`. For example, if custom alphabet rules state that `'h'` is the first character, then `order_map['h' - 'a'] = 0`.
+- **Adjacent-Pair Validation Optimizations** — Transitivity rules dictate that you do not need to compare every word against every other word in an expensive $O(N^2)$ loop combination. If a list of elements is perfectly sorted, then every individual word must be less than or equal to its immediate next neighbor. You can completely validate the system in a single linear pass by evaluating exactly $N - 1$ adjacent string pairs.
+- **The Short-Circuit Mismatch Condition** — When comparing two adjacent words, loop character-by-character from left to right. The moment you encounter the first index where the two characters differ, evaluate their custom weights:
+  * If the first word's character has a smaller weight than the second word's character, this pair is valid. You can **break immediately** and skip checking the rest of these two words.
+  * If the first word's character has a larger weight, the list is out of order—return `false` immediately.
+- **The Invisible Boundary Prefix Rule** — If you parse through the entire length of the shorter word and find that every single character matches the longer word perfectly (e.g., comparing `"apple"` and `"app"`), a tie-breaker rule applies. In any valid dictionary system, the shorter word must always appear first. If `word1.length() > word2.length()` after a clean loop finish with no character mismatches, return `false`.
+- **LC #269 connection** → While LC #953 functions as a *verification validation rule* (confirming if a specific sequence respects a known rule set), LC #269 Alien Dictionary operates in reverse as a *deduction engine*. It takes the exact same adjacent-word parsing strategy, but uses the character mismatches to build a directed graph of edge rules, feeding them into a topological sort to infer the alphabet order from scratch.
+- **Custom weight priorities and custom sorted sequences generalize** → This template is the industry baseline blueprint for localized language sorting engines in operating systems, multi-currency international commerce ledger sorting filters, custom catalog sorting sequences, and custom database collation setups. Master the cycle of: 1) Convert prioritized sorting orders into primitive weight index tables, 2) Stream evaluate adjacent sequence nodes linearly, 3) Match localized text components character-by-character, 4) Break matching validation lines early upon finding distinct prioritize differences, 5) Intercept length-based prefix errors to flag broken validation boundaries.
+
+```cpp
+class Solution {
+private:
+    unordered_map<char, int> dict;
+public:
+    bool wordOrder(string& s1, string& s2){
+        for(int i = 0; i < s1.length() && i < s2.length(); i++){
+            if(s1[i] == s2[i]) continue;
+            else{
+                if(dict[s2[i]] < dict[s1[i]]) return false;
+                else return true; //this is where order is determined, once first difference is found, can make distinction right there
+            }
+        }
+        if(s1.length() > s2.length()) return false;
+        return true;
+    }
+    bool isAlienSorted(vector<string>& words, string order) {
+        int ctr = 1;
+        for(char c : order){
+            dict[c] = ctr;
+            ctr++;
+        }
+        
+        for(int i = 0; i < words.size() - 1; i++){
+            if(!wordOrder(words[i], words[i+1])) return false;
+        }
+        return true;
+    }
+};
+```
+
+## Rotting Oranges LC 994
+
+<!-- notecardId: 1784570145437 -->
+
+You are given an m x n grid where each cell can have one of three values:
+
+0 representing an empty cell,
+1 representing a fresh orange, or
+2 representing a rotten orange.
+Every minute, any fresh orange that is 4-directionally adjacent to a rotten orange becomes rotten.
+
+Return the minimum number of minutes that must elapse until no cell has a fresh orange. If this is impossible, return -1.
+
+ 
+
+Example 1:
+
+
+Input: grid = [[2,1,1],[1,1,0],[0,1,1]]
+Output: 4
+Example 2:
+
+Input: grid = [[2,1,1],[0,1,1],[1,0,1]]
+Output: -1
+Explanation: The orange in the bottom left corner (row 2, column 0) is never rotten, because rotting only happens 4-directionally.
+Example 3:
+
+Input: grid = [[0,2]]
+Output: 0
+Explanation: Since there are already no fresh oranges at minute 0, the answer is just 0.
+ 
+
+Constraints:
+
+m == grid.length
+n == grid[i].length
+1 <= m, n <= 10
+grid[i][j] is 0, 1, or 2.
+
+**Link**: [text](https://leetcode.com/problems/rotting-oranges/)
+
+%
+
+**Pattern:** BFS, Multi-Source BFS, Grid Traversal
+
+**Approach:** Use breadth-first search (BFS) to simulate the rotting process. Start by identifying all the initially rotten oranges and add their positions to a queue. Keep track of the number of fresh oranges. For each minute, process all the rotten oranges in the queue, and for each rotten orange, check its 4-directionally adjacent cells. If an adjacent cell contains a fresh orange, rot it (change its value to 2), decrement the count of fresh oranges, and add its position to the queue. Continue this process until there are no more fresh oranges or the queue is empty. Return the number of minutes elapsed if all fresh oranges have rotted; otherwise, return -1.
+
+**Key Insight:** The key insight is that the rotting process can be modeled as a multi-source BFS, where all initially rotten oranges act as sources that spread the rot to adjacent fresh oranges. Each level of BFS corresponds to one minute of time passing.
+
+**Gotchas:** Be careful with the edge cases where there are no fresh oranges at the start or where some fresh oranges are isolated and cannot be reached by any rotten orange. Ensure that you correctly handle the grid boundaries when checking adjacent cells to avoid index out-of-bounds errors.
+
+**Complexity:** Time: O(m * n) where m is the number of rows and n is the number of columns in the grid, as each cell is processed at most once. | Space: O(m * n) for the queue that stores the positions of rotten oranges.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Walls and Gates — LC #286 | Map shortest steps to empty rooms from all gates → identical multi-source BFS engine, initializing the queue with gates instead of tracking a countdown metrics mismatch | Yes — direct structural twin |
+| 01 Matrix — LC #542 | Compute minimum distance to a 0 for all cells → identical layered matrix expansion template, tracking coordinate steps down directly instead of checking global target counts | Yes — direct structural twin |
+| Shortest Path in Binary Matrix — LC #1091 | Trace a single path across a grid map → uses single-source 8-directional BFS instead of expanding multiple parallel origin waves simultaneously | Yes — foundational base |
+| Escape a Large Maze — LC #1036 | Determine if a coordinate can break out of a blocked ring boundary → bounded graph search that stops expanding once an area limit threshold is reached | Partial — same coordinate queue processing |
+
+**How this pattern scales:**
+- **Multi-Source BFS Layer Propagation (Simultaneous Expansion)** is the absolute core rule — treating this as a set of separate single-source searches or tracking steps via DFS will yield incorrect temporal counts and cause a TLE (Time Limit Exceeded). To capture simultaneous independent rotting spreads correctly, scan the matrix upfront to identify **every rotten orange (`2`)** and seed them all into the same initial BFS queue.
+- **The Global Unreached Target Guard (Fresh Count)** — During your initial full-matrix scan, maintain a counter tracking the total number of fresh oranges (`1`). If `fresh_oranges == 0` right from the beginning, return `0` immediately. After the multi-source wave completely finishes, check this counter again. If `fresh_oranges > 0`, it proves that isolated pockets of fresh fruit were structurally cut off by empty spaces (`0`), making full propagation impossible—so you return `-1`.
+- **Level-by-Layer Step Tracking** — Because every simultaneous step outward represents exactly 1 minute of real time, you must process the queue using explicit **size-snapshot boundaries** (`int size = q.size()`). Only increment your `minutes` tracker *after* you have popped and fully expanded all nodes present in that specific layer's snapshot.
+- **In-Place Mutation As A Visited Shield** — You do not need an auxiliary tracking matrix to map visited nodes. When expanding to a valid neighbor fresh orange, mutate its grid state directly from `1` to `2` the exact moment you push it into the queue. This in-place modification locks the cell, preventing other parallel branches from processing it redundantly, and automatically decrements your active `fresh_oranges` count.
+- **The Empty Final Wave Off-By-One Guard** — The standard layered queue layout tends to increment the time tracker blindly at the end of every loop cycle. However, when the final batch of fresh oranges turns rotten, they will push their empty neighbors or finished boundaries into the queue for the next cycle. If you aren't careful, the loop will run one extra time without actually rotting anything new. To prevent an off-by-one error, only increment `minutes` if you actually succeeded in rotting at least one fresh neighbor during that layer's cycle.
+- **LC #286 connection** → Walls and Gates operates on the exact same multi-source skeleton. While LC #286 populates cell states with precise incremental coordinate distance metrics (`current + 1`), LC #994 relies on the level-by-layer size boundary loop to track time globally while maintaining a separate target matching counter to handle reachable vs. unreachable constraints.
+- **Simultaneous contagion propagation networks generalize** → This template is the industry blueprint for epidemical virus spread tracking software, network packet broadcast wave routing protocols, dynamic fluid leakage analysis models, and wild-fire forest containment systems. Master the cycle of: 1) Scan grid systems to load all source origins into queues while counting targets, 2) Exit early if target totals sit at zero, 3) Execute size-bounded layer cycles to track uniform step increments, 4) Mutate target states directly upon intersection to lock paths, 5) Verify total target consumption post-traversal to confirm complete network saturation.
+
+```cpp
+class Solution {
+public:
+    int orangesRotting(vector<vector<int>>& grid) {
+
+        int minMinutes = 0;
+        int dRow[4] = {-1, 1, 0 , 0};
+        int dCol[4] = {0, 0, -1, 1};
+
+        queue<pair<int, int>> q;
+        for(int i = 0; i < grid.size(); i++){
+            for(int j = 0; j < grid[0].size(); j++){
+                if(grid[i][j] == 2){
+                    q.push({i, j});
+                }
+            }
+        }
+        while(!q.empty()){
+            int currsize = q.size();
+            bool rottedThisTime = false;
+            for(int iterations = 0; iterations < currsize; iterations++){
+                auto top = q.front();
+                q.pop();
+            
+            for(int idx = 0; idx < 4; idx++){
+                int currRow = top.first + dRow[idx];
+                int currCol = top.second + dCol[idx];
+
+                while(currRow >= 0 && currRow < grid.size() && currCol >= 0 && currCol < grid[0].size() && grid[currRow][currCol] == 1){
+                    grid[currRow][currCol] = 2;
+                    rottedThisTime = true;
+                    q.push({currRow, currCol});
+                }
+            }
+        }
+        if(rottedThisTime){
+         minMinutes++;
+        }
+        }
+
+
+        for(int i = 0; i < grid.size(); i++){
+            for(int j = 0; j < grid[0].size(); j++){
+                if(grid[i][j] == 1){
+                    return -1;
+                }
+            }
+        }
+        return minMinutes;
+    }
+};
+```
+
+## Find the Town Judge LC 997
+
+<!-- notecardId: 1784570265185 -->
+
+In a town, there are n people labeled from 1 to n. There is a rumor that one of these people is secretly the town judge.
+
+If the town judge exists, then:
+
+The town judge trusts nobody.
+Everybody (except for the town judge) trusts the town judge.
+There is exactly one person that satisfies properties 1 and 2.
+You are given an array trust where trust[i] = [ai, bi] representing that the person labeled ai trusts the person labeled bi. If a trust relationship does not exist in trust array, then such a trust relationship does not exist.
+
+Return the label of the town judge if the town judge exists and can be identified, or return -1 otherwise.
+
+ 
+
+Example 1:
+
+Input: n = 2, trust = [[1,2]]
+Output: 2
+Example 2:
+
+Input: n = 3, trust = [[1,3],[2,3]]
+Output: 3
+Example 3:
+
+Input: n = 3, trust = [[1,3],[2,3],[3,1]]
+Output: -1
+ 
+
+Constraints:
+
+1 <= n <= 1000
+0 <= trust.length <= 104
+trust[i].length == 2
+All the pairs of trust are unique.
+ai != bi
+1 <= ai, bi <= n
+
+**Link**: [text](https://leetcode.com/problems/find-the-town-judge/)
+
+%
+
+**Pattern:** Graph Theory, In-Degree and Out-Degree Counting
+
+**Approach:** Use two arrays to count the in-degree and out-degree of each person. The in-degree represents how many people trust a person, and the out-degree represents how many people a person trusts. Iterate through the trust array and update the in-degree and out-degree counts accordingly. After processing all trust relationships, check for a person who has an in-degree of n-1 (trusted by everyone else) and an out-degree of 0 (trusts nobody). If such a person exists, return their label; otherwise, return -1. An even more efficient way is just to have 1 array for each candidate and then increment the in-degree for the person being trusted and decrement the out-degree for the person doing the trusting. Then, check for a person with a net score of n-1.
+
+**Key Insight:** The key insight is that the town judge must be trusted by everyone else (in-degree of n-1) and must not trust anyone (out-degree of 0). By counting the in-degrees and out-degrees, you can efficiently identify the judge without needing to build a full graph structure.
+
+**Gotchas:** Be careful with the case where there are no trust relationships. If n is 1, then that single person is trivially the judge. Also, ensure that you correctly handle the indexing of the arrays since people are labeled from 1 to n, but array indices start from 0.
+
+**Complexity:** Time: O(n + m) where n is the number of people and m is the number of trust relationships, as you need to process each trust relationship once. | Space: O(n) for the in-degree and out-degree arrays.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Find the Celebrity (Typical Interview / LC #277) | Find a person everyone knows but who knows no one → identical graph degree logic, but uses an API query constraint rather than an explicit edge pair array | Yes — direct structural twin |
+| Course Schedule — LC #207 | Detect cycles in a dependency graph → tracks in-degrees and out-degrees to schedule nodes sequentially rather than checking for a single absolute sink node | Yes — direct graph degree twin |
+| Find Center of Star Graph — LC #1791 | Locate the common central hub node → an unweighted undirected star graph where the center node connects to all others; can be found by inspecting just two edges | Partial — simplified degree matching |
+| Network Delay Time — LC #743 | Calculate signal distribution latency → focuses on weighted directed path accumulation via Dijkstra's algorithm rather than isolated incoming edge balances | No — path cost traversal |
+
+**How this pattern scales:**
+- **In-Degree and Out-Degree Graph Bookkeeping** is the absolute core rule — a directed trust relationship where person `A` trusts person `B` represents a directed edge from node `A` to node `B`. The Town Judge represents a classic **Sink Node** in a graph. By definition, a valid judge must possess exactly two mathematical structural properties:
+  1. Their **Out-Degree** must be exactly `0` (they trust absolutely nobody).
+  2. Their **In-Degree** must be exactly `N - 1` (every single other person in the town trusts them).
+- **The Single-Array Score Offset Space Optimization** — Instead of allocating two separate tracking arrays for in-degrees and out-degrees ($O(2N)$ space), you can scale this into a single optimization array: `vector<int> trust_score(n + 1, 0)`. As you iterate through the trust pairs `[u, v]`, you decrement the score of the truster (`trust_score[u]--`) and increment the score of the trustee (`trust_score[v]++`). 
+- **The Absolute Score Target Match** — Because the judge loses `1` point for every person they trust and gains `1` point for every person who trusts them, a valid judge's net score must be exactly equal to `N - 1`. After processing all edge streams, run a simple linear sweep from `1` to `N`. The first node with `trust_score[i] == n - 1` is your judge. If no node hits this balance, return `-1`.
+- **Handling Structural Edge Case Boundaries** — A common trap involves handling a town with exactly one resident (`N = 1`) and an empty trust array (`trust = []`). Because a single person has no neighbors, their required judge score is $1 - 1 = 0$. The score array optimization handles this beautifully: the loop checks index `1`, sees its score matches `0`, and correctly identifies them as the judge.
+- **LC #277 connection** → Find the Celebrity is conceptually identical. The primary evolution is the data layout interface. While LC #997 hands you a complete static list of trust edges upfront, LC #277 hides the edges behind an algorithmic question function `knows(A, B)`. You apply the same degree elimination rules dynamically to eliminate candidates in $O(N)$ time.
+- **Directed network sink identification and authority ranking generalize** → This template is the industry baseline blueprint for PageRank authority hub analytics, identifying root deadlocks or black-hole nodes in network packet routing tables, detecting orphaned system user profiles, and identifying central key consensus brokers in secure communications networks. Master the cycle of: 1) Allocate unified net score tracking metrics mapped to element indices, 2) Process directed relationship streams by applying positive and negative edge weights, 3) Loop across total node capacity ranges linearly, 4) Intercept matching value metrics that balance exactly at maximum capacity offsets ($N - 1$), 5) Return default error states if structural matching balances remain unmet.
+
+```cpp
+class Solution {
+public:
+    int findJudge(int n, vector<vector<int>>& trust) {
+    vector<int> trustScore(n + 1, 0);
+        
+        for (const auto& relation : trust) {
+            int citizen = relation[0];
+            int candidate = relation[1];
+            
+            trustScore[citizen]--;   // Citizen trusts someone, reduce score
+            trustScore[candidate]++; // Candidate gains trust, increase score
+        }
+        
+        // The judge must have a net score of exactly n - 1
+        for (int i = 1; i <= n; i++) {
+            if (trustScore[i] == n - 1) {
+                return i;
+            }
+        }
+        
+        return -1;
+    }
+};
+```
+
+## Course Schedule IV LC 1462
+
+<!-- notecardId: 1784570501012 -->
+
+There are a total of numCourses courses you have to take, labeled from 0 to numCourses - 1. You are given an array prerequisites where prerequisites[i] = [ai, bi] indicates that you must take course ai first if you want to take course bi.
+
+For example, the pair [0, 1] indicates that you have to take course 0 before you can take course 1.
+Prerequisites can also be indirect. If course a is a prerequisite of course b, and course b is a prerequisite of course c, then course a is a prerequisite of course c.
+
+You are also given an array queries where queries[j] = [uj, vj]. For the jth query, you should answer whether course uj is a prerequisite of course vj or not.
+
+Return a boolean array answer, where answer[j] is the answer to the jth query.
+
+ 
+
+Example 1:
+
+
+Input: numCourses = 2, prerequisites = [[1,0]], queries = [[0,1],[1,0]]
+Output: [false,true]
+Explanation: The pair [1, 0] indicates that you have to take course 1 before you can take course 0.
+Course 0 is not a prerequisite of course 1, but the opposite is true.
+Example 2:
+
+Input: numCourses = 2, prerequisites = [], queries = [[1,0],[0,1]]
+Output: [false,false]
+Explanation: There are no prerequisites, and each course is independent.
+Example 3:
+
+
+Input: numCourses = 3, prerequisites = [[1,2],[1,0],[2,0]], queries = [[1,0],[1,2]]
+Output: [true,true]
+ 
+
+Constraints:
+
+2 <= numCourses <= 100
+0 <= prerequisites.length <= (numCourses * (numCourses - 1) / 2)
+prerequisites[i].length == 2
+0 <= ai, bi <= numCourses - 1
+ai != bi
+All the pairs [ai, bi] are unique.
+The prerequisites graph has no cycles.
+1 <= queries.length <= 104
+0 <= ui, vi <= numCourses - 1
+ui != vi
+
+**Link**: [text](https://leetcode.com/problems/course-schedule-iv/)
+
+%
+
+**Pattern:** Graph Theory, Transitive Closure, Floyd-Warshall Algorithm
+
+**Approach**: Use the Floyd-Warshall algorithm to compute the transitive closure of the course prerequisites graph. Create a 2D boolean matrix `isPrerequisite` where `isPrerequisite[i][j]` is true if course `i` is a prerequisite for course `j`. Initialize the matrix based on the given prerequisites. Then, for each pair of courses `(k, i, j)`, update the matrix to reflect that if course `i` is a prerequisite for course `k` and course `k` is a prerequisite for course `j`, then course `i` is also a prerequisite for course `j`. Finally, answer each query by checking the corresponding entry in the `isPrerequisite` matrix.
+
+**Key Insight:** In this problem, the prerequisites can be represented as a directed graph, and the transitive closure of this graph will allow us to determine if one course is a prerequisite for another. The Floyd-Warshall algorithm is an efficient way to compute this transitive closure.
+
+**Gotchas:** Be careful with the indexing of the courses, as they are labeled from 0 to `numCourses - 1`. Ensure that you correctly initialize the `isPrerequisite` matrix and handle the updates in the Floyd-Warshall algorithm. Also, remember that the graph has no cycles, so you do not need to worry about infinite loops.
+
+**Complexity:** Time: O(n^3) where n is the number of courses, due to the three nested loops in the Floyd-Warshall algorithm. | Space: O(n^2) for the `isPrerequisite` matrix.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Course Schedule II — LC #210 | Find a single linear topological ordering of courses → standard Kahn's or DFS sorting array instead of resolving arbitrary pair-reachability queries | Yes — foundational base |
+| Evaluate Division — LC #399 | Evaluate multiplicative equations via variable paths → requires tracking accumulated float products during traversal rather than precomputing boolean connectivity states | Yes — reachability variant |
+| Network Delay Time — LC #743 | Find the shortest signal travel latency → calculates minimum path summation lengths using Dijkstra's algorithm instead of unweighted true/false path presence | Partial — directed path exploration |
+| All Paths From Source to Target — LC #797 | Enumerate all unique path sequences from start to end → demands full path sequence generation, completely breaking the optimization bounds of a flat boolean lookup table | No — path generation traversal |
+
+**How this pattern scales:**
+- **Transitive Closure Optimization (Precomputation vs. On-the-Fly)** is the absolute core paradigm — running an individual DFS or BFS for every single incoming query results in an inefficient $O(Q \cdot (V + E))$ runtime. When the query count $Q$ scales up heavily, the optimal approach is to calculate all possible node-to-node reachabilities upfront. By computing the complete **transitive closure matrix** (a global reachability blueprint), you reduce individual query answers to a lightning-fast $O(1)$ lookup.
+- **The Floyd-Warshall Reachability Scaling Trick** — The most straightforward way to establish reachability across every single pair of nodes in a small-to-medium graph layout ($V \leq 100$) is using the Floyd-Warshall algorithm. You initialize a 2D boolean array `is_prereq[V][V]` to false, filling `is_prereq[u][v] = true` for all direct prerequisite edges. Then, run a triple nested loop evaluating intermediate stepping nodes `k`:
+  `is_prereq[i][j] = is_prereq[i][j] || (is_prereq[i][k] && is_prereq[k][j]);`
+  If course `i` leads to course `k`, and course `k` leads to course `j`, then course `i` is mathematically proven to be a prerequisite of course `j`.
+- **Topological Sorting + Bitset Optimization ($O(V \cdot E)$)** — If the graph vertex count scales beyond the performance boundaries of Floyd-Warshall's $O(V^3)$ runtime loop, pivot to a combination of Kahn's Algorithm (Topological Sort) and bit manipulation. Process nodes from sources to sinks. When updating a node's dependencies, perform a bitwise OR operation to merge the current node's complete prerequisite bitset array directly into its child neighbor's tracking map, achieving massive execution speedups.
+- **LC #210 connection** → Course Schedule IV shares the exact same directed acyclic dependency structure. The primary evolutionary step is the structural requirement change: instead of merely validating that a valid ordering path exists globally, you are asked to probe specific multi-tier connections across that topology, changing the core design goal from sequence creation to precise matrix reachability indexing.
+- **Directed graph reachability matrices and transitive dependencies generalize** → This template is the industry baseline blueprint for package manager dependency tree validation engines (e.g., `npm` or `pip`), corporate organizational multi-tier reporting path checks, industrial manufacturing supply-chain bottleneck mapping, and compiler compilation order optimizations. Master the cycle of: 1) Initialize a flat 2D tracking matrix mapping state connectivity indices, 2) Seed the structure with immediate raw edge relationships, 3) Execute intermediate-tier evaluation loops to map multi-hop transitive paths, 4) Compress overlapping path maps using optimized bitset sequences on wider graph spaces, 5) Intercept final incoming queries using instantaneous $O(1)$ coordinate point assessments.
+
+```cpp
+class Solution {
+public:
+    vector<bool> checkIfPrerequisite(int numCourses, vector<vector<int>>& prerequisites, vector<vector<int>>& queries) {
+        // vector<bool> res;
+        // vector<vector<bool>> isPrereq(numCourses, vector<bool>(numCourses, false));
+        // vector<vector<int>> adj(numCourses);
+        // vector<int> degree(numCourses, 0);
+        // queue<int> q;
+        // for(auto prereq: prerequisites){
+        //     isPrereq[prereq[0]][prereq[1]] = true;
+        //     degree[prereq[1]]++;
+        //     adj[prereq[0]].push_back(prereq[1]);
+        // }
+        // for(int i = 0; i < numCourses; i++){
+        //     if(degree[i] == 0) q.push(i);
+        // }
+
+        // while(!q.empty()){
+        //     auto front = q.front();
+        //     q.pop();
+        //     for(int neighbor : adj[front]){
+        //         degree[neighbor]--;
+        //         for(int i = 0; i < numCourses; i++){
+        //             if(isPrereq[i][front]) isPrereq[i][neighbor] = true; //if i is a prerequisite of front, then i is also a prerequisite of neighbor
+        //         }
+        //         if(degree[neighbor] == 0){
+        //             q.push(neighbor);
+        //         }
+        //     }
+        // }
+
+        // for(auto query : queries){
+        //     if(isPrereq[query[0]][query[1]] == true){
+        //         res.push_back(true);
+        //     }
+        //     else{
+        //         res.push_back(false);
+        //     }
+        // }
+        // return res;
+
+
+        vector<vector<bool>> isPrereq(numCourses, vector<bool>(numCourses, false));
+        for (auto preq : prerequisites){
+            isPrereq[preq[0]][preq[1]] = true;
+        }
+
+        //this is the floyd warshall
+
+        for(int via = 0; via < numCourses; via++){
+            for(int i = 0; i < numCourses; i++){
+                for(int j = 0; j < numCourses; j++){
+                    if(isPrereq[i][via] && isPrereq[via][j]) isPrereq[i][j] = true;
+                }
+            }
+        }
+            vector<bool> res;
+            for(auto query : queries){
+            if(isPrereq[query[0]][query[1]] == true){
+                res.push_back(true);
+            }
+            else{
+                res.push_back(false);
+            }
+        }
+        return res;
+
+    }
+};
+```
+
+## Merge Intervals LC 56
+
+<!-- notecardId: 1784579220529 -->
+
+Given an array of intervals where intervals[i] = [starti, endi], merge all overlapping intervals, and return an array of the non-overlapping intervals that cover all the intervals in the input.
+
+ 
+
+Example 1:
+
+Input: intervals = [[1,3],[2,6],[8,10],[15,18]]
+Output: [[1,6],[8,10],[15,18]]
+Explanation: Since intervals [1,3] and [2,6] overlap, merge them into [1,6].
+Example 2:
+
+Input: intervals = [[1,4],[4,5]]
+Output: [[1,5]]
+Explanation: Intervals [1,4] and [4,5] are considered overlapping.
+Example 3:
+
+Input: intervals = [[4,7],[1,4]]
+Output: [[1,7]]
+Explanation: Intervals [1,4] and [4,7] are considered overlapping.
+ 
+
+Constraints:
+
+1 <= intervals.length <= 104
+intervals[i].length == 2
+0 <= starti <= endi <= 104
+
+**Link**: [text](https://leetcode.com/problems/merge-intervals/)
+
+%
+
+**Pattern:** Sorting, Interval Merging, Greedy Algorithm
+
+**Approach:** First, sort the intervals based on their starting points. Then, iterate through the sorted intervals and compare each interval with the last merged interval. If the current interval overlaps with the last merged interval (i.e., the start of the current interval is less than or equal to the end of the last merged interval), merge them by updating the end of the last merged interval to be the maximum of its current end and the end of the current interval. If there is no overlap, add the current interval to the list of merged intervals. Finally, return the list of merged intervals.
+
+**Key Insight:** The key insight is that by sorting the intervals by their starting points, you can efficiently determine overlaps in a single pass through the list. This allows you to merge intervals in a greedy manner, ensuring that you always have the most up-to-date merged interval.
+
+**Gotchas:** Be careful with the case where intervals are adjacent (e.g., [1,4] and [4,5]). According to the problem statement, these should be merged. Also, ensure that you handle the case where there is only one interval or no intervals correctly.
+
+**Complexity:** Time: O(n log n) due to the sorting step, where n is the number of intervals. | Space: O(n) for storing the merged intervals.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Insert Interval — LC #57 | Add a new interval into an already sorted list → list is pre-sorted; can be solved in linear time by dropping the initial sorting step | Yes — direct structural twin |
+| Non-overlapping Intervals — LC #435 | Find minimum intervals to remove → sorts by *end time* to greedily maximize total intervals, rather than merging overlapping blocks | Yes — greedy coordinate twin |
+| Meeting Rooms II — LC #253 | Find maximum simultaneous overlapping meetings → tracks concurrent spikes using a min-heap or split boundary coordinate points | Yes — sweep-line variant |
+| Employee Free Time — LC #759 | Find common empty time gaps across multiple lists → processes combined sorted interval streams to extract spaces between active blocks | Yes — inverse space matching |
+
+**How this pattern scales:**
+- **The Monotonic Start-Time Sort Order** is the absolute core rule — evaluating unsorted intervals requires checking every item against every other item in an inefficient $O(N^2)$ cross-comparison. Sorting the intervals explicitly by their **start times** (`intervals[i][0]`) reduces the problem to a clean $O(N \log N)$ sweep. Sorting ensures that if two intervals can possibly overlap, they are guaranteed to appear adjacent to each other in the processed stream.
+- **Dynamic Last-Element Comparison (Greedy Extension)** — Maintain your merged collections directly inside your final output list: `vector<vector<int>> merged`. Insert the first sorted interval to initialize the system. For every subsequent interval `current`, compare its start bound against the end bound of the *last* interval pushed into your output tracker: `merged.back()[1]`.
+- **The Two Branch Update Conditions** — As you sweep through the sorted stream, only two distinct geometric relationships can occur:
+  1. *Overlap:* If `current[0] <= merged.back()[1]`, an overlap exists. Update the boundary of the existing block to absorb the new element: `merged.back()[1] = max(merged.back()[1], current[1])`.
+  2. *No Overlap:* If `current[0] > merged.back()[1]`, the current interval is completely disjoint. Push `current` directly into `merged` as a brand new independent tracking baseline.
+- **The `max()` End-Bound Trapper Rule** — A common trap is assuming that because an interval starts later, it must end later. Nested configurations (e.g., `[[1, 10], [2, 5]]`) break this assumption. Always use `max(merged.back()[1], current[1])` during a merge operation to ensure a smaller, completely enveloped interval does not accidentally shrink a pre-existing larger timeline boundary.
+- **LC #57 connection** → Insert Interval operates on the exact same linear comparison rules. The optimization jump is that since the input is pre-sorted, you bypass the explicit $O(N \log N)$ sorting step. Instead, run a single linear scan to split elements into three phases: 1) add intervals that end before the new item starts, 2) merge all overlapping segments into a single combined block, 3) append the remaining trailing elements.
+- **Linear interval compaction and overlapping chunk reductions generalize** → This template is the industry baseline blueprint for calendar scheduling engines resolving double-booking anomalies, disk defragmentation block consolidation tools, memory management garbage collection engines tracking contiguous byte allocations, and video timeline editing render frameworks. Master the cycle of: 1) Sort raw multi-dimensional coordinate pairs by their initial boundary indexes, 2) Seed an active output structure with the primary element block, 3) Loop across the remaining input stream sequentially, 4) Leverage conditional look-backs to dynamically stretch the active boundaries of tracking nodes using maximum caps, 5) Append isolated non-overlapping array blocks cleanly as fresh operational reference points.
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> merge(vector<vector<int>>& intervals) {
+        vector<vector<int>> res;
+        sort(intervals.begin(), intervals.end());
+        int start = intervals[0][0];
+        int end = intervals[0][1];
+
+        for(int i = 1; i < intervals.size(); i++){
+            if(intervals[i][0] <= end){
+                end = max(intervals[i][1], end); //have to take the max ending, because an intevral can engulf another interval entirely, take later one
+            }
+            //if not overlapping
+            else{
+            res.push_back({start , end});
+            start = intervals[i][0]; //keep the start and end tracked properly by moving it up
+            end = intervals[i][1];
+            }
+        }
+        res.push_back({start, end});
+        return res;
+    }
+};
+```
+
+## Insert Interval LC 57
+
+<!-- notecardId: 1784579575462 -->
+
+You are given an array of non-overlapping intervals intervals where intervals[i] = [starti, endi] represent the start and the end of the ith interval and intervals is sorted in ascending order by starti. You are also given an interval newInterval = [start, end] that represents the start and end of another interval.
+
+Insert newInterval into intervals such that intervals is still sorted in ascending order by starti and intervals still does not have any overlapping intervals (merge overlapping intervals if necessary).
+
+Return intervals after the insertion.
+
+Note that you don't need to modify intervals in-place. You can make a new array and return it.
+
+ 
+
+Example 1:
+
+Input: intervals = [[1,3],[6,9]], newInterval = [2,5]
+Output: [[1,5],[6,9]]
+Example 2:
+
+Input: intervals = [[1,2],[3,5],[6,7],[8,10],[12,16]], newInterval = [4,8]
+Output: [[1,2],[3,10],[12,16]]
+Explanation: Because the new interval [4,8] overlaps with [3,5],[6,7],[8,10].
+ 
+
+Constraints:
+
+0 <= intervals.length <= 104
+intervals[i].length == 2
+0 <= starti <= endi <= 105
+intervals is sorted by starti in ascending order.
+newInterval.length == 2
+0 <= start <= end <= 105
+
+**Link**: [text](https://leetcode.com/problems/insert-interval/)
+
+%
+
+**Pattern:** Sorting, Interval Merging, Greedy Algorithm
+
+**Approach:** Since the intervals are already sorted and non-overlapping, we can iterate through the list and find the correct position to insert the new interval. We will maintain a result list to store the merged intervals. For each interval in the original list, we will check if it overlaps with the new interval. If it does, we will merge them by updating the start and end of the new interval. If it does not overlap, we will add the current interval to the result list. After processing all intervals, we will add the new interval to the result list.
+
+**Key Insight:** The key insight is that since the intervals are sorted, we can efficiently find the correct position for the new interval and merge any overlapping intervals in a single pass through the list. This allows us to maintain the sorted order and ensure that there are no overlapping intervals in the final result.
+
+**Gotchas:** Be careful with the case where the new interval does not overlap with any existing intervals and needs to be inserted at the beginning or end of the list. Also, ensure that you handle the case where the original list of intervals is empty.
+
+**Complexity:** Time: O(n) where n is the number of intervals, as we need to iterate through the list once. | Space: O(n) for storing the merged intervals in the result list.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Merge Intervals — LC #56 | Combine an entirely unsorted collection of intervals → requires a explicit initial $O(N \log N)$ sorting pass rather than a structured $O(N)$ linear insertion scan | Yes — direct structural twin |
+| Non-overlapping Intervals — LC #435 | Find the minimum number of items to remove to eliminate overlaps → focuses on counting and drop exclusions rather than modifying and embedding an interval | Yes — greedy coordinate twin |
+| Range Module — LC #715 | Dynamically add, query, and remove tracking ranges → requires an advanced data structure like a balanced BST (`std::set` / `std::map`) to handle rapid continuous stream updates | Yes — advanced interactive variant |
+| Summary Ranges — LC #228 | Summarize a sorted array of unique integers into ranges → continuous value scanning across a 1D primitive array without multi-dimensional block merging | No — flat value scanning |
+
+**How this pattern scales:**
+- **The Tri-Phase Linear Sweep ($O(N)$ Architecture)** is the absolute core rule — since the input interval list is already guaranteed to be sorted by start times, executing a naive approach of appending the `newInterval` and re-sorting the entire list takes an unoptimized $O(N \log N)$ time. The scaling trick is to run a single, continuous linear pass that splits the operations into three sequential mathematical phases.
+- **Phase 1: The Pre-Overlap Skip** — Iterate through the sorted list while `intervals[i][1] < newInterval[0]`. These intervals end completely before the new interval even starts. Because they have zero relational interaction with the new block, push them directly into your final `result` tracker without modifications.
+- **Phase 2: The Continuous Multi-Interval Merge Bubble** — The moment the preceding condition fails, you enter the overlap zone. Loop while `i < intervals.size() && intervals[i][0] <= newInterval[1]`. As long as the current interval starts *before or at the same time* that the expanding `newInterval` ends, they are structurally trapped in the same overlap bubble. Merge them by stretching the boundaries:
+  $$\text{newInterval}[0] = \min(\text{newInterval}[0], \text{intervals}[i][0])$$
+  $$\text{newInterval}[1] = \max(\text{newInterval}[1], \text{intervals}[i][1])$$
+  Increment your index counter `i` across every element swallowed by this phase. Once the loop terminates, push the finalized, fully expanded `newInterval` block into the `result` collection exactly once.
+- **Phase 3: The Post-Overlap Append** — Any remaining intervals left in the input list satisfy `intervals[i][0] > newInterval[1]`. These blocks start completely after the merged interval bubble has concluded. Since they are guaranteed to be sorted and non-overlapping relative to the rest of the stream, sweep through the rest of the index positions and append them unmodified to finish the calculation.
+- **Handling Boundary Edge Cases Out of the Box** — The tri-phase architecture handles extreme input variations with zero extra conditional check blocks. If the input list is completely empty, Phase 1 and 3 are skipped instantly, Phase 2 commits the single `newInterval`, and the function completes safely. If the new interval fits at the very front or very back of the array, the loops dynamically step down without throwing out-of-bounds pointer errors.
+- **LC #56 connection** → Insert Interval represents the optimized stream processing subset of Merge Intervals. By recognizing the pre-existing sorted invariant of the array, you swap the heavy sorting engine out for a coordinated three-stage linear stream divider, dropping computational complexity down to a minimal $O(N)$ time profile.
+- **Dynamic chronological timeline insertion and range manipulation generalize** → This template is the industry baseline blueprint for calendar booking engines inserting a new event into a user's pre-sorted schedule, audio/video track layout editors slicing in a new media clip, ad-network tracking modules inserting non-intrusive promotion windows, and firewall network routers editing IP address white-list blocks dynamically. Master the cycle of: 1) Stream through sorted coordinates to pass elements that terminate before your target bounds trigger, 2) Absorb all intersecting element ranges into a single localized dynamic bubble using minimum and maximum boundary limits, 3) Commit the unified cluster block exactly once, 4) Pipe all remaining trailing stream segments forward unmodified, 5) Output the cleanly restructured timeline layout directly.
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> insert(vector<vector<int>>& intervals, vector<int>& newInterval) {
+        vector<vector<int>> res;
+        int i = 0;
+        //first add intervals before new interval starts
+      while(i < intervals.size() && intervals[i][1] < newInterval[0]){
+        res.push_back(intervals[i]);
+        i++;
+      }
+
+      while(i < intervals.size() && intervals[i][0] <= newInterval[1]){ // intervals that start before the new Interval Ends
+        newInterval[0] = min(newInterval[0] , intervals[i][0]);
+        newInterval[1] = max(newInterval[1], intervals[i][1]);
+        i++;
+      }
+
+      res.push_back(newInterval);
+
+    while(i < intervals.size()){
+        res.push_back(intervals[i]);
+        i++;
+      }
+
+    return res;
+    }
+};
+```
+
+## Meeting Rooms LC 252
+
+<!-- notecardId: 1784580944611 -->
+
+You are given an array of meeting times intervals where intervals[i] = [starti, endi].
+
+A person can attend all meetings if no two meeting intervals overlap. Meetings ending at time t and starting at time t do not overlap.
+
+​​​​​​​Return true if a person can attend all meetings. Otherwise, return false.
+
+ 
+
+Example 1:
+
+Input: intervals = [[0,30],[5,10],[15,20]]
+Output: false
+Example 2:
+
+Input: intervals = [[7,10],[2,4]]
+Output: true
+ 
+
+Constraints:
+
+0 <= intervals.length <= 104
+intervals[i].length == 2
+0 <= starti < endi <= 106
+
+**Link**: [text](https://leetcode.com/problems/meeting-rooms/)
+
+%
+
+**Pattern:** Sorting, Interval Overlap Detection
+
+**Approach:** First, sort the intervals based on their starting times. Then, iterate through the sorted intervals and check if the start time of the current interval is less than the end time of the previous interval. If it is, then there is an overlap, and we return false. If we finish iterating through all intervals without finding any overlaps, we return true.
+
+**Key Insight:** The key insight is that by sorting the intervals by their starting times, we can efficiently check for overlaps in a single pass through the list. This allows us to determine if a person can attend all meetings without needing to compare every pair of intervals.
+
+**Gotchas:** Be careful with the case where intervals are adjacent (e.g., [1,4] and [4,5]). According to the problem statement, these do not overlap. Also, ensure that you handle the case where there are no intervals correctly.
+
+**Complexity:** Time: O(n log n) due to the sorting step, where n is the number of intervals. | Space: O(1) if the sorting is done in place, or O(n) if a separate sorted copy is made.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Meeting Rooms II — LC #253 | Find the minimum number of conference rooms required → tracks the maximum number of *simultaneous* overlaps using a min-heap or sweep-line approach rather than returning a binary true/false on the first conflict | Yes — advanced structural twin |
+| Merge Intervals — LC #56 | Combine overlapping intervals into consolidated blocks → modifies and extends interval boundaries in-place rather than short-circuiting at the first sign of intersection | Yes — direct structural twin |
+| Non-overlapping Intervals — LC #435 | Find the minimum number of intervals to remove → uses a greedy end-time sort to selectively drop conflicting blocks and maximize room utility | Yes — greedy coordinate twin |
+| Car Pooling — LC #1094 | Determine if a vehicle capacity limit is exceeded → processes capacity changes at discrete timeline coordinates using a prefix sum array / bucket sort | Partial — coordinate sweep-line variant |
+
+**How this pattern scales:**
+- **The Monotonic Start-Time Sort Order Invariant** is the absolute core rule — trying to find overlapping time intervals in an unsorted collection requires a brute-force cross-comparison of every single pair, running in an inefficient $O(N^2)$ time. Sorting the intervals explicitly by their **start times** (`intervals[i][0]`) reduces the problem to an optimized $O(N \log N)$ operations profile. Sorting guarantees that if any two intervals conflict, they are mathematically forced to appear right next to each other in the array sequence.
+- **The Adjacent Single-Pass Check (Short-Circuit Optimization)** — Once the array is sorted, you do not need an auxiliary data structure or nested loop patterns. Run a single linear scan from index `0` up to `N - 2`. For each index `i`, compare the current interval's end time directly against the *next* interval's start time:
+  `if (intervals[i][1] > intervals[i + 1][0]) return false;`
+  The absolute first time this conditional statement evaluates to true, an overlap is detected. You can immediately halt execution and short-circuit return `false`. If the loop finishes its complete run across the array with zero collisions, return `true`.
+- **Handling the Shared Boundary Condition (Touch Rule)** — A common edge-case boundary question in interviews is whether back-to-back meetings (e.g., one meeting ending at 1:00 PM and the next beginning at 1:00 PM exactly, represented as `[1, 2]` and `[2, 3]`) constitute an overlap. The standard problem parameter dictates that a meeting can start the exact moment another ends. By using a strict greater-than comparison (`>`) instead of a greater-than-or-equal-to check (`>=`), you correctly classify touching boundaries as completely safe and valid.
+- **LC #56 and LC #253 Connection** → Meeting Rooms is the foundational gatekeeper problem for the entire interval parsing category. While LC #56 requires you to continuously stretch and build a fresh merged array, and LC #253 requires tracking dynamic room allocations via a priority queue, LC #252 merely requires you to validate if *any* overlap exists at all. It uses the exact same sorting prerequisite template but drops the processing loop down to a bare conflict detector.
+- **Linear interval conflict detection and timeline overlapping checks generalize** → This template is the industry baseline blueprint for basic single-threaded calendar booking systems, validation gates for scheduling database entries, reservation collision detection filters, and checking for CPU scheduling resource conflicts. Master the cycle of: 1) Sort multi-dimensional time blocks by their starting indexes, 2) Run a single linear loop evaluating adjacent pairs, 3) Compare the rightmost bound of the current element against the leftmost bound of the incoming next element, 4) Exit early with a failure flag the instant an intersection boundary is crossed, 5) Return default confirmation statuses once the stream is completely parsed without collisions.
+
+```cpp
+class Solution {
+public:
+    bool canAttendMeetings(vector<vector<int>>& intervals) {
+        if(intervals.empty()) return true;
+        sort(intervals.begin(), intervals.end());
+        int start = intervals[0][0];
+        int end = intervals[0][1];
+        for(int i = 1; i < intervals.size(); i++){
+            if(intervals[i][0] < end){
+                return false;
+            }
+            else{
+                start = intervals[i][0];
+                end = intervals[i][1];
+            }
+        }
+        return true;
+    }
+};
+```
+
+## Meeting Rooms II LC 253
+
+<!-- notecardId: 1784581129216 -->
+
+Given an array of meeting time intervals intervals where intervals[i] = [starti, endi], return the minimum number of conference rooms required.
+
+ 
+
+Example 1:
+
+Input: intervals = [[0,30],[5,10],[15,20]]
+Output: 2
+Example 2:
+
+Input: intervals = [[7,10],[2,4]]
+Output: 1
+ 
+
+Constraints:
+
+1 <= intervals.length <= 104
+0 <= starti < endi <= 106
+
+**Link**: [text](https://leetcode.com/problems/meeting-rooms-ii/)
+
+%
+
+**Pattern:** Sorting, Interval Overlap Counting, Min-Heap / Priority Queue
+
+**Approach:** First, sort the intervals based on their starting times. Then, use a min-heap (priority queue) to keep track of the end times of meetings currently using a room. For each meeting, check if the room with the earliest end time is free (i.e., if the start time of the current meeting is greater than or equal to the end time of the meeting at the top of the heap). If it is free, remove that meeting from the heap. Then, add the current meeting's end time to the heap. The size of the heap at any point in time will represent the number of rooms currently in use. The maximum size of the heap during this process will be the minimum number of conference rooms required.
+
+**Key Insight:** The key insight is that by sorting the meetings by their start times and using a min-heap to track the end times of ongoing meetings, we can efficiently determine when a room becomes available and how many rooms are needed at any given time.
+
+**Gotchas:** Be careful with the case where meetings end and start at the same time. According to the problem statement, a meeting can start at the exact time another meeting ends, so you should use a less than or equal to comparison when checking if a room is free. Also, ensure that you handle the case where there are no meetings correctly.
+
+**Complexity:** Time: O(n log n) due to the sorting step and the heap operations, where n is the number of intervals. | Space: O(n) for storing the end times in the heap.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Meeting Rooms — LC #252 | Determine if a person can attend all meetings → binary true/false validation short-circuiting at the first overlap instead of tracking concurrent allocations | Yes — foundational base |
+| Merge Intervals — LC #56 | Combine all overlapping intervals → flattens intersecting blocks together rather than tracking the peak height of overlapping layers | Yes — direct structural twin |
+| Car Pooling — LC #1094 | Verify if passenger capacity is exceeded → identical concurrent capacity tracking problem; can be optimized using a bucket array because the coordinate range is fixed | Yes — direct structural twin |
+| Minimum Number of Arrows to Burst Balloons — LC #452 | Find the minimum points to intersect all intervals → greedy end-time sorting where a single arrow pops all overlapping layers until a non-overlapping segment triggers | Yes — greedy variant |
+
+**How this pattern scales:**
+- **Chronological Chrono-Sorting + Dynamic Resource tracking** is the absolute core rule — finding the maximum number of simultaneous overlapping intervals cannot be solved by simply tracking adjacent items. You must evaluate the system chronologically. Sort the intervals explicitly by their **start times** (`intervals[i][0]`) to process the timeline from left to right.
+- **The Min-Heap Room Allocation Engine ($O(N \log N)$)** — To figure out how many physical rooms are occupied at any single moment, maintain a min-heap (priority queue) that stores exclusively the **end times** of currently active meetings. The top of the min-heap always represents the very earliest meeting that will finish and vacate a room.
+- **The Room Reuse vs. Expansion Decision Logic** — Loop through each meeting after sorting by start time. For the current meeting, check the top of your min-heap:
+  * *Reuse:* If `current.start >= heap.top()`, the earliest ongoing meeting has already ended. Pop that finished end-time out of the heap and push the new meeting's end-time in. You have successfully reused that exact room.
+  * *Expand:* If `current.start < heap.top()`, every active room is occupied. Do not pop anything; simply push the current meeting's end-time into the heap to allocate a brand-new room.
+  The final size of your min-heap (`heap.size()`) represents the total number of physical rooms required.
+- **The Two-Pointer Chronological Alternate Strategy** — Instead of a min-heap, you can decouple the intervals into two independent, sorted tracking arrays: `starts` and `ends`. Initialize a `rooms` counter and an index pointer `end_ptr = 0`. Iterate through each time point in `starts`. If `starts[i] < ends[end_ptr]`, increment `rooms`. If it is greater than or equal to, it means a meeting has wrapped up, so you advance your `end_ptr` forward to free a room slot.
+- **LC #252 and LC #1094 Connection** → Meeting Rooms II bridges simple interval validation with classic load-balancing calculations. While LC #252 terminates the absolute second a collision occurs, LC #253 tracks the ongoing peak volume of those collisions. This precise capacity tracking architecture maps directly to LC #1094 Car Pooling, where the maximum capacity limit replaces the dynamic min-heap allocation metric.
+- **Concurrent resource allocation and peak capacity networks generalize** → This template is the industry baseline blueprint for server cluster load-balancers scaling container counts based on execution timelines, cloud compute spot instance allocation engines, airline gate assignment systems at major travel hubs, and database connection pool optimization modules. Master the cycle of: 1) Sort event boundaries by their incoming initiation coordinates, 2) Spin up a priority queue tracking the earliest release thresholds, 3) Process incoming tasks sequentially, 4) Compare new target triggers against the active release minimums to decide whether to reuse or spin up new instances, 5) Read the final tracking structure capacity to determine maximum runtime load requirements.
+
+```cpp
+class Solution {
+public:
+    int minMeetingRooms(vector<vector<int>>& intervals) {
+        priority_queue<int, vector<int>, greater<int>> pq;
+        sort(intervals.begin(), intervals.end());
+        pq.push(intervals[0][1]);
+
+        for(int i = 1; i < intervals.size(); i++){
+            if(intervals[i][0] >= pq.top()) pq.pop(); //if the start time of the current interval is greater than or equal to the end time of the earliest ending meeting, we can reuse that room, so we pop it from the priority queue
+            pq.push(intervals[i][1]); //always push, because this is akin to adding a new meeting room, because we have to account for the current meeting
+        }
+        return pq.size();
+    }
+};
+```
+
+## Non-overlapping Intervals LC 435
+
+<!-- notecardId: 1784581237090 -->
+
+Given an array of intervals intervals where intervals[i] = [starti, endi], return the minimum number of intervals you need to remove to make the rest of the intervals non-overlapping.
+
+Note that intervals which only touch at a point are non-overlapping. For example, [1, 2] and [2, 3] are non-overlapping.
+
+ 
+
+Example 1:
+
+Input: intervals = [[1,2],[2,3],[3,4],[1,3]]
+Output: 1
+Explanation: [1,3] can be removed and the rest of the intervals are non-overlapping.
+Example 2:
+
+Input: intervals = [[1,2],[1,2],[1,2]]
+Output: 2
+Explanation: You need to remove two [1,2] to make the rest of the intervals non-overlapping.
+Example 3:
+
+Input: intervals = [[1,2],[2,3]]
+Output: 0
+Explanation: You don't need to remove any of the intervals since they're already non-overlapping.
+ 
+
+Constraints:
+
+1 <= intervals.length <= 105
+intervals[i].length == 2
+-5 * 104 <= starti < endi <= 5 * 104
+
+**Link**: [text](https://leetcode.com/problems/non-overlapping-intervals/)
+
+%
+
+**Pattern:** Sorting, Interval Overlap Counting, Greedy Algorithm
+
+**Approach:** First, sort the intervals based on their ending times. Then, iterate through the sorted intervals and keep track of the end time of the last added interval. For each interval, if its start time is greater than or equal to the end time of the last added interval, it does not overlap, and we can include it in our count. If it overlaps, we increment a counter for the number of intervals to remove. Finally, return the total number of intervals minus the count of non-overlapping intervals.
+
+**Key Insight:** The key insight is that by sorting the intervals by their ending times, we can efficiently determine the maximum number of non-overlapping intervals in a single pass through the list. This allows us to minimize the number of intervals that need to be removed.
+
+**Gotchas:** Be careful with the case where intervals are adjacent (e.g., [1,2] and [2,3]). According to the problem statement, these do not overlap. Also, ensure that you handle the case where there is only one interval or no intervals correctly.
+
+**Complexity:** Time: O(n log n) due to the sorting step, where n is the number of intervals. | Space: O(1) if the sorting is done in place, or O(n) if a separate sorted copy is made.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Minimum Number of Arrows to Burst Balloons — LC #452 | Find the minimum arrows to pop all overlapping intervals → structurally identical, but touching boundaries (e.g., `[1,2]` and `[2,3]`) are considered overlapping rather than non-overlapping | Yes — direct structural twin |
+| Merge Intervals — LC #56 | Combine overlapping blocks together → sorts by *start time* to dynamically stretch boundaries out, rather than dropping specific intervals to maximize independent slots | Yes — greedy coordinate twin |
+| Meeting Rooms — LC #252 | Check if any two time blocks intersect → short-circuits to return false at the very first sign of an overlapping collision, rather than counting optimal removals | Yes — foundational base |
+| Maximum Length of Pair Chain — LC #467 | Find the longest chain of pairs where $a < b$ and $c < d$ → uses the exact same greedy end-time selection strategy to build the largest possible sequence chain | Yes — direct mathematical twin |
+
+**How this pattern scales:**
+- **Greedy Selection via Monotonic End-Time Sort** is the absolute core rule — trying to sort intervals by their start times can lead to incorrect optimization decisions because an interval that starts very early might have an massive duration that conflicts with multiple shorter events. To maximize the total number of non-overlapping intervals (which mathematically minimizes the number of removals), you must prioritize finishing events as early as possible. Sorting by **end times** (`intervals[i][1]`) ensures you constantly choose the option that leaves the maximum possible timeline space remaining for future scheduling.
+- **The Keep-vs.-Drop Single-Scan Tracking Logic** — Initialize a count variable `removals = 0` and track the end bound of the last successfully kept interval: `int prev_end = intervals[0][1]`. Run a clean, single-pass linear loop starting from index `1` to evaluate incoming segments:
+  * *Overlap/Removal Zone:* If `intervals[i][0] < prev_end`, a conflict occurs. To preserve your optimal early finish baseline, drop the current interval entirely and increment your `removals` counter. Do not update `prev_end`.
+  * *Safe Zone:* If `intervals[i][0] >= prev_end`, the current interval starts after or at the exact moment the previous one finished. Accept this interval safely and update your tracker: `prev_end = intervals[i][1]`.
+- **The Alternative Start-Time Sort Invariant** — If an interviewer forces you to sort by *start time* instead of end time, the greedy logic must shift to a dynamic replacement pattern. When an overlap triggers (`intervals[i][0] < prev_end`), you are still forced to discard one of the two conflicting intervals. To maximize future slots, you greedily drop the one that stretches further out by forcing an in-place modification: `prev_end = min(prev_end, intervals[i][1])`.
+- **LC #452 connection** → Non-overlapping Intervals and Minimum Number of Arrows to Burst Balloons are built on the exact same mathematical foundation. The only minor variance lies in the strictness of the boundary condition. In LC 435, touching boundaries are safe (`>=`), whereas in LC 452, a single arrow can slice through touching endpoints simultaneously, modifying the overlap condition to a strict greater-than check (`>`).
+- **Activity selection optimizations and timeline resource pruning generalize** → This template is the industry baseline blueprint for single-core CPU task scheduling algorithms (Interval Scheduling Maximization Problem), text rendering line-wrap overlap avoidance filters, optimizing commercial radio advertisement slots, and streaming bandwidth package chunk allocation systems. Master the cycle of: 1) Sort multi-dimensional event collections by their termination indices, 2) Capture the initial rightmost boundary position as an active benchmark, 3) Loop sequentially through the remaining timeline blocks, 4) Discard intersecting element slots to protect the earliest available closure states, 5) Advance tracking benchmarks exclusively when intersecting thresholds are completely cleared.
+
+```cpp
+class Solution {
+public:
+    int eraseOverlapIntervals(vector<vector<int>>& intervals) {
+        sort(intervals.begin(), intervals.end());
+        int overlapCts = 0;
+        int end = intervals[0][1];
+        for(int i = 1; i < intervals.size(); i++){
+            if(intervals[i][0] < end){
+                overlapCts++;
+                end = min(end, intervals[i][1]); //have to be greedy, to minimize overlaps, keep the one that ends earlier
+                //the one that goes on longer can overlap with something else so that is something to track
+                continue;
+            }
+            end = intervals[i][1];
+        }
+        return overlapCts;
+    }
+};
+```
+
+## Minimum Interval To Include Each Query LC 1851
+
+<!-- notecardId: 1784581459157 -->
+
+You are given a 2D integer array intervals, where intervals[i] = [lefti, righti] describes the ith interval starting at lefti and ending at righti (inclusive). The size of an interval is defined as the number of integers it contains, or more formally righti - lefti + 1.
+
+You are also given an integer array queries. The answer to the jth query is the size of the smallest interval i such that lefti <= queries[j] <= righti. If no such interval exists, the answer is -1.
+
+Return an array containing the answers to the queries.
+
+ 
+
+Example 1:
+
+Input: intervals = [[1,4],[2,4],[3,6],[4,4]], queries = [2,3,4,5]
+Output: [3,3,1,4]
+Explanation: The queries are processed as follows:
+- Query = 2: The interval [2,4] is the smallest interval containing 2. The answer is 4 - 2 + 1 = 3.
+- Query = 3: The interval [2,4] is the smallest interval containing 3. The answer is 4 - 2 + 1 = 3.
+- Query = 4: The interval [4,4] is the smallest interval containing 4. The answer is 4 - 4 + 1 = 1.
+- Query = 5: The interval [3,6] is the smallest interval containing 5. The answer is 6 - 3 + 1 = 4.
+Example 2:
+
+Input: intervals = [[2,3],[2,5],[1,8],[20,25]], queries = [2,19,5,22]
+Output: [2,-1,4,6]
+Explanation: The queries are processed as follows:
+- Query = 2: The interval [2,3] is the smallest interval containing 2. The answer is 3 - 2 + 1 = 2.
+- Query = 19: None of the intervals contain 19. The answer is -1.
+- Query = 5: The interval [2,5] is the smallest interval containing 5. The answer is 5 - 2 + 1 = 4.
+- Query = 22: The interval [20,25] is the smallest interval containing 22. The answer is 25 - 20 + 1 = 6.
+ 
+
+Constraints:
+
+1 <= intervals.length <= 105
+1 <= queries.length <= 105
+intervals[i].length == 2
+1 <= lefti <= righti <= 107
+1 <= queries[j] <= 107
+
+**Link**: [text](https://leetcode.com/problems/minimum-interval-to-include-each-query/)
+
+%
+
+**Pattern:** Sorting, Interval Containment, Min-Heap / Priority Queue
+
+**Approach:** First, sort the intervals based on their starting times. Then, sort the queries while keeping track of their original indices. Use a min-heap (priority queue) to keep track of the intervals that contain the current query. For each query, add all intervals that start before or at the query time to the heap. Remove any intervals from the heap that end before the query time. The top of the heap will give you the smallest interval that contains the query. If the heap is empty, return -1 for that query. In my solution, I used an ordered set to keep track of the intervals instead of a min-heap, which allows for efficient insertion and removal of intervals. After all removals, we have the smallest interval that contains the query at the front of the set.
+
+**Key Insight:** The key insight is that by sorting the intervals and queries, we can efficiently determine which intervals contain each query in a single pass through the list. Using a min-heap or ordered set allows us to quickly find the smallest interval that contains the query.
+
+**Gotchas:** Be careful with the case where multiple intervals contain the same query. You need to ensure that you are always returning the smallest interval. Also, ensure that you handle the case where there are no intervals that contain a query correctly.
+
+**Complexity:** Time: O(n log n + m log m) where n is the number of intervals and m is the number of queries, due to the sorting steps and heap operations. | Space: O(n + m) for storing the intervals and queries in the heap and result array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Meeting Rooms II — LC #253 | Track maximum concurrent active overlaps at any single point → uses a min-heap to monitor ending boundaries dynamically over sorted start triggers, but without coordinate lookup queries | Yes — direct structural twin |
+| Number of Flowers in Full Bloom — LC #2251 | Count how many intervals overlap at given time points → applies the identical sorted event/query scan pattern, accumulating a rolling total count instead of tracking the minimum size | Yes — direct structural twin |
+| Merge Intervals — LC #56 | Flatten overlapping tracking blocks together → continuous static transformation of input structures rather than resolving isolated structural point lookups | Yes — greedy coordinate twin |
+| Range Module — LC #715 | Add, track, and remove range spaces continuously → requires dynamic tree structures (`std::set` or Segment Trees) to handle continuous updates instead of offline static queries | No — advanced dynamic tree |
+
+**How this pattern scales:**
+- **The Offline Query Sweep-Line Strategy ($O((N + Q) \log N + Q \log Q)$)** is the absolute core rule — trying to evaluate each query against every interval yields a massive $O(N \cdot Q)$ performance timeout. To optimize this, decouple the queries from their original input sequence. Pair each query with its original index position `[query_value, original_index]` and sort the array explicitly by `query_value`. Sort the `intervals` list by their start times as well. This converts the problem into a synchronized, single-pass sweep-line model.
+- **The Min-Heap Size Selector Optimization** — As you sweep through the sorted queries from left to right, pull all intervals whose start boundaries are less than or equal to the current query point (`intervals[i][0] <= query_value`). Store these active candidates inside a min-heap. Crucially, the min-heap must be sorted by **interval size** (`size = right - left + 1`), storing pairs as `[size, right_boundary]`. This ensures the smallest valid interval size is always immediately accessible at the top of the heap.
+- **The Stale-Interval Heap Eviction Clean** — Before reading the optimal answer for a query from the top of the heap, you must clean out expired ranges. Loop and pop from the min-heap as long as the rightmost boundary of the top element is strictly less than the current query value (`heap.top().right_boundary < query_value`). Because queries are sorted monotonically upward, any interval that falls behind the current query can never cover any subsequent queries in the loop.
+- **Populating the Result Registry** — After adding all viable candidate intervals and evicting all stale entries, inspect the state of your structure:
+  * If the min-heap is not empty, the top element holds the smallest valid interval that spans the query coordinate. Record `heap.top().size` into your `result[original_index]` slot.
+  * If the heap is completely empty, it means no active interval covers this point—record `-1`.
+- **LC #253 and LC #2251 Connection** → Minimum Interval to Include Each Query represents the advanced peak of the sweep-line queue layout. While Meeting Rooms II relies on a min-heap to release structures chronologically by end times, LC 1851 alters the optimization parameter. It uses a sweep-line pointer to input data while mapping custom array structures inside the priority queue to filter elements by size while lazily evicting expired endpoints.
+- **Multi-attribute range searches and offline coordinate stream profiling generalize** → This template is the industry baseline blueprint for geo-spatial database query engines resolving localized service zones, optimizing targeted ad delivery campaigns matching specific user profiles, log event routing analyzers processing discrete timestamp indices, and network bandwidth allocation systems routing dynamic packet windows. Master the cycle of: 1) Pair raw input query elements with tracking index references, 2) Sort input intervals and query targets concurrently by their leading metrics, 3) Advance data indexes to load overlapping intervals into structure queues sorted by optimization weights, 4) Execute lazy structural evictions to flush elements whose rightmost limits lag behind active benchmarks, 5) Record top queue values directly into tracked result arrays.
+
+```cpp
+class Solution {
+public:
+    vector<int> minInterval(vector<vector<int>>& intervals, vector<int>& queries) {
+        vector<int> res(queries.size(), -1);
+        sort(intervals.begin(), intervals.end(), 
+        [](const auto &a, const auto &b){return a[1] - a[0] < b[1] - b[0];}); //sort intervals by length, so that 
+        //we can find the minimum interval that includes the query, shortest interval first, so that we can find the minimum interval that includes the query, shortest interval first
+        set<pair<int, int>> s;
+        for(int i = 0; i < queries.size(); i++){
+            s.insert({queries[i], i}); //insert the queries into a set, so that we can find the minimum interval that includes the query, 
+            //shortest interval first
+        }
+
+        for(auto interval : intervals){
+            int start = interval[0];
+            int end = interval[1];
+            int length = end - start + 1;
+
+            auto it = s.lower_bound({start, 0}); //find the first query that is greater than or equal to the start of the interval, so that we can find the minimum interval that includes the query, shortest interval first
+            //{start, 0} is used to find the first query that is greater than or equal to the start of the interval, so that we can find the minimum interval that includes the query, shortest interval first
+            //0 is just a placeholder floor so the smallest start query is found, so that we can find the minimum interval that includes the query, shortest interval first
+            while(it != s.end() && it->first <= end){ //while the query is less than or equal to the end of the interval, so that we can find the minimum interval that includes the query, shortest interval first
+                res[it->second] = length;
+                it = s.erase(it);
+                //it->first is the query, it->second is the index of the query in the original queries vector, so that we can find the minimum interval that includes the query, 
+                //shortest interval first
+                //it moves to the next query in the set, so that we can find the minimum interval that includes the query, shortest interval first, dont need it++
+            }
+        }
+        return res;
+    }
+};
+```
+
+## Meeting Rooms III LC 2402
+
+<!-- notecardId: 1784581721227 -->
+
+You are given an integer n. There are n rooms numbered from 0 to n - 1.
+
+You are given a 2D integer array meetings where meetings[i] = [starti, endi] means that a meeting will be held during the half-closed time interval [starti, endi). All the values of starti are unique.
+
+Meetings are allocated to rooms in the following manner:
+
+Each meeting will take place in the unused room with the lowest number.
+If there are no available rooms, the meeting will be delayed until a room becomes free. The delayed meeting should have the same duration as the original meeting.
+When a room becomes unused, meetings that have an earlier original start time should be given the room.
+Return the number of the room that held the most meetings. If there are multiple rooms, return the room with the lowest number.
+
+A half-closed interval [a, b) is the interval between a and b including a and not including b.
+
+ 
+
+Example 1:
+
+Input: n = 2, meetings = [[0,10],[1,5],[2,7],[3,4]]
+Output: 0
+Explanation:
+- At time 0, both rooms are not being used. The first meeting starts in room 0.
+- At time 1, only room 1 is not being used. The second meeting starts in room 1.
+- At time 2, both rooms are being used. The third meeting is delayed.
+- At time 3, both rooms are being used. The fourth meeting is delayed.
+- At time 5, the meeting in room 1 finishes. The third meeting starts in room 1 for the time period [5,10).
+- At time 10, the meetings in both rooms finish. The fourth meeting starts in room 0 for the time period [10,11).
+Both rooms 0 and 1 held 2 meetings, so we return 0. 
+Example 2:
+
+Input: n = 3, meetings = [[1,20],[2,10],[3,5],[4,9],[6,8]]
+Output: 1
+Explanation:
+- At time 1, all three rooms are not being used. The first meeting starts in room 0.
+- At time 2, rooms 1 and 2 are not being used. The second meeting starts in room 1.
+- At time 3, only room 2 is not being used. The third meeting starts in room 2.
+- At time 4, all three rooms are being used. The fourth meeting is delayed.
+- At time 5, the meeting in room 2 finishes. The fourth meeting starts in room 2 for the time period [5,10).
+- At time 6, all three rooms are being used. The fifth meeting is delayed.
+- At time 10, the meetings in rooms 1 and 2 finish. The fifth meeting starts in room 1 for the time period [10,12).
+Room 0 held 1 meeting while rooms 1 and 2 each held 2 meetings, so we return 1. 
+ 
+
+Constraints:
+
+1 <= n <= 100
+1 <= meetings.length <= 105
+meetings[i].length == 2
+0 <= starti < endi <= 5 * 105
+All the values of starti are unique.
+
+**Link**: [text](https://leetcode.com/problems/meeting-rooms-iii/)
+
+%
+
+**Pattern:** Sorting, Interval Scheduling, Min-Heap / Priority Queue
+
+**Approach:** First, sort the meetings based on their starting times. Then, use a min-heap (priority queue) to keep track of the end times of meetings currently using a room. For each meeting, check if the room with the earliest end time is free (i.e., if the start time of the current meeting is greater than or equal to the end time of the meeting at the top of the heap). If it is free, remove that meeting from the heap and assign the current meeting to that room. If it is not free, delay the meeting until a room becomes available. Keep track of how many meetings each room has held and return the room with the most meetings.
+
+**Key Insight:** The key insight is that by sorting the meetings by their start times and using a min-heap to track the end times of ongoing meetings, we can efficiently determine when a room becomes available and how many meetings each room has held.
+
+**Gotchas:** Be careful with the case where meetings end and start at the same time. According to the problem statement, a meeting can start at the exact time another meeting ends, so you should use a less than or equal to comparison when checking if a room is free. Also, ensure that you handle the case where there are no meetings correctly.
+
+**Complexity:** Time: O(n log n) due to the sorting step and the heap operations, where n is the number of meetings. | Space: O(n) for storing the end times in the heap and the count of meetings for each room.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Meeting Rooms II — LC #253 | Find the minimum total number of rooms needed → room supply is infinite; you simply track concurrent peaks rather than queuing, delaying, and counting individual room traffic | Yes — foundational base |
+| Single-Threaded CPU — LC #1834 | Schedule tasks dynamically based on execution rules → prioritizes short processing times and index ties via a heap rather than managing fixed physical coordinate channels | Yes — heap scheduling twin |
+| Find Servers That Handled Most Requests — LC #1606 | Route web traffic across active server banks → relies on a strict modulo ring buffer rotation (`i % k`) and a BST structure to capture available server indexes | Yes — advanced interactive variant |
+| Task Scheduler — LC #621 | Organize CPU tasks with a uniform cooldown delay → handles frequency counts and math-based idle slots rather than physical multi-room tracking arrays | Partial — greedy queue tracking |
+
+**How this pattern scales:**
+- **Double Min-Heap Event Coordination ($O(M \log M + M \log N)$)** is the absolute core rule — trying to loop through every single room on every incoming meeting creates a sluggish runtime profile. To scale this efficiently, decouple your simulation state into two separate min-heaps:
+  1. `free_rooms`: A structure containing exclusively the integer IDs of currently vacant rooms (sorted naturally from lowest index to highest index).
+  2. `busy_rooms`: A structure tracking ongoing meetings, sorting elements as custom pairs: `[end_time, room_id]`.
+- **Chronological Sorting + The Lazy Release Cycle** — Sort the incoming meetings explicitly by their start times. As you step through each meeting `[start, end]`, first clean out the `busy_rooms` heap. Compare the current meeting's start time against the top element of the heap: while `busy_rooms.top().end_time <= start`, pop the entry out and push its `room_id` straight back into the `free_rooms` heap.
+- **The Two-Path Allocation Logic** — Once the release cycle finishes, you encounter exactly two choices:
+  * *Immediate Assignment:* If `free_rooms` is not empty, pop the smallest available `room_id`. Assign the meeting here, increment its booking count, and push it into the busy structure: `busy_rooms.push([end, room_id])`.
+  * *Delayed Assignment (The Queue Slide):* If all rooms are busy, the meeting must wait. Pull the earliest terminating meeting directly from the top of the busy heap (`busy_rooms.top()`). Calculate the delay duration. The meeting's new execution boundary shifts forward: `new_start = top.end_time`, and `new_end = new_start + (end - start)`. Assign this delayed task to the exact same `room_id`, increment its count, and push it right back into the busy heap.
+- **The Tie-Breaker Index Tracking Rule** — If multiple rooms free up at the exact same moment, or if multiple rooms are available immediately, the problem rules specify that the meeting must choose the room with the lowest index number. Utilizing a min-heap for `free_rooms` natively guarantees that index `0` pops before index `1`, satisfying the sorting condition out of the box with zero extra code loops.
+- **LC #253 and LC #1834 Connection** → Meeting Rooms III combines the timeline sorting model of Meeting Rooms II with the complex constraint parameters of Single-Threaded CPU. While LC #253 allows infinite room scaling, LC #2402 caps resource supply at $N$. This transforms your algorithm from a passive timeline observer into an active queue manager that must dynamically calculate execution delays and manage strict index priorities.
+- **Finite resource load balancing and multi-channel hardware schedulers generalize** → This template is the industry baseline blueprint for OS process thread mapping across multi-core CPU architectures, load balancing network queues across limited server topologies, tracking gate assignments at constrained airline terminals, and warehouse dock scheduling tools. Master the cycle of: 1) Initialize structures tracking empty resource indices alongside a timeline queue tracking active operations, 2) Sort incoming tasks by their initial entry triggers, 3) Evict finished processes dynamically to restore resource availability markers, 4) Divert unallocated tasks into waiting pipelines by computing trailing offset delays, 5) Record event history inside tracking tables to identify the absolute peak consumer node.
+
+```cpp
+class Solution {
+public:
+    int mostBooked(int n, vector<vector<int>>& meetings) {
+        auto comparator = [](const pair<long long, int> p1, const pair<long long, int> p2){ //need a comparator here, because we want to sort the busy rooms by end time,
+        // and if two rooms have the same end time, we want to sort by room number, so that we can get the room with the smallest number
+            if(p1.first == p2.first){
+                            return p1.second > p2.second;
+            }
+            return p1.first > p2.first;
+        };
+        
+        priority_queue<int, vector<int>, std::greater<int>> freeRooms; //order freeRooms by room number, so that we can get the room with the smallest number
+        priority_queue<pair<long long, int>, vector<pair<long long, int>>, decltype(comparator)> busy_rooms; //get the room with the earliest end time, and if two rooms have the same end time, get the room with the smallest number
+        vector<int> roomCt(n, 0);
+        sort(meetings.begin(), meetings.end());
+        int currClock = 0;
+        for(int i = 0; i < n; i++) freeRooms.push(i);
+
+        for(auto meeting : meetings){
+            long long start = meeting[0];
+            long long end = meeting[1];
+            long long duration = end - start;
+
+            //at current start time, clear out all meetigns thar ended before this
+
+            while(!busy_rooms.empty() && busy_rooms.top().first <= start){ //if a busy room has ended before the current meeting starts, 
+            //we can free it up and add it to the freeRooms heap
+                freeRooms.push(busy_rooms.top().second);
+                busy_rooms.pop();
+            }
+
+            //now, add room, first we consider if there is a freeRoom available
+
+            if(!freeRooms.empty()){
+                int room = freeRooms.top();
+                freeRooms.pop();
+
+                roomCt[room]++;
+                busy_rooms.push({end, room}); //add meeitng end time and room number to the busy rooms queue, update the roomCt, and remove the room from the freeRooms queue
+            }
+            else{
+
+                auto top = busy_rooms.top();
+                busy_rooms.pop(); //pop from busy rooms and we will readd it with the new end time, which is the current end time plus the duration of the meeting, and we will update the roomCt for that room
+
+
+                roomCt[top.second]++;
+                busy_rooms.push({top.first + duration, top.second});
+            }
+        }
+        int maxCt = -1;
+        int roomNum = -1;
+        for(int i = 0; i < roomCt.size(); i++) {
+            
+            if(roomCt[i] > maxCt){
+                roomNum = i;
+                maxCt = roomCt[i];
+            }
+            
+            }
+        return roomNum;
+
+
+    }
+};
+```
+
+## Jump Game II LC 45
+
+<!-- notecardId: 1784598782720 -->
+
+You are given a 0-indexed array of integers nums of length n. You are initially positioned at index 0.
+
+Each element nums[i] represents the maximum length of a forward jump from index i. In other words, if you are at index i, you can jump to any index (i + j) where:
+
+0 <= j <= nums[i] and
+i + j < n
+Return the minimum number of jumps to reach index n - 1. The test cases are generated such that you can reach index n - 1.
+
+ 
+
+Example 1:
+
+Input: nums = [2,3,1,1,4]
+Output: 2
+Explanation: The minimum number of jumps to reach the last index is 2. Jump 1 step from index 0 to 1, then 3 steps to the last index.
+Example 2:
+
+Input: nums = [2,3,0,1,4]
+Output: 2
+ 
+
+Constraints:
+
+1 <= nums.length <= 104
+0 <= nums[i] <= 1000
+It's guaranteed that you can reach nums[n - 1].
+
+**Link**: [text](https://leetcode.com/problems/jump-game-ii/)
+
+%
+
+**Pattern:** Greedy, Interval Coverage, Two-Pointer
+
+**Approach:** Use a greedy approach to keep track of the farthest index that can be reached with the current number of jumps. Iterate through the array, and for each index, update the farthest reachable index. When you reach the end of the current jump range, increment the jump count and update the current jump range to the farthest reachable index. There is an approach to do this with DP, but the greedy approach is more efficient and works in linear time.
+
+**Key Insight:** The key insight is that you can always make the optimal jump by choosing the farthest reachable index within the current jump range. This allows you to minimize the number of jumps needed to reach the end of the array.
+
+**Gotchas:** Be careful with the case where the array has only one element. In this case, you are already at the last index, so no jumps are needed. Also, ensure that you handle cases where the maximum jump length is zero correctly.
+
+**Complexity:** Time: O(n) where n is the length of the input array, since we are iterating through the array once. | Space: O(1) since we are using a constant amount of extra space.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Jump Game — LC #55 | Determine if you can reach the final index at all → returns a binary boolean state based on keeping a running max-reach tracker, rather than calculating the minimum jump count | Yes — foundational base |
+| Jump Game III — LC #1307 | Reach an index with value 0 starting from a given index → moves backward or forward by exact array steps; solved via standard 1D array BFS/DFS traversal | Partial — explicit graph search |
+| Minimum Number of Taps to Open to Water a Garden — LC #1326 | Water a 1D line using overlapping range intervals → transforms radius ranges into maximum jump limits per index to apply the identical greedy BFS strategy | Yes — direct structural twin |
+| Video Stitching — LC #1024 | Cover a time interval using the minimum number of video clips → maps clip start/end times into array index reach bounds, running the exact same greedy jump engine | Yes — direct structural twin |
+
+**How this pattern scales:**
+- **Implicit Implicit BFS via Greedy Window Ranges ($O(N)$)** is the absolute core rule — treating this as a dynamic programming problem leads to an unnecessary $O(N^2)$ quadratic runtime. Instead, model the array traversal as an **implicit Breadth-First Search (BFS)**. Every "jump" represents moving from the current level's window `[near, far]` to the next level's reach window. This achieves an optimal $O(N)$ time complexity using $O(1)$ auxiliary memory space.
+- **The Dual-Boundary Tracking Invariant** — Maintain two key pointer metrics alongside your jump counter (`jumps = 0`):
+  1. `farthest`: The absolute furthest index reachable from any position within the current level window (`farthest = max(farthest, i + nums[i])`).
+  2. `current_end`: The boundary marker designating the end of the current jump level window.
+- **The Step-Trigger Boundary Expansion** — Sweep linearly through the array from index `0` up to `nums.size() - 2` (you stop one index before the end because reaching or exceeding the final index finishes the traversal). At every index `i`:
+  * Continuously stretch `farthest = max(farthest, i + nums[i])`.
+  * Check if you have reached the boundary of your current window (`i == current_end`).
+  * The moment `i` hits `current_end`, you are forced to make a jump: increment `jumps++`, and shift the window boundary forward by setting `current_end = farthest`.
+- **Early-Exit Goal Line Optimization** — If at any point during your iteration `farthest >= nums.size() - 1`, you can instantly return `jumps + 1` (or let the loop terminate naturally) because the current level already possesses enough reach capacity to touch or cross the target destination.
+- **LC #55 and LC #1326 Connection** → Jump Game II bridges basic reachability checks with range-coverage optimization. While LC #55 merely asks if `farthest >= i` holds true across the array, LC #45 tracks the precise boundary boundaries (`current_end`) where reach capacity must be converted into discrete step increments. This exact step-window conversion logic forms the backbone of LC #1326 and LC #1024.
+- **Implicit level-by-level BFS expansions and range coverage optimization generalize** → This template is the industry baseline blueprint for network packet multi-hop routing optimizations, greedy clip/range stitching software, packet buffering bandwidth allocation frameworks, and step-cost path planning algorithms. Master the cycle of: 1) Initialize dual tracking boundaries representing the active level cutoff alongside the maximum reach limit, 2) Sweep through elements to dynamically stretch the furthest reach benchmark, 3) Commit a step increment the instant your current index touches the level cutoff, 4) Advance the level cutoff forward to match the updated maximum reach limit, 5) Halt execution as soon as reach limits span beyond the required output target.
+
+```cpp
+class Solution {
+public:
+    int jump(vector<int>& nums) {
+        //I did the DP sol, it is inefficient tho at O(n^2), greedy is O(n)
+        // vector<int> dp(nums.size(), nums.size());
+
+        // dp[0] = 0;
+
+        // for(int i = 0; i < nums.size(); i++){
+        //     for(int j = i + 1; j <= std::min((int)nums.size() - 1, i + nums[i]); j++){
+        //         dp[j] = min(dp[j], dp[i] + 1);
+        //     }
+        // }
+        
+        // return dp[nums.size() - 1];
+
+        int result = 0;
+        int left = 0;
+        int right = 0;
+
+        while (right < nums.size() - 1){ 
+            int furthest = 0;
+            for(int i = left; i <= right; i++){
+                furthest = max(furthest, nums[i] + i); //here, we are checking the furthest index we can reach from the current window of indices 
+                //[left, right]. We iterate through all indices in this window and calculate the maximum index we can reach by adding the value at that index (nums[i]) to the index itself (i). 
+                //This gives us the furthest point we can jump to from any of the indices in the current window.
+            }
+            result++;
+
+            if(furthest >= nums.size() - 1) return result;
+            left = right + 1; //we update the left pointer to be one more than the current right pointer, effectively moving our window to the next set of indices we can jump from.
+            right = furthest;  //we update the right pointer to be the furthest index we can reach from the current window. This sets up our new window of indices for the next iteration of the while loop.
+        }
+        return result;
+    }
+};
+```
+
+## Maximum Subarray LC 53
+
+<!-- notecardId: 1784599221983 -->
+
+Given an integer array nums, find the subarray with the largest sum, and return its sum.
+
+ 
+
+Example 1:
+
+Input: nums = [-2,1,-3,4,-1,2,1,-5,4]
+Output: 6
+Explanation: The subarray [4,-1,2,1] has the largest sum 6.
+Example 2:
+
+Input: nums = [1]
+Output: 1
+Explanation: The subarray [1] has the largest sum 1.
+Example 3:
+
+Input: nums = [5,4,-1,7,8]
+Output: 23
+Explanation: The subarray [5,4,-1,7,8] has the largest sum 23.
+ 
+
+Constraints:
+
+1 <= nums.length <= 105
+-104 <= nums[i] <= 104
+ 
+
+Follow up: If you have figured out the O(n) solution, try coding another solution using the divide and conquer approach, which is more subtle.
+
+**Link**: [text](https://leetcode.com/problems/maximum-subarray/)
+
+%
+
+**Pattern:** Greedy, Dynamic Programming, Kadane's Algorithm
+
+**Approach:** Use Kadane's algorithm to find the maximum subarray sum in linear time. Initialize two variables: `max_so_far` to keep track of the maximum sum found so far, and `max_ending_here` to keep track of the maximum sum of the subarray ending at the current index. Iterate through the array, updating `max_ending_here` by adding the current element. If `max_ending_here` becomes negative, reset it to zero. Update `max_so_far` if `max_ending_here` is greater than `max_so_far`. Return `max_so_far` at the end. Or, check currentSum by taking the max of the current element or the current element plus the previous sum, and update the maxSum if currentSum is greater than maxSum.
+
+**Key Insight:** The key insight is that if the sum of the subarray ending at the current index is negative, it cannot contribute to a maximum sum for any future subarray. Therefore, we can reset the current sum to zero and start a new subarray from the next index.
+
+**Gotchas:** Be careful with the case where all elements are negative. In this case, the maximum subarray sum is the largest single element. Also, ensure that you handle the case where the array has only one element correctly.
+
+**Complexity:** Time: O(n) where n is the length of the input array, since we are iterating through the array once. | Space: O(1) since we are using a constant amount of extra space.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Maximum Product Subarray — LC #152 | Find the continuous subarray with the largest product → must track both minimum and maximum running products to handle negative numbers flipping signs | Yes — direct dynamic twin |
+| Best Time to Buy and Sell Stock — LC #121 | Maximize profit from a single buy/sell transaction → equivalent to finding the maximum subarray sum on an array of daily price differences | Yes — direct mathematical twin |
+| Continuous Subarray Sum — LC #523 | Find a subarray of size $\ge 2$ whose sum is a multiple of $k$ → uses prefix sum remainders and hash tracking rather than Kadane's single-pass resetting sum | No — prefix sum hashing |
+| Maximum Sum Circular Subarray — LC #918 | Maximize sum where the subarray can wrap around the array ends → calculates both Kadane's max subarray sum and min subarray sum to handle total array wrap-arounds | Yes — advanced structural variant |
+
+**How this pattern scales:**
+- **Kadane's Algorithm (Local vs. Global Choice)** is the absolute core rule — finding the maximum contiguous subarray using brute force requires checking all $O(N^2)$ pairs. Kadane's algorithm reduces this to an optimal $O(N)$ single pass with $O(1)$ space by making a local greedy choice at every single index `i`:
+  $$\text{current\_sum} = \max(\text{nums}[i], \text{current\_sum} + \text{nums}[i])$$
+  At each element, you decide whether it is better to **extend** the existing running subarray or **reset** and start a brand-new running subarray from the current element.
+- **The Global Maximum Tracking Guard** — Alongside `current_sum`, maintain a `max_sum` variable initialized to the first element (`nums[0]`) or negative infinity. Update `max_sum = max(max_sum, current_sum)` at every step. Initializing `max_sum` to `0` instead of `nums[0]` is a critical bug trap—if the input array consists entirely of negative numbers (e.g., `[-3, -1, -2]`), initializing with `0` would incorrectly return `0` instead of the correct maximum value (`-1`).
+- **The Divide-and-Conquer Alternative ($O(N \log N)$)** — Although Kadane's linear sweep is optimal, the problem also introduces a Divide-and-Conquer paradigm. Split the array in half, find the max subarray sum in the left half, the right half, and across the middle split point (a cross-boundary sum extending outward from the midpoint). While slower ($O(N \log N)$), this segment-tree-like pattern is key for answering dynamic range-query variations.
+- **Reconstructing the Actual Subarray Indices** — If an interviewer asks you to return the actual subarray elements (or their start and end indices) rather than just the maximum sum:
+  * Maintain `start = 0`, `end = 0`, and `temp_start = 0`.
+  * When `nums[i] > current_sum + nums[i]`, update `temp_start = i` (a new reset begins).
+  * Whenever `current_sum > max_sum`, update `max_sum = current_sum`, set `start = temp_start`, and set `end = i`.
+- **LC #121 and LC #918 Connection** → Maximum Subarray is the gateway problem for single-pass state tracking algorithms. LC #121 (Best Time to Buy and Sell Stock) is mathematically identical to running Kadane's algorithm on the price-delta array (`prices[i] - prices[i-1]`). LC #918 (Maximum Sum Circular Subarray) extends this directly by running Kadane's twice simultaneously—once for the standard maximum subarray sum and once for the minimum subarray sum to capture wrapped circular bounds.
+- **Contiguous optimization windows and single-pass local state tracking generalize** → This template is the industry baseline blueprint for financial time-series streak analysis (finding peak gain windows), signal processing maximum burst detection, audio amplitude processing, and real-time network traffic burst rate monitoring. Master the cycle of: 1) Initialize running local and global state metrics to the first element, 2) Sweep through elements sequentially, 3) Compare adding the incoming element to starting fresh from that element, 4) Update global tracking maximums at each index step, 5) Return the global state metric as the optimal continuous result.
+
+```cpp
+class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+        int currentSum = nums[0];
+        int maxSum = nums[0];
+        if(nums.size() == 1) return nums[0];
+
+        for(int i = 1; i < nums.size(); i++){
+            currentSum = std::max(nums[i], nums[i] + currentSum); //currentSum checks the largest possible sum you can have at index i
+            maxSum = max(currentSum, maxSum);
+        }
+        return maxSum;
+    }
+};
+```
+
+## Jump Game LC 55
+
+<!-- notecardId: 1784599473982 -->
+
+You are given an integer array nums. You are initially positioned at the array's first index, and each element in the array represents your maximum jump length at that position.
+
+Return true if you can reach the last index, or false otherwise.
+
+ 
+
+Example 1:
+
+Input: nums = [2,3,1,1,4]
+Output: true
+Explanation: Jump 1 step from index 0 to 1, then 3 steps to the last index.
+Example 2:
+
+Input: nums = [3,2,1,0,4]
+Output: false
+Explanation: You will always arrive at index 3 no matter what. Its maximum jump length is 0, which makes it impossible to reach the last index.
+ 
+
+Constraints:
+
+1 <= nums.length <= 104
+0 <= nums[i] <= 105
+
+**Link**: [text](https://leetcode.com/problems/jump-game/)
+
+%
+
+**Pattern:** Greedy, Interval Coverage, Two-Pointer
+
+**Approach:** Use a greedy approach to keep track of the farthest index that can be reached. Iterate through the array, and for each index, update the farthest reachable index. If at any point the current index exceeds the farthest reachable index, return false. If you reach or exceed the last index, return true.
+
+**Key Insight:** The key insight is that if the current index exceeds the farthest reachable index, it means there is a gap that cannot be crossed, and thus the last index cannot be reached.
+
+**Gotchas:** Be careful with the case where the array has only one element. In this case, you are already at the last index, so you can return true. Also, ensure that you handle cases where the maximum jump length is zero correctly.
+
+**Complexity:** Time: O(n) where n is the length of the input array, since we are iterating through the array once. | Space: O(1) since we are using a constant amount of extra space.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Jump Game II — LC #45 | Find the *minimum number* of jumps to reach the end index → tracks discrete level window bounds (`current_end`) to count step increments rather than returning a binary boolean | Yes — direct structural twin |
+| Jump Game VII — LC #1871 | Jump to indices with value `'0'` bounded by $[i + \text{minJump}, i + \text{maxJump}]$ → requires a sliding window prefix sum or queue to track reachable states across strict distance gaps | Yes — bounded reachability variant |
+| Maximum Size Subarray Sum Equals k — LC #325 | Find maximum subarray length matching target sum $k$ → relies on prefix sums and hash map lookups rather than single-pass max-reach greedy tracking | No — prefix sum hashing |
+| Minimum Number of Taps to Open to Water a Garden — LC #1326 | Open minimum taps to cover a 1D interval → transforms radius ranges into maximum jump limits per index, reducing directly to Jump Game reachability | Yes — direct structural twin |
+
+**How this pattern scales:**
+- **The Monotonic Max-Reach Greedy Sweep ($O(N)$)** is the absolute core rule — evaluating all possible jump combinations using dynamic programming takes $O(N^2)$ time. Instead, reduce the problem to maintaining a single running tracker: `max_reach`. At every index `i`, your maximum reachable position updates greedy-style:
+  $$\text{max\_reach} = \max(\text{max\_reach}, i + \text{nums}[i])$$
+- **The Dead-End Trapping Guard (`i > max_reach`)** — Sweep linearly through the array from index `0` up to `N - 1`. Before processing index `i`, check if `i > max_reach`. If this condition ever holds true, it means you have hit a zero-value wall or an unreachable gap that blocks further movement—return `false` immediately.
+- **Early-Exit Destination Optimization** — You do not need to iterate through the entire array if `max_reach` already spans the target. At each step, check if `max_reach >= nums.size() - 1`. If true, return `true` immediately to short-circuit the remaining loop cycles.
+- **The Backward Greedy Alternative** — Alternatively, track a target destination starting from the last index (`goal = N - 1`). Iterate backward from right to left (`i = N - 2` down to `0`). If index `i` has enough jump capacity to touch or exceed the goal (`i + nums[i] >= goal`), shift the goalpost leftward (`goal = i`). If `goal == 0` at the end of the sweep, return `true`.
+- **LC #45 and LC #1326 Connection** → Jump Game is the foundational base for the entire range-coverage category. While LC #55 checks if `max_reach` can touch the final index, LC #45 builds directly on top of this invariant by counting how many distinct max-reach boundary shifts (`current_end`) are required to get there.
+- **Single-pass reachability tracking and greedy boundary propagation generalize** → This template is the industry baseline blueprint for packet buffer delivery validation, reachability analysis in state machines, memory offset traversal checks in binary parsers, and game state validation engines. Master the cycle of: 1) Initialize a max-reach tracking variable to index 0, 2) Sweep through elements linearly, 3) Intercept unreachable indices where the current pointer exceeds the max-reach boundary, 4) Dynamically expand the max-reach metric using element jump values, 5) Return success early as soon as the max-reach metric spans beyond the final index boundary.
+
+```cpp
+class Solution {
+public:
+    bool canJump(vector<int>& nums) {
+        int MaxIdx = 0;
+        if(nums.size() == 1) return true;
+        for(int i = 0 ; i < nums.size(); i++){
+            if(MaxIdx < i) return false;
+            MaxIdx = max(MaxIdx, nums[i] + i);
+        }
+        return true;
+    }
+};
+```
+
+## Gas Station LC 134
+
+<!-- notecardId: 1784599618591 -->
+
+There are n gas stations along a circular route, where the amount of gas at the ith station is gas[i].
+
+You have a car with an unlimited gas tank and it costs cost[i] of gas to travel from the ith station to its next (i + 1)th station. You begin the journey with an empty tank at one of the gas stations.
+
+Given two integer arrays gas and cost, return the starting gas station's index if you can travel around the circuit once in the clockwise direction, otherwise return -1. If there exists a solution, it is guaranteed to be unique.
+
+ 
+
+Example 1:
+
+Input: gas = [1,2,3,4,5], cost = [3,4,5,1,2]
+Output: 3
+Explanation:
+Start at station 3 (index 3) and fill up with 4 unit of gas. Your tank = 0 + 4 = 4
+Travel to station 4. Your tank = 4 - 1 + 5 = 8
+Travel to station 0. Your tank = 8 - 2 + 1 = 7
+Travel to station 1. Your tank = 7 - 3 + 2 = 6
+Travel to station 2. Your tank = 6 - 4 + 3 = 5
+Travel to station 3. The cost is 5. Your gas is just enough to travel back to station 3.
+Therefore, return 3 as the starting index.
+Example 2:
+
+Input: gas = [2,3,4], cost = [3,4,3]
+Output: -1
+Explanation:
+You can't start at station 0 or 1, as there is not enough gas to travel to the next station.
+Let's start at station 2 and fill up with 4 unit of gas. Your tank = 0 + 4 = 4
+Travel to station 0. Your tank = 4 - 3 + 2 = 3
+Travel to station 1. Your tank = 3 - 3 + 3 = 3
+You cannot travel back to station 2, as it requires 4 unit of gas but you only have 3.
+Therefore, you can't travel around the circuit once no matter where you start.
+ 
+
+Constraints:
+
+n == gas.length == cost.length
+1 <= n <= 105
+0 <= gas[i], cost[i] <= 104
+The input is generated such that the answer is unique.
+
+**Link**: [text](https://leetcode.com/problems/gas-station/)
+
+%
+
+**Pattern:** Greedy, Circular Array, Prefix Sum
+
+**Approach:** Use a greedy approach to find the starting gas station. First, check if the total gas is greater than or equal to the total cost. If not, return -1. Then, iterate through the gas stations, keeping track of the current tank balance. If the tank balance becomes negative, reset the starting station to the next station and reset the tank balance to zero. At the end of the iteration, return the starting station index.
+
+**Key Insight:** The key insight is that if the total gas is less than the total cost, it is impossible to complete the circuit. If the tank balance becomes negative at any point, it means that starting from the current starting station is not feasible, and we need to try starting from the next station.
+
+**Gotchas:** Be careful with the case where the gas and cost arrays have only one element. In this case, you can complete the circuit if the gas is greater than or equal to the cost. Also, ensure that you handle cases where the gas and cost values are zero correctly.
+
+**Complexity:** Time: O(n) where n is the length of the gas and cost arrays, since we are iterating through the arrays once. | Space: O(1) since we are using a constant amount of extra space.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Jump Game — LC #55 | Reach the final index using jump lengths → maintains a running max-reach boundary rather than accumulating net gains/losses in a circular loop | Yes — foundational base |
+| Maximum Subarray — LC #53 | Find continuous subarray with maximum sum → uses Kadane's algorithm to reset running sums when they drop below zero, mirroring the start-station reset logic | Yes — direct mathematical twin |
+| Defuse the Bomb — LC #1652 | Sum circular array ranges → calculates fixed circular window totals rather than finding a dynamic single starting origin for a complete circuit traversal | Partial — circular index traversal |
+| Minimum Number of Refueling Stops — LC #871 | Reach target destination with minimum fuel stops → uses a max-heap to dynamically pull fuel from past stations as needed rather than a single linear pass | No — greedy priority queue |
+
+**How this pattern scales:**
+- **The Global Feasibility Invariant ($\sum \text{gas} \ge \sum \text{cost}$)** is the absolute core mathematical rule — testing every candidate starting index with a full circular simulation results in an unoptimized $O(N^2)$ brute-force runtime. To solve this in a single $O(N)$ pass, rely on a fundamental mathematical guarantee: **if the total amount of available gas across the entire circuit is greater than or equal to the total cost, a valid starting station is guaranteed to exist.**
+- **The Local Deficit Reset Rule (Kadane-Style)** — Maintain two separate running counters during a single linear sweep across the array:
+  1. `total_tank`: Accumulates the global net fuel balance (`gas[i] - cost[i]`) across all stations.
+  2. `curr_tank`: Tracks the active fuel balance for the current candidate route.
+- **The Jump-Past-Failure Elimination Trick** — If `curr_tank + (gas[i] - cost[i]) < 0` at station `i`, your current starting station `start` cannot complete the route. Crucially, **no station between `start` and `i` can complete the route either**, because you reached those intermediate stations with a non-negative fuel balance and *still* failed at `i`. Therefore, you can safely skip all intermediate stations and reset your candidate start position directly to the next index: `start = i + 1`, while resetting `curr_tank = 0`.
+- **Single Pass Without Circular Simulation** — Because of the mathematical invariant established in step 1, you do not need to wrap around the array or execute a second loop to verify the candidate `start` index. Simply finish the linear sweep. At the end of the array, if `total_tank >= 0`, return `start`; otherwise, return `-1`.
+- **LC #53 and LC #55 Connection** → Gas Station is the circular dynamic equivalent of Kadane's Algorithm (LC #53). Where Kadane resets its running sum (`curr_sum = 0`) when an array segment drops negative to isolate maximum continuous subarray bounds, LC #134 uses the negative drop (`curr_tank < 0`) to prune invalid starting origin candidates across a circular domain.
+- **Circular net-balance optimization and single-pass origin tracking generalize** → This template is the industry baseline blueprint for circular microservice token-bucket rate limiters, battery management systems verifying charge-discharge cycle stability, ring-buffer transport protocols in networking, and resource-constrained logistics routing. Master the cycle of: 1) Track global net balance metrics alongside active candidate balances, 2) Accumulate net gain/loss values at each step, 3) Reset candidate starting positions to $i + 1$ the instant the local balance drops below zero, 4) Complete a single linear pass without explicit circular loops, 5) Validate the final start position against the global balance threshold.
+
+```cpp
+class Solution {
+public:
+    int canCompleteCircuit(vector<int>& gas, vector<int>& cost) {
+        int totGas = 0;
+        int totCost = 0;
+        for(int i = 0; i < gas.size(); i++){
+            totGas += gas[i];
+            totCost += cost[i];
+        }
+        if (totCost > totGas) return -1;
+
+        int currentTank = 0;
+        int currentSurplus = 0;
+        int startIdx = 0;
+
+        for(int i = 0; i < gas.size(); i++){
+            int diff = gas[i] - cost[i];
+            currentTank += diff;
+            currentSurplus += diff;
+
+            if(currentTank < 0){ //gas being 0 is ok, just cant be less, if less, move start to position after the one you are at right now
+            // and reset tank to 0
+                currentTank = 0;
+                startIdx = i + 1;
+            }
+
+        }
+        return startIdx;
+    }
+};
+```
+
+## Candy LC 135
+
+<!-- notecardId: 1784599849769 -->
+
+There are n children standing in a line. Each child is assigned a rating value given in the integer array ratings.
+
+You are giving candies to these children subjected to the following requirements:
+
+Each child must have at least one candy.
+Children with a higher rating get more candies than their neighbors.
+Return the minimum number of candies you need to have to distribute the candies to the children.
+
+ 
+
+Example 1:
+
+Input: ratings = [1,0,2]
+Output: 5
+Explanation: You can allocate to the first, second and third child with 2, 1, 2 candies respectively.
+Example 2:
+
+Input: ratings = [1,2,2]
+Output: 4
+Explanation: You can allocate to the first, second and third child with 1, 2, 1 candies respectively.
+The third child gets 1 candy because it satisfies the above two conditions.
+ 
+
+Constraints:
+
+n == ratings.length
+1 <= n <= 2 * 104
+0 <= ratings[i] <= 2 * 104
+
+**Link**: [text](https://leetcode.com/problems/candy/)
+
+%
+
+**Pattern:** Greedy, Two-Pass, Local vs. Global State
+
+**Approach:** Use a two-pass greedy approach to distribute candies. First, initialize an array `candies` with 1 candy for each child. In the first pass, iterate from left to right and for each child, if their rating is higher than the previous child's rating, give them one more candy than the previous child. In the second pass, iterate from right to left and for each child, if their rating is higher than the next child's rating, ensure they have more candies than the next child by taking the maximum of their current candies and one more than the next child's candies. Finally, sum up the total candies needed.
+
+**Key Insight:** The key insight is that each child must have at least one candy, and if a child has a higher rating than their neighbor, they must have more candies. By making two passes, we ensure that both left-to-right and right-to-left conditions are satisfied.
+
+**Gotchas:** Be careful with the case where all children have the same rating. In this case, each child should receive exactly one candy. Also, ensure that you handle cases where the ratings array has only one child correctly.
+
+**Complexity:** Time: O(n) where n is the length of the ratings array, since we are iterating through the array twice. | Space: O(n) since we are using an extra array to store the number of candies for each child.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Trapping Rain Water — LC #42 | Calculate trapped water per column using left and right height limits → uses two-pass left/right max arrays or two pointers to resolve dual directional constraints | Yes — direct structural twin |
+| Gas Station — LC #134 | Complete a circular route with net fuel constraints → relies on Kadane-style reset logic during a single pass rather than decoupling constraints into left/right sweeps | Yes — foundational base |
+| Assign Cookies — LC #455 | Satisfy children's greed with cookie sizes → sorts both arrays and applies a single greedy two-pointer match, ignoring adjacent relative relationships | Partial — simple greedy sorting |
+| Create Maximum Number — LC #321 | Build the maximum number from two arrays while preserving relative order → combines monotonic stacks with multi-pass array comparisons | No — monotonic stack sequencing |
+
+**How this pattern scales:**
+- **The Two-Pass Independent Directional Decoupling ($O(N)$)** is the absolute core rule — trying to satisfy both left and right neighbor constraints simultaneously in a single pass leads to complex backtrack edge cases. The optimal strategy decouples bi-directional dependencies into two independent unidirectional sweeps:
+  1. **Left-to-Right Pass:** Ensures every child with a higher rating than their *left* neighbor receives more candy.
+  2. **Right-to-Left Pass:** Ensures every child with a higher rating than their *right* neighbor receives more candy, while taking the maximum to preserve the left-pass result.
+- **The Baseline Array Initialization** — Allocate an array `candies` of size $N$ initialized to `1` for all elements (satisfying the baseline requirement that every child must receive at least one candy).
+- **The Two-Pass Execution Logic** —
+  * *Left-to-Right Pass:* Loop from index `1` to `N - 1`. If `ratings[i] > ratings[i - 1]`, set `candies[i] = candies[i - 1] + 1`.
+  * *Right-to-Left Pass:* Loop backward from index `N - 2` down to `0`. If `ratings[i] > ratings[i + 1]`, update `candies[i] = max(candies[i], candies[i + 1] + 1)`.
+- **The `max()` Union Guard Invariant** — Using `max(candies[i], candies[i + 1] + 1)` during the second pass is the critical step. It guarantees that satisfying the right neighbor constraint never invalidates or reduces the candy allocation already established for the left neighbor during the first pass.
+- **Equal Rating Non-Strictness Trap** — A common trap is assuming that children with equal ratings must receive the same number of candies. The problem specifies that a child only needs more candies if they have a *strictly higher* rating than a neighbor. If `ratings[i] == ratings[i - 1]`, no additional candies are required; the element simply retains its default baseline value of `1` (or whatever its right-pass condition dictates).
+- **LC #42 Connection** → Candy shares the exact architectural DNA as Trapping Rain Water (LC #42). Both problems feature elements whose final state depends on constraints coming from both directions. In LC #42, `water[i]` depends on `min(left_max[i], right_max[i]) - height[i]`. In LC #135, `candies[i]` depends on `max(left_pass[i], right_pass[i])`.
+- **Bi-directional constraint resolution and dynamic peak/valley allocations generalize** → This template is the industry baseline blueprint for slope-based resource allocation algorithms, wage tier assignment tools with peer-group benchmarking, elevation profile grading frameworks in CAD software, and dynamic priority scaling engines in distributed workflow schedulers. Master the cycle of: 1) Initialize a flat tracking array with baseline default allocations, 2) Execute a left-to-right sweep to satisfy left-adjacent relational conditions, 3) Execute a right-to-left sweep to satisfy right-adjacent relational conditions, 4) Merge constraints using maximum bounds to prevent invalidating previous pass results, 5) Sum the array to calculate the global minimum allocation.
+
+```cpp
+class Solution {
+public:
+    int candy(vector<int>& ratings) {
+        //have a vector to store num of candies each child gets, start with 1
+        vector<int> candies(ratings.size(), 1);
+        for(int i = 1; i < ratings.size(); i++){ //do a left to right pass, if current rating is greater than previous rating,
+        // give current child 1 more candy than previous child
+            if(ratings[i] > ratings[i-1]){
+                candies[i] = candies[i-1] + 1;
+            }
+        }
+
+        for(int i = ratings.size() - 2; i >= 0; i--){
+            if(ratings[i] > ratings[i+1]){ //do a right to left pass, if current rating is greater than next rating,
+            // give current child 1 more candy than next child, but also take the max of the current candy count and the new candy count, because we want to make sure we are not giving less candies than we already have given in the left to right pass
+                candies[i] = max(candies[i], candies[i+1] + 1);
+            }
+        }
+        int totalCandies = 0;
+        for(int c : candies){
+            totalCandies += c;
+        }
+        return totalCandies;
+    }
+};
+```
+
+## Dota 2 Senate LC 649
+
+<!-- notecardId: 1784600017072 -->
+
+In the world of Dota2, there are two parties: the Radiant and the Dire.
+
+The Dota2 senate consists of senators coming from two parties. Now the Senate wants to decide on a change in the Dota2 game. The voting for this change is a round-based procedure. In each round, each senator can exercise one of the two rights:
+
+Ban one senator's right: A senator can make another senator lose all his rights in this and all the following rounds.
+Announce the victory: If this senator found the senators who still have rights to vote are all from the same party, he can announce the victory and decide on the change in the game.
+Given a string senate representing each senator's party belonging. The character 'R' and 'D' represent the Radiant party and the Dire party. Then if there are n senators, the size of the given string will be n.
+
+The round-based procedure starts from the first senator to the last senator in the given order. This procedure will last until the end of voting. All the senators who have lost their rights will be skipped during the procedure.
+
+Suppose every senator is smart enough and will play the best strategy for his own party. Predict which party will finally announce the victory and change the Dota2 game. The output should be "Radiant" or "Dire".
+
+ 
+
+Example 1:
+
+Input: senate = "RD"
+Output: "Radiant"
+Explanation: 
+The first senator comes from Radiant and he can just ban the next senator's right in round 1. 
+And the second senator can't exercise any rights anymore since his right has been banned. 
+And in round 2, the first senator can just announce the victory since he is the only guy in the senate who can vote.
+Example 2:
+
+Input: senate = "RDD"
+Output: "Dire"
+Explanation: 
+The first senator comes from Radiant and he can just ban the next senator's right in round 1. 
+And the second senator can't exercise any rights anymore since his right has been banned. 
+And the third senator comes from Dire and he can ban the first senator's right in round 1. 
+And in round 2, the third senator can just announce the victory since he is the only guy in the senate who can vote.
+ 
+
+Constraints:
+
+n == senate.length
+1 <= n <= 104
+senate[i] is either 'R' or 'D'.
+
+**Link**: [text](https://leetcode.com/problems/dota2-senate/)
+
+%
+
+**Pattern:** Greedy, Queue Simulation, Circular Processing
+
+**Approach:** Use two queues to simulate the voting process. One queue for Radiant senators and one for Dire senators. Iterate through the string and enqueue the indices of each senator into their respective queues. In each round, compare the front indices of both queues. The senator with the lower index gets to ban the other senator, and their index is re-enqueued to the back of their queue with an updated index (current index + n). Continue this process until one of the queues is empty, indicating that all senators from that party have been banned.
+
+**Key Insight:** The key insight is that the senators take turns banning each other based on their order in the string. By using queues to track the indices of the senators, we can efficiently simulate the banning process and determine which party will have the last senator standing.
+
+**Gotchas:** Be careful with the circular nature of the problem. When a senator bans another, they should be re-enqueued with an updated index to simulate the next round. Also, ensure that you handle cases where one party has more senators than the other correctly.
+
+**Complexity:** Time: O(n) where n is the length of the senate string, since we are processing each senator in a queue. | Space: O(n) since we are using two queues to store the indices of the senators.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Design Circular Queue — LC #622 | Build a fixed-size ring buffer array → focuses on structural pointer management and boundary operations rather than greedy voting round simulations | Yes — foundational queue base |
+| Teemo Attacking — LC #495 | Track poison duration across timeline triggers → calculates non-overlapping interval overlaps rather than cyclic elimination rounds | No — interval timeline tracking |
+| Task Scheduler — LC #621 | Schedule CPU processes with a fixed cooldown constraint → tracks task frequencies using a priority queue/math framework rather than sequential round-robin queue turns | Partial — cyclic queue scheduling |
+| Last Stone Weight — LC #1046 | Repeatedly smash two heaviest stones together → uses a max-heap to process global max values rather than maintaining relative cyclic arrival orders | No — priority queue simulation |
+
+**How this pattern scales:**
+- **Greedy Immediate Elimination via Dual Queues ($O(N)$)** is the absolute core rule — a senator should always greedily ban the *next available senator of the opposing party* to neutralize their voting power before they can act in the current or upcoming round. Simulating this round-robin process efficiently requires storing the arrival indices of each party in two separate First-In, First-Out (FIFO) queues: `radiant` and `dire`.
+- **The Index Offset Re-queueing Mechanism** — Populate two queues with the zero-based indices of senators from the input string `senate`. While both queues are non-empty, compare their front elements (`r_idx = radiant.front()` and `d_idx = dire.front()`):
+  * **Radiant Acts First (`r_idx < d_idx`):** The Radiant senator bans the Dire senator. Pop both elements from their respective queues. Re-queue the Radiant senator for the *next round* by appending `r_idx + N` to the back of `radiant`.
+  * **Dire Acts First (`d_idx < r_idx`):** The Dire senator bans the Radiant senator. Pop both elements. Re-queue the Dire senator for the next round by appending `d_idx + N` to the back of `dire`.
+- **The $+N$ Circular Timeline Expansion Invariant** — Adding the array length $N$ to the senator's current index when pushing them back into the queue simulates moving to the next round seamlessly. It guarantees that all senators act strictly in chronological order within their active round before any senator gets a second turn in the subsequent round.
+- **The Single Queue / Count Tracker Alternative** — You can also solve this problem with a single queue and a floating ban-counter for each party (`r_bans` and `d_bans`). As you pop senators, if a party has pending bans against them, consume a ban and do not re-queue the senator; otherwise, increment a pending ban credit for that party and push the acting senator back into the queue.
+- **LC #622 and Cyclic Queue Scheduling Connection** → Dota2 Senate demonstrates how standard FIFO queues handle turn-based, multi-round elimination mechanics. By mapping time-steps to index offsets (`index + N`), cyclic elimination processes scale predictably in $O(N)$ time without expensive string manipulation or dynamic array re-indexing.
+- **Cyclic queue-based elimination and turn-based resource preemptions generalize** → This template is the industry baseline blueprint for round-robin CPU process scheduling with privilege drops, multi-party consensus algorithms in distributed systems, dynamic turn-based game loop engines, and priority-queued network bandwidth throttling. Master the cycle of: 1) Separate active competing entities into dedicated FIFO queues with initial timestamp/index values, 2) Process front elements concurrently to evaluate immediate action rights, 3) Neutralize and drop the losing party's index entry, 4) Advance the winning party's index by adding the cycle offset $N$ and re-queueing, 5) Declare victory when the opposing queue is completely depleted.
+
+```cpp
+class Solution {
+public:
+    string predictPartyVictory(string senate) {
+        queue<int> R; //queue for radiant senators, store their indices
+        queue<int> D;//queue for dire senators, store their indices
+
+        for(int i = 0; i < senate.length(); i++){
+            if(senate[i] == 'R') R.push(i);
+            else D.push(i);
+        }
+
+        while(!R.empty() && !D.empty()){
+            int Ridx = R.front(); //we take the first senator from each queue
+            R.pop();
+            int Didx = D.front();
+            D.pop();
+
+            if(Ridx > Didx){ //if the radiant senator comes after the dire senator, the dire senator bans the radiant senator, and then the dire senator goes to the back of the queue
+            //goes to the back of the queue with an index that is incremented by the length of the senate string, so that it will come after all the current senators in the queue, this is because 
+            //the senators are in a circular arrangement, and we want to simulate the next round of voting
+                D.push(Didx + senate.length());
+            }
+            else{
+                R.push(Ridx + senate.length());
+            }
+        }
+
+        if(R.empty()) return "Dire"; //if the radiant queue is empty, then the dire senators have won
+        else return "Radiant";
+
+    }
+};
+```
+
+## Valid Parenthesis String LC 678
+
+<!-- notecardId: 1784600206145 -->
+
+Given a string s containing only three types of characters: '(', ')' and '*', return true if s is valid.
+
+The following rules define a valid string:
+
+Any left parenthesis '(' must have a corresponding right parenthesis ')'.
+Any right parenthesis ')' must have a corresponding left parenthesis '('.
+Left parenthesis '(' must go before the corresponding right parenthesis ')'.
+'*' could be treated as a single right parenthesis ')' or a single left parenthesis '(' or an empty string "".
+ 
+
+Example 1:
+
+Input: s = "()"
+Output: true
+Example 2:
+
+Input: s = "(*)"
+Output: true
+Example 3:
+
+Input: s = "(*))"
+Output: true
+ 
+
+Constraints:
+
+1 <= s.length <= 100
+s[i] is '(', ')' or '*'.
+
+**Link**: [text](https://leetcode.com/problems/valid-parenthesis-string/)
+
+%
+
+**Pattern:** Greedy, Two-Pointer, Range Tracking
+
+**Approach:** Use a greedy approach to track the range of possible open parentheses counts. Maintain an open count and a close count, and iterate through the string. For each character, update the counts based on whether it's '(', ')', or '*'. If at any point the close count exceeds the open count, return false. At the end of the iteration, check if the open count is zero to determine if the string is valid. Or, at the end, if the openCount or the closeCount is less than 0, return false.
+
+**Key Insight:** The key insight is that '*' can be treated as either '(', ')', or an empty string, which allows for flexibility in balancing the parentheses. By tracking the range of possible open parentheses counts, we can determine if the string can be valid.
+
+**Gotchas:** Be careful with the case where there are more ')' than '(' at any point in the string. Also, ensure that you handle cases where '*' is used to balance the parentheses correctly.
+
+**Complexity:** Time: O(n) where n is the length of the string, since we are iterating through the string once. | Space: O(1) since we are using a constant amount of extra space.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Valid Parentheses — LC #20 | Match static open/close bracket types (`()`, `[]`, `{}`) → uses a stack without flexible wildcard characters | Yes — foundational base |
+| Check if a Parentheses String Can Be Valid — LC #2116 | Match brackets where locked states determine flexibility → treats unlocked positions as wildcard `*` markers using dual-range greedy tracking | Yes — direct structural twin |
+| Longest Valid Parentheses — LC #32 | Find the length of the longest valid substring → uses a stack or 2-pass dynamic prefix tracking to locate exact maximum lengths | Partial — stack/prefix tracking |
+| Minimum Remove to Make Valid Parentheses — LC #1249 | Remove minimal brackets to fix string balance → uses a single stack to track invalid index positions for removal | Partial — index tracking stack |
+
+**How this pattern scales:**
+- **The Min-Max Open Bracket Balance Range ($O(N)$)** is the absolute core rule — trying to evaluate wildcards `*` using backtracking/recursion leads to an unoptimized $O(3^N)$ runtime. Instead, model the possible number of open brackets `(` as a dynamic continuous range `[min_open, max_open]`.
+- **The Range Mutation Rules** — Sweep linearly through the string character by character while updating the bounds:
+  * `char == '('`: Both bounds increment: `min_open++`, `max_open++`.
+  * `char == ')'`: Both bounds decrement: `min_open--`, `max_open--`.
+  * `char == '*'`: The wildcard can act as `)`, empty string `""`, or `(`. Expand the range accordingly: `min_open--`, `max_open++`.
+- **The Invalid Prefix Early-Exit Check (`max_open < 0`)** — At any point during the sweep, if `max_open` drops below `0`, it means there are strictly too many closing parentheses `)` to be balanced by any combination of open brackets or wildcards. Short-circuit and return `false` immediately.
+- **The Non-Negative Floor Bound (`min_open = max(min_open, 0)`)** — Because `min_open` tracks the lower bound of unmatched open brackets assuming wildcards act as closing brackets `)`, `min_open` can drop below `0` if wildcards exceed open brackets. Since we cannot have a negative count of open brackets, clamp `min_open` back up to `0`: `min_open = max(min_open, 0)`.
+- **Final Validation Condition (`min_open == 0`)** — After parsing the entire string, the string is valid if and only if `min_open == 0`. This proves that at least one valid combination allows all open brackets to be completely matched.
+- **The Two-Stack Index Tracking Alternative** — Alternatively, track unmatched `(` indices and `*` indices in two separate stacks. When encountering `)`, prioritize popping from the `(` stack; if empty, pop from the `*` stack. After the sweep, match remaining `(` indices against `*` indices, ensuring each `*` index appears *after* the `(` index it matches (`star_stack.top() > open_stack.top()`).
+- **LC #20 and LC #2116 Connection** → Valid Parenthesis String bridges simple stack validation with flexible wildcard optimization. While LC #20 uses rigid single-value counters or stacks, LC #678 tracks the range bounds created by non-deterministic choices, directly powering problems like LC #2116 where unlocked binary masks replace explicit wildcard symbols.
+- **Greedy interval tracking and wild-card range propagation generalize** → This template is the industry baseline blueprint for non-deterministic string parsing engines, relaxed syntax validation in compilers, stream verification with dropped packet wildcards, and dynamic regex pattern matching engines. Master the cycle of: 1) Initialize minimum and maximum requirement metrics to zero, 2) Adjust lower and upper bounds dynamically based on deterministic vs. wildcard characters, 3) Intercept illegal states when the maximum bound drops below zero, 4) Clamp the minimum bound at zero to ignore over-matched wildcards, 5) Validate that the lower bound terminates cleanly at zero.
+
+```cpp
+class Solution {
+public:
+    bool checkValidString(string s) {
+        int openCount = 0; //this is the count of open parentheses, we will increment it when we see an open parenthesis or a star,
+        // and decrement it when we see a close parenthesis
+        int closeCount = 0; //this is the count of close parentheses, we will increment it when we see a close parenthesis or a star,
+        // and decrement it when we see an open parenthesis
+        int length = s.length() - 1;
+
+        for(int i = 0; i < s.length(); i++){
+            if(s[i] == '(' || s[i] == '*') {
+                openCount++;
+            }
+            else{
+                openCount--;
+            }
+
+            if(s[length - i] == ')' || s[length - i] == '*') {
+                closeCount++;
+            }
+            else{
+                closeCount--;
+            }
+
+            if(openCount < 0 || closeCount < 0) return false;
+            //the reason this works is because we are checking the string from both ends, 
+            //and we are keeping track of the number of open and close parentheses, if at any point the number of open parentheses is less than 0, it means that there are more close parentheses than open parentheses, which is invalid, and vice versa for the close parentheses.
+        }
+        return true;
+    }
+};
+```
+
+## Partition Labels LC 763
+
+<!-- notecardId: 1784600456799 -->
+
+You are given a string s. We want to partition the string into as many parts as possible so that each letter appears in at most one part. For example, the string "ababcc" can be partitioned into ["abab", "cc"], but partitions such as ["aba", "bcc"] or ["ab", "ab", "cc"] are invalid.
+
+Note that the partition is done so that after concatenating all the parts in order, the resultant string should be s.
+
+Return a list of integers representing the size of these parts.
+
+ 
+
+Example 1:
+
+Input: s = "ababcbacadefegdehijhklij"
+Output: [9,7,8]
+Explanation:
+The partition is "ababcbaca", "defegde", "hijhklij".
+This is a partition so that each letter appears in at most one part.
+A partition like "ababcbacadefegde", "hijhklij" is incorrect, because it splits s into less parts.
+Example 2:
+
+Input: s = "eccbbbbdec"
+Output: [10]
+ 
+
+Constraints:
+
+1 <= s.length <= 500
+s consists of lowercase English letters.
+
+**Link**: [text](https://leetcode.com/problems/partition-labels/)
+
+%
+
+**Pattern:** Greedy, Two-Pointer, Last Occurrence Tracking
+
+**Approach:** Use a greedy approach to partition the string. First, create a map to store the last occurrence of each character in the string. Then, iterate through the string and keep track of the current partition's end index based on the last occurrences of the characters seen so far. When the current index reaches the end index, it means we can make a partition. Record the size of the partition and reset for the next partition.
+
+**Key Insight:** The key insight is that to ensure each letter appears in at most one part, we need to track the last occurrence of each character. By extending the current partition's end index to the farthest last occurrence of any character seen so far, we can determine when a partition can be made.
+
+**Gotchas:** Be careful with the case where characters appear multiple times in the string. Ensure that you always extend the end index to the last occurrence of any character seen so far. Also, handle cases where the string has only one character correctly.
+
+**Complexity:** Time: O(n) where n is the length of the string, since we are iterating through the string twice (once to create the last occurrence map and once to partition). | Space: O(1) since we are using a fixed-size array of 26 for lowercase English letters.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Merge Intervals — LC #56 | Combine overlapping interval ranges together → requires sorting intervals by start times explicitely rather than relying on a fixed 26-character alphabet string layout | Yes — direct structural twin |
+| Jump Game II — LC #45 | Find the minimum jumps to reach the final index → uses a dynamic max-reach boundary (`current_end`) to count steps rather than partitioning a string into distinct sub-segments | Yes — greedy boundary twin |
+| Optimal Partition of String — LC #2405 | Partition a string into minimal substrings with unique characters → clears a hash set or bitmask on duplicate characters rather than grouping all occurrences of a character into a single block | Partial — string partitioning |
+| Minimum Number of Taps to Open to Water a Garden — LC #1326 | Cover an entire interval range using overlapping taps → converts tap radiuses into max jump limits before applying a single-pass greedy window expansion | Yes — greedy boundary twin |
+
+**How this pattern scales:**
+- **The Last-Occurrence Boundary Map ($O(N)$)** is the absolute core rule — trying to track partition boundaries using dynamic programming or nested string scans leads to an unoptimized $O(N^2)$ runtime. Because each unique character must appear in at most one partition, the minimum boundary for any partition containing character `c` is fixed by `c`'s **last index occurrence** in the string.
+- **Phase 1: The Pre-Scan Index Lookup Table** — Perform a quick linear pass through the string `s` to record the last seen index for each character into a hash map or a fixed 26-element array: `last_occurrence[s[i] - 'a'] = i`.
+- **Phase 2: The Monotonic Max-Reach Partition Expansion** — Iterate through the string `s` with two tracking pointers alongside an active window anchor:
+  * `max_reach`: The furthest last-occurrence index required by any character encountered within the current partition (`max_reach = max(max_reach, last_occurrence[s[i]])`).
+  * `anchor`: The starting index of the current partition block (initialized to `0`).
+- **The Step-Trigger Boundary Split (`i == max_reach`)** — As you step linearly through index `i`:
+  * Expand `max_reach` dynamically at every character.
+  * When index `i` catches up to `max_reach` (`i == max_reach`), it guarantees that **every** character seen between `anchor` and `i` has no future occurrences past `i`.
+  * Record the partition length (`i - anchor + 1`) into your results list, and reset the anchor for the next partition block: `anchor = i + 1`.
+- **LC #56 and LC #45 Connection** → Partition Labels is an implicit interval merging problem disguised as a string manipulation problem. Each unique character defines an interval `[first_occurrence, last_occurrence]`. By pre-calculating `last_occurrence` and using the single-pass `max_reach` loop, you merge all overlapping character intervals on the fly without an explicit $O(N \log N)$ sorting pass.
+- **Implicit interval merging and max-reach window partitioning generalize** → This template is the industry baseline blueprint for string-stream message framing protocols, batch transaction boundary grouping, log file chunking by session IDs, and memory page fragmentation analysis. Master the cycle of: 1) Pre-calculate the maximum rightmost boundary for each unique entity tag, 2) Sweep linearly through the stream while maintaining a running maximum boundary reach metric, 3) Stretch the boundary limit dynamically as new entities enter the active window, 4) Slice off a discrete partition chunk the instant your iterator reaches the maximum boundary limit, 5) Advance tracking anchors forward to start the next isolated partition block.
+
+```cpp
+class Solution {
+public:
+    vector<int> partitionLabels(string s) {
+        vector<int> lastIdx(26, 0);
+        vector<int> res;
+
+        for(int i = 0; i < s.length(); i++){
+            lastIdx[s[i] - 'a'] = i; //store the last index of each character in the string, 
+            //this is important because we want to know when we can partition the string, we can only partition when we have seen all the characters in the current partition
+        }
+
+        int start = 0;
+        int end = 0; //track start and end of current window, checking for the last index of each character in the current window,
+        // if we have seen all the characters in the current window, we can partition the string
+
+        for(int i = 0; i < s.length(); i++){
+            end = max(end, lastIdx[s[i] - 'a']); //this is the key, we are updating the end of the current window 
+            //to be the last index of the current character, this is because we want to make sure we have seen all the characters in the current window before we can partition the string
+
+
+            if(i == end){ //if i is equal to end, we have seen all the characters in the current window, 
+            //we can partition the string
+                res.push_back(end - start + 1);
+                start = end + 1; //update the start of the next window to be the next character after the current window
+            }
+        }
+    return res;
+    }
+};
+```
+
+## Hand of Straights LC 846
+
+<!-- notecardId: 1784600987178 -->
+
+Alice has some number of cards and she wants to rearrange the cards into groups so that each group is of size groupSize, and consists of groupSize consecutive cards.
+
+Given an integer array hand where hand[i] is the value written on the ith card and an integer groupSize, return true if she can rearrange the cards, or false otherwise.
+
+ 
+
+Example 1:
+
+Input: hand = [1,2,3,6,2,3,4,7,8], groupSize = 3
+Output: true
+Explanation: Alice's hand can be rearranged as [1,2,3],[2,3,4],[6,7,8]
+Example 2:
+
+Input: hand = [1,2,3,4,5], groupSize = 4
+Output: false
+Explanation: Alice's hand can not be rearranged into groups of 4.
+
+ 
+
+Constraints:
+
+1 <= hand.length <= 104
+0 <= hand[i] <= 109
+1 <= groupSize <= hand.length
+ 
+
+Note: This question is the same as 1296: https://leetcode.com/problems/divide-array-in-sets-of-k-consecutive-numbers/
+
+**Link**: [text](https://leetcode.com/problems/hand-of-straights/)
+
+%
+
+**Pattern:** Greedy, Sorted Map, Consecutive Grouping
+
+**Approach:** Use a greedy approach with a sorted map (or priority queue) to group the cards. First, count the occurrences of each card using a map. Then, iterate through the sorted keys of the map and for each key, try to form a group of consecutive cards starting from that key. Decrease the count of each card in the group accordingly. If at any point you cannot form a complete group, return false. If you can form groups for all cards, return true.
+
+**Key Insight:** The key insight is that to form groups of consecutive cards, you should always start from the smallest available card. By using a sorted map, you can efficiently find the next smallest card and attempt to form a group.
+
+**Gotchas:** Be careful with the case where there are not enough consecutive cards to form a complete group. Also, ensure that you handle cases where the hand has duplicate cards correctly.
+
+**Complexity:** Time: O(n log n) where n is the number of cards, since we are sorting the keys of the map. | Space: O(n) since we are using a map to store the counts of each card.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Divide Array in Sets of K Consecutive Numbers — LC #1296 | Rearrange array into groups of $k$ consecutive numbers → 100% identical problem statement under a different story wrapper | Yes — exact structural clone |
+| Split Array into Consecutive Subsequences — LC #659 | Split array into consecutive subsequences of length $\ge 3$ → allows variable length groups; uses frequency maps + vacancy maps to greedily extend existing chains before starting new ones | Yes — dynamic sequence variant |
+| Maximum Frequency Stack — LC #895 | Pop the most frequent element from a stack → tracks frequencies via hash maps and stacks, but manages stack popping rather than consecutive numerical card sequences | No — frequency stack management |
+| Task Scheduler — LC #621 | Schedule tasks with fixed CPU cooldown delays → uses frequency counting and greedy fill strategies, but targets CPU idle slots rather than consecutive values | Partial — frequency counting |
+
+**How this pattern scales:**
+- **The Modulo Divisibility Early Guard (`hand.size() % groupSize != 0`)** is the first essential check — if the total number of cards cannot be evenly divided by `groupSize`, it is mathematically impossible to form valid groups. Immediately short-circuit and return `false`.
+- **Greedy Smallest-Element Grouping via Sorted Map ($O(N \log N)$)** — To form consecutive sequences without guessing, you must always start a group with the **smallest available card value**. Using an ordered map (`std::map` or `TreeMap`) automatically keeps unique card values sorted while tracking their remaining frequency counts.
+- **The Consecutive Chain Validation Loop** — Iterate through the ordered map from smallest key to largest. For each key `card` with frequency `count > 0`:
+  * You are forced to build `count` groups of size `groupSize` starting at `card`.
+  * Loop through the expected consecutive values from `i = 0` to `groupSize - 1`:
+    * Target value = `card + i`.
+    * If `map[card + i] < count`, there are not enough cards to satisfy the required `count` straight groups. Return `false` immediately.
+    * Decrement the target value frequency: `map[card + i] -= count`.
+- **The $O(N \log N)$ to $O(N)$ Optimization (Hash Map + Queue / Min-Heap)** — Instead of iterating through an ordered map, sort the original array (or use an unordered hash map paired with a min-heap / queue) to find sequence start values. By processing array elements in sorted order and skipping elements whose frequency has already been depleted to `0`, you avoid redundant map lookup overhead.
+- **LC #1296 and LC #659 Connection** → Hand of Straights is the baseline problem for consecutive frequency bucket decomposition. LC #1296 is its identical twin, while LC #659 extends the core pattern by dropping the fixed group size constraint (`groupSize`). In LC #659, instead of strictly verifying fixed blocks of size $k$, you greedily append numbers to existing active sequences before starting a new group of length 3.
+- **Frequency map decomposition and ordered greedy sequence construction generalize** → This template is the industry baseline blueprint for poker hand evaluation software, memory page block contiguous allocation checkers, inventory consecutive serial number matching tools, and packet sequence reassembly algorithms in data networking. Master the cycle of: 1) Execute early modulo divisibility checks to confirm valid structural capacity, 2) Build a frequency map tracking occurrence counts of each distinct entity, 3) Process smallest available values sequentially to identify valid group starting anchors, 4) Verify and decrement frequencies for required consecutive sequence values, 5) Halt execution as soon as a required consecutive value count falls short.
+
+```cpp
+class Solution {
+public:
+    bool isNStraightHand(vector<int>& hand, int groupSize) {
+        if(hand.size() % groupSize != 0) return false;
+        map<int, int> numFreq; //using an ordered map to keep track of the frequency of each number 
+        //in the hand, so we can always get the smallest number in the hand
+        for(int i = 0; i < hand.size(); i++){
+            numFreq[hand[i]]++;
+        }
+        while(!numFreq.empty()){
+            int start = numFreq.begin()->first;
+            for(int i = 0; i < groupSize; i++){
+                int currCard = start + i; //we want to check if the current card is in the hand, 
+                //if it is not, then we cannot form a group of consecutive cards, so we return false
+
+                if(numFreq.find(currCard) == numFreq.end()) return false;
+
+                numFreq[currCard]--;
+                if(numFreq[currCard] == 0) numFreq.erase(currCard);
+
+            }
+
+        }
+        return true;
+    }
+};
+```
+
+## Lemonade Change LC 860
+
+<!-- notecardId: 1784601134720 -->
+
+At a lemonade stand, each lemonade costs $5. Customers are standing in a queue to buy from you and order one at a time (in the order specified by bills). Each customer will only buy one lemonade and pay with either a $5, $10, or $20 bill. You must provide the correct change to each customer so that the net transaction is that the customer pays $5.
+
+Note that you do not have any change in hand at first.
+
+Given an integer array bills where bills[i] is the bill the ith customer pays, return true if you can provide every customer with the correct change, or false otherwise.
+
+ 
+
+Example 1:
+
+Input: bills = [5,5,5,10,20]
+Output: true
+Explanation: 
+From the first 3 customers, we collect three $5 bills in order.
+From the fourth customer, we collect a $10 bill and give back a $5.
+From the fifth customer, we give a $10 bill and a $5 bill.
+Since all customers got correct change, we output true.
+Example 2:
+
+Input: bills = [5,5,10,10,20]
+Output: false
+Explanation: 
+From the first two customers in order, we collect two $5 bills.
+For the next two customers in order, we collect a $10 bill and give back a $5 bill.
+For the last customer, we can not give the change of $15 back because we only have two $10 bills.
+Since not every customer received the correct change, the answer is false.
+ 
+
+Constraints:
+
+1 <= bills.length <= 105
+bills[i] is either 5, 10, or 20.
+
+**Link**: [text](https://leetcode.com/problems/lemonade-change/)
+
+%
+
+**Pattern:** Greedy, Cash Register Simulation
+
+**Approach:** Use a greedy approach to simulate the cash register. Maintain counters for the number of $5 and $10 bills you have. Iterate through the bills array and for each bill, update your counters accordingly. If a customer pays with a $10 bill, you need to give back one $5 bill as change. If a customer pays with a $20 bill, you need to give back either one $10 and one $5 bill or three $5 bills as change. If at any point you cannot provide the correct change, return false.
+
+**Key Insight:** The key insight is that you should always try to give back the largest bills first when providing change. This ensures that you have enough smaller bills for future customers.
+
+**Gotchas:** Be careful with the case where you have to give change for a $20 bill. Always check if you have a $10 bill first before using three $5 bills. Also, ensure that you handle cases where you run out of $5 bills correctly.
+
+**Complexity:** Time: O(n) where n is the length of the bills array, since we are iterating through the array once. | Space: O(1) since we are using a constant amount of extra space for the counters.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Assign Cookies — LC #455 | Match cookie sizes to child greed factors → sorts two arrays and pairs minimal resources to satisfy requirements | Yes — direct greedy twin |
+| Minimum Number of Coins for Fruits — LC #2944 | Track optimal currency/cost selections over dynamic step choices → requires dynamic programming or mono-queue optimization rather than simple bill counts | No — dynamic programming |
+| Coin Change — LC #322 | Make target amount using minimum total coins → dynamic programming knapsack variant for arbitrary coin denominations where greedy selection fails | No — unbounded knapsack DP |
+| Task Scheduler — LC #621 | Organize tasks with fixed CPU idle cooldowns → uses frequency counts and greedy bucket fills to minimize idle slots | Partial — state counter tracking |
+
+**How this pattern scales:**
+- **The Highest-Denomination Preservation Rule ($O(N)$)** is the absolute core rule — when making change for a $20 bill ($15 change required), you have two valid choices: give one $10 bill + one $5 bill, or give three $5 bills. The optimal strategy is to **always prioritize giving a $10 bill first**. Because $5 bills are strictly more versatile (they can be used to make change for both $10 and $20 bills, whereas $10 bills can only make change for $20 bills), preserving $5 bills maximizes your ability to serve future customers.
+- **The Bill Counter Register** — Track the exact counts of available change using two integer variables: `five_count` and `ten_count`. (You do not need to track $20 bills because $20 bills can never be used to give change to any customer).
+- **The Decision Tree Logic** — Iterate through the `bills` array from start to finish:
+  * **Customer pays $5:** Increment `five_count++`.
+  * **Customer pays $10:** Check if `five_count > 0`. If yes, decrement `five_count--` and increment `ten_count++`; otherwise, return `false` immediately.
+  * **Customer pays $20:**
+    1. *Greedy Path 1 (Preferred):* If `ten_count > 0` and `five_count > 0`, decrement `ten_count--` and decrement `five_count--`.
+    2. *Fallback Path 2:* Else if `five_count >= 3`, decrement `five_count -= 3`.
+    3. *Failure:* Otherwise, you cannot provide change—return `false` immediately.
+- **Why Greedy Works Here (And Fails in General Coin Change)** — Greedy choices work for Lemonade Change because the bill denominations ($5, $10, $20) are strict multiples of each other ($10 = 2 \times 5$, $20 = 2 \times 10$). In generalized Coin Change problems with arbitrary denominations (e.g., coins of 1, 3, 4 to make 6), greedy selection fails and dynamic programming must be used instead.
+- **LC #455 Connection** → Lemonade Change showcases pure greedy resource preservation with $O(1)$ space. Just as LC #455 (Assign Cookies) greedily satisfies the smallest greed factors with the smallest effective cookie sizes, LC #860 greedily conserves the most versatile resource ($5 bills) to protect against future worst-case customer transactions.
+- **Resource preservation hierarchies and greedy change-making generalize** → This template is the industry baseline blueprint for automated physical cash/vending machine registers, dynamic inventory buffer allocations preserving versatile general-purpose SKUs, transactional token exchange limiters, and network buffer pool managers reserving multi-purpose data channels. Master the cycle of: 1) Maintain dedicated state counters for each resource denomination, 2) Process incoming requests sequentially in a single pass, 3) Satisfy required changes by consuming less versatile resources first, 4) Fall back to consuming multiple smaller versatile resources only when necessary, 5) Fail fast and exit early the instant available resource counts fall below required change thresholds.
+
+```cpp
+class Solution {
+public:
+    bool lemonadeChange(vector<int>& bills) {
+        int five = 0;
+        int ten = 0;
+        int twenty = 0;
+        if(bills[0]  == 10 || bills[0]  == 20) return false;
+        for(int i = 0; i < bills.size(); i++){
+            if(bills[i] == 5) five++;
+            else if (bills[i] == 10){
+                ten++;
+                if(five > 0) five--;
+                else return false;
+            }
+            else{
+                if(ten > 0 && five > 0){
+                    ten--;
+                    five--;
+                }
+                else if(five > 2){
+                    five -= 3;
+                }
+                else{
+                    return false;
+                }
+            }
+        }
+        return true;
+
+
+    }
+};
+```
+
+## Maximum Sum Circular Subarray LC 918
+
+<!-- notecardId: 1784601477832 -->
+
+Given a circular integer array nums of length n, return the maximum possible sum of a non-empty subarray of nums.
+
+A circular array means the end of the array connects to the beginning of the array. Formally, the next element of nums[i] is nums[(i + 1) % n] and the previous element of nums[i] is nums[(i - 1 + n) % n].
+
+A subarray may only include each element of the fixed buffer nums at most once. Formally, for a subarray nums[i], nums[i + 1], ..., nums[j], there does not exist i <= k1, k2 <= j with k1 % n == k2 % n.
+
+ 
+
+Example 1:
+
+Input: nums = [1,-2,3,-2]
+Output: 3
+Explanation: Subarray [3] has maximum sum 3.
+Example 2:
+
+Input: nums = [5,-3,5]
+Output: 10
+Explanation: Subarray [5,5] has maximum sum 5 + 5 = 10.
+Example 3:
+
+Input: nums = [-3,-2,-3]
+Output: -2
+Explanation: Subarray [-2] has maximum sum -2.
+ 
+
+Constraints:
+
+n == nums.length
+1 <= n <= 3 * 104
+-3 * 104 <= nums[i] <= 3 * 104
+
+**Link**: [text](https://leetcode.com/problems/maximum-sum-circular-subarray/)
+
+%
+
+**Pattern:** Greedy, Kadane's Algorithm, Circular Array Handling
+
+**Approach:** Use Kadane's algorithm to find the maximum subarray sum in a circular array. First, find the maximum subarray sum using the standard Kadane's algorithm. Then, find the minimum subarray sum and subtract it from the total sum of the array to get the maximum circular subarray sum. The final result is the maximum of the two sums.
+
+**Key Insight:** The key insight is that the maximum circular subarray sum can be obtained in two ways: either it is the maximum subarray sum found using Kadane's algorithm, or it is the total sum of the array minus the minimum subarray sum. This is because the circular subarray can be thought of as the total array minus a contiguous subarray (the minimum one).
+
+**Gotchas:** Be careful with the case where all numbers are negative. In this case, the maximum subarray sum is simply the maximum single element, and the circular sum calculation would incorrectly yield zero. Handle this edge case separately.
+
+**Complexity:** Time: O(n) where n is the length of the array, since we are iterating through the array multiple times. | Space: O(1) since we are using a constant amount of extra space.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Maximum Subarray — LC #53 | Find the maximum contiguous subarray sum in a linear array → single-pass Kadane's algorithm without circular wrap-around edge cases | Yes — direct foundational base |
+| Maximum Product Subarray — LC #152 | Find continuous subarray with maximum product → tracks running min and max products to handle negative sign flips rather than linear sum tracking | Yes — direct dynamic twin |
+| Gas Station — LC #134 | Complete a circular route with net fuel constraints → relies on Kadane-style reset logic to prune invalid start origins in a circular array | Yes — circular array twin |
+| House Robber II — LC #213 | Maximize sum of non-adjacent elements in a circular array → runs 1D dynamic programming twice (excluding first vs. last element) to break circular dependencies | Partial — circular DP state tracking |
+
+**How this pattern scales:**
+- **The Dual-Case Mathematical Split ($O(N)$)** is the absolute core rule — a circular max subarray can take one of two distinct structural forms:
+  1. **Standard Linear Subarray (Case 1):** The maximum subarray does not cross the boundary array wrap-around. This is captured directly using standard Kadane's algorithm (`max_kadane`).
+  2. **Circular Wrapping Subarray (Case 2):** The maximum subarray wraps around the array boundary (combining a prefix and a suffix). Mathematically, finding the maximum circular sum is equivalent to taking the total array sum and subtracting the **minimum contiguous subarray sum**:
+     $$\text{max\_circular} = \text{total\_sum} - \text{min\_kadane}$$
+- **Simultaneous Dual-Kadane Pass** — In a single $O(N)$ linear pass, track four dynamic metrics alongside `total_sum`:
+  * `curr_max` and `global_max`: Standard Kadane's algorithm tracking the maximum subarray sum.
+  * `curr_min` and `global_min`: Inverted Kadane's algorithm tracking the minimum subarray sum (`curr_min = min(nums[i], curr_min + nums[i])`).
+- **The All-Negative Elements Edge Case Guard** — If all numbers in the array are negative (e.g., `[-3, -2, -1]`):
+  * `global_max` will store the largest single negative element (`-1`).
+  * `global_min` will equal `total_sum`, causing `total_sum - global_min` to output `0` (which represents an invalid empty subarray choice).
+  * Check if `global_max < 0`. If true, return `global_max` directly, short-circuiting the circular formula.
+- **Final Result Calculation** — For arrays containing at least one non-negative element, the optimal answer is simply the maximum of both cases:
+  $$\text{return } \max(\text{global\_max}, \text{total\_sum} - \text{global\_min})$$
+- **LC #53 and LC #134 Connection** → Maximum Sum Circular Subarray bridges linear state-tracking algorithms with circular domain transformations. It extends LC #53 (Maximum Subarray) by running min/max Kadane passes concurrently, while sharing the circular net-sum logic seen in LC #134 (Gas Station).
+- **Inverted complement sum reductions and circular state tracking generalize** → This template is the industry baseline blueprint for ring-buffer signal processing peak detection, cyclic time-series anomaly profiling, continuous telemetry window aggregation, and wrap-around resource optimization loops. Master the cycle of: 1) Run dual linear Kadane passes tracking both maximum and minimum contiguous subarray sums concurrently, 2) Accumulate the global array sum across a single pass, 3) Compute the wrapped candidate sum using the inverted complement formula ($\text{total\_sum} - \text{global\_min}$), 4) Intercept all-negative edge cases where the maximum sum drops below zero, 5) Return the maximum boundary result across linear vs. wrapped candidate values.
+
+```cpp
+class Solution {
+public:
+    int maxSubarraySumCircular(vector<int>& nums) {
+        int currMin = nums[0];
+        int globalMin = nums[0];
+        int currMax = nums[0];
+        int globalMax = nums[0];
+        int totalSum  = 0;
+
+        for(int i = 0; i < nums.size(); i++) totalSum += nums[i];
+
+        for(int i = 1; i < nums.size(); i++){
+            currMin = min(nums[i], currMin + nums[i]);
+            globalMin = min(globalMin, currMin);
+
+            currMax = max(nums[i], currMax + nums[i]);
+            globalMax = max(currMax, globalMax); 
+        }
+
+        if(globalMax < 0){ //need this because if all numbers are negative, 
+        //then totalSum - globalMin will be 0, which is not the correct answer. In this case, we just return the maximum number in the array, which is globalMax.
+            return globalMax;
+        }
+        //taking the sum of the whole array and subtracting the minimum subarray sum will give us the maximum circular subarray sum.
+        return max(globalMax, totalSum - globalMin);
+    }
+};
+```
+
+## Longest Turbulent Subarray LC 978
+
+<!-- notecardId: 1784601760205 -->
+
+Given an integer array arr, return the length of a maximum size turbulent subarray of arr.
+
+A subarray is turbulent if the comparison sign flips between each adjacent pair of elements in the subarray.
+
+More formally, a subarray [arr[i], arr[i + 1], ..., arr[j]] of arr is said to be turbulent if and only if:
+
+For i <= k < j:
+arr[k] > arr[k + 1] when k is odd, and
+arr[k] < arr[k + 1] when k is even.
+Or, for i <= k < j:
+arr[k] > arr[k + 1] when k is even, and
+arr[k] < arr[k + 1] when k is odd.
+ 
+
+Example 1:
+
+Input: arr = [9,4,2,10,7,8,8,1,9]
+Output: 5
+Explanation: arr[1] > arr[2] < arr[3] > arr[4] < arr[5]
+Example 2:
+
+Input: arr = [4,8,12,16]
+Output: 2
+Example 3:
+
+Input: arr = [100]
+Output: 1
+ 
+
+Constraints:
+
+1 <= arr.length <= 4 * 104
+0 <= arr[i] <= 109
+
+**Link**: [text](https://leetcode.com/problems/longest-turbulent-subarray/)
+
+%
+
+**Pattern:** Greedy, Two-Pointer, Sliding Window
+
+**Approach:** Use a two-pointer sliding window approach to find the longest turbulent subarray. Use two variables, incStreak and decStreak to track the lengths of increasing and decreasing streaks. Iterate through the array and update these streaks based on the comparison of adjacent elements. The maximum length of a turbulent subarray is the maximum of these streaks.
+
+**Key Insight:** The key insight is that a turbulent subarray requires alternating comparisons between adjacent elements. By maintaining two streak counters (one for increasing and one for decreasing), you can efficiently track the length of the current turbulent subarray as you iterate through the array.
+
+**Gotchas:** Be careful with the case where adjacent elements are equal, as this breaks the turbulent condition. Also, ensure that you handle the case where the array has only one element correctly. In addition, when the previous elem is bigger than the current element, the decreasingStreak should be the sum of the previous increasingStreak + 1, and increasingStreak should be set to 1. Vice versa for the case where the current element is bigger than the previous element.
+
+**Complexity:** Time: O(n) where n is the length of the array, since we are iterating through the array once. | Space: O(1) since we are using a constant amount of extra space for the streak counters.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Maximum Subarray — LC #53 | Maximize sum of contiguous elements → tracks running positive/negative sums rather than enforcing alternating comparison signs between adjacent pairs | Yes — foundational base |
+| Longest Alternating Subarray — LC #2765 | Find maximum length of subarray alternating strictly as `[a, a+1, a, a+1]` → enforces strict numerical delta patterns ($+1, -1$) rather than loose sign inequality shifts | Yes — strict alternating variant |
+| Wiggle Subsequence — LC #376 | Find maximum length of alternating wiggle subsequence → allows dropping intermediate elements (subsequence) rather than requiring contiguous subarrays | Partial — subsequence greedy DP |
+| Best Time to Buy and Sell Stock II — LC #122 | Accumulate profit across all positive price increases → sums all positive adjacent deltas rather than tracking contiguous alternating comparison signs | No — greedy delta summation |
+
+**How this pattern scales:**
+- **The Comparison-Sign Alternation Invariant ($O(N)$)** is the absolute core rule — evaluating contiguous subarray windows using nested loops leads to an unnecessary $O(N^2)$ runtime. Instead, observe that a subarray is "turbulent" if the comparison signs between adjacent elements alternate strictly between consecutive pairs:
+  $$\text{cmp}(A[i-1], A[i]) \neq \text{cmp}(A[i], A[i+1]) \quad \text{and} \quad A[i-1] \neq A[i]$$
+- **Single-Pass Two-Pointer / Sliding Window Sweep** — Sweep linearly through the array while maintaining a running window length `curr_len` (initialized to `1`) and a global tracking maximum `max_len` (initialized to `1`):
+  * **Case 1 (Turbulent Flip):** If the comparison sign between `arr[i-1]` and `arr[i]` strictly opposes the sign between `arr[i-2]` and `arr[i-1]`, the turbulent chain continues: `curr_len++`.
+  * **Case 2 (Equal Pair Reset):** If `arr[i] == arr[i-1]`, turbulence breaks completely: reset `curr_len = 1`.
+  * **Case 3 (Non-Alternating Pair Reset):** If `arr[i]` and `arr[i-1]` do not alternate signs (e.g., two consecutive increases or two consecutive decreases), the chain breaks, but the current pair `[arr[i-1], arr[i]]` forms a valid baseline turbulent start: reset `curr_len = 2`.
+- **The DP Two-State Alternative ($O(N)$ Time, $O(1)$ Space)** — You can also model this as a 1D dynamic programming problem with two running variables:
+  * `inc`: Max turbulent length ending at index `i` with an *increasing* comparison (`arr[i] > arr[i-1]`).
+  * `dec`: Max turbulent length ending at index `i` with a *decreasing* comparison (`arr[i] < arr[i-1]`).
+  * If `arr[i] > arr[i-1]`, `inc = dec + 1`, and `dec = 1`.
+  * If `arr[i] < arr[i-1]`, `dec = inc + 1`, and `inc = 1`.
+  * If `arr[i] == arr[i-1]`, `inc = 1`, and `dec = 1`.
+- **LC #53 and LC #376 Connection** → Longest Turbulent Subarray sits at the intersection of sliding window reset mechanics and alternating DP state transitions. It applies the contiguous window reset rules of Kadane’s algorithm (LC #53) to the alternating sign dynamics found in Wiggle Subsequence (LC #376).
+- **Alternating comparison states and contiguous sliding window resets generalize** → This template is the industry baseline blueprint for time-series oscillator peak-trough detection, signal noise validation, market volatility oscillation tracking, and sensor telemetry cadence checking. Master the cycle of: 1) Initialize running window state and global maximum trackers to baseline defaults, 2) Compare adjacent element deltas using sign/direction comparison functions, 3) Increment running window lengths when strict directional alternation is maintained, 4) Reset tracking windows appropriately upon encountering duplicate values or flat directional trends, 5) Update global maximums at each step pass.
+
+```cpp
+class Solution {
+public:
+    int maxTurbulenceSize(vector<int>& arr) {
+        int incStreak = 1;
+        int decStreak = 1;
+        int maxSize = 1;
+        for(int i = 1; i < arr.size(); i++){
+            if(arr[i-1] > arr[i]){
+                decStreak = incStreak + 1; //if the previous element is greater than the current element, 
+                //then we can increase the decreasing streak by 1, and reset the increasing streak to 1
+                incStreak = 1;
+            }
+            else if (arr[i-1] < arr[i]){
+                incStreak = decStreak + 1; //if the previous element is less than the current element, 
+                //we can increase the increasing streak by 1, and reset the decreasing streak to 1
+                decStreak = 1;
+            }
+            else{
+                incStreak = 1; //if equal, reset both streaks to 1
+                decStreak = 1;
+            }
+            maxSize = max({decStreak, incStreak, maxSize}); //at each step, we check the max of the current increasing streak, 
+            //decreasing streak, and the max size so far
+        }
+
+        return maxSize;
+    }
+};
+```
+
+## Jump Game VII LC 1871
+
+<!-- notecardId: 1784602097188 -->
+
+You are given a 0-indexed binary string s and two integers minJump and maxJump. In the beginning, you are standing at index 0, which is equal to '0'. You can move from index i to index j if the following conditions are fulfilled:
+
+i + minJump <= j <= min(i + maxJump, s.length - 1), and
+s[j] == '0'.
+Return true if you can reach index s.length - 1 in s, or false otherwise.
+
+ 
+
+Example 1:
+
+Input: s = "011010", minJump = 2, maxJump = 3
+Output: true
+Explanation:
+In the first step, move from index 0 to index 3. 
+In the second step, move from index 3 to index 5.
+Example 2:
+
+Input: s = "01101110", minJump = 2, maxJump = 3
+Output: false
+ 
+
+Constraints:
+
+2 <= s.length <= 105
+s[i] is either '0' or '1'.
+s[0] == '0'
+1 <= minJump <= maxJump < s.length
+
+**Link**: [text](https://leetcode.com/problems/jump-game-vii/)
+
+%
+
+**Pattern:** Greedy, Sliding Window, BFS/DFS Simulation
+
+**Approach:** Use a greedy sliding window approach to determine if you can reach the last index. Maintain a variable `maxReach` to track the farthest index you can reach. Iterate through the string and for each index, check if it is reachable (i.e., it is within the range of `maxReach` and is '0'). If it is reachable, update `maxReach` to be the maximum of its current value and the farthest index you can jump to from this index. If at any point `maxReach` reaches or exceeds the last index, return true. If you finish iterating and haven't reached the last index, return false. Or, use a queue to perform a BFS-like traversal, where you enqueue reachable indices and process them until you either reach the last index or exhaust all possibilities.
+
+**Key Insight:** The key insight is that you can use a greedy approach to keep track of the farthest index you can reach, and only consider indices that are reachable and have a '0'. This allows you to efficiently determine if the last index is reachable without having to explore all possible paths.
+
+**Gotchas:** Be careful with the case where there are consecutive '1's that block your path. Also, ensure that you handle the case where the last index is not reachable due to the jump constraints.
+
+**Complexity:** Time: O(n) where n is the length of the string, since we are iterating through the string once. | Space: O(1) if using the greedy approach, or O(n) if using a queue for BFS.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Jump Game — LC #55 | Determine if destination index is reachable with unbounded variable jump lengths $\le \text{nums}[i]$ → solved using standard greedy single-pass max-reach tracking | Yes — foundational base |
+| Jump Game II — LC #45 | Find minimum jumps to reach destination index → uses greedy window boundary tracking (`current_end`) to count discrete jump increments | Yes — greedy level twin |
+| Jump Game III — LC #1306 | Jump forward or backward by exact value $\text{arr}[i]$ → models a graph traversal requiring BFS or DFS with visited tracking | No — graph BFS/DFS |
+| Sliding Window Maximum — LC #239 | Find max value in sliding windows of size $k$ → tracks maximums using a monotonic deque rather than maintaining reachable state counts across dynamic window boundaries | Partial — sliding window optimization |
+
+**How this pattern scales:**
+- **Sliding Window Reachability Counter ($O(N)$)** is the absolute core rule — checking all incoming jump origin candidates for index `i` via nested loops requires $O(N \cdot (\text{maxJump} - \text{minJump}))$ time, which TLEs. To optimize to $O(N)$, notice that index `i` is reachable if and only if **at least one reachable index exists in the window $[i - \text{maxJump}, i - \text{minJump}]$**. Maintaining a running count of reachable indices (`reachable_count`) inside this sliding window lets you resolve each index in $O(1)$ time.
+- **The Target Destination Guard (`s[N-1] == '0'`)** — First, check if the last character `s[N - 1] == '0'`. If `s[N - 1] == '1'`, it is impossible to land on the destination—return `false` immediately.
+- **Sliding Window State Maintenance** — Use a boolean array `dp` of size $N$ where `dp[i] = true` indicates index `i` is reachable. Initialize `dp[0] = true` and `reachable_count = 0`. Loop linearly through index `i` from `1` to `N - 1`:
+  * **Window Addition:** As index `i` advances, the left bound of its valid jump source window ($i - \text{minJump}$) becomes active. If $i - \text{minJump} \ge 0$ and `dp[i - minJump]` is `true`, increment `reachable_count++`.
+  * **Window Subtraction:** The right bound ($i - \text{maxJump} - 1$) falls out of range. If $i - \text{maxJump} - 1 \ge 0$ and `dp[i - maxJump - 1]` is `true`, decrement `reachable_count--`.
+  * **State Evaluation:** If `s[i] == '0'` and `reachable_count > 0`, set `dp[i] = true`.
+- **The Queue/Far-Reach Optimization Alternative** — Alternatively, use a BFS queue combined with a `max_reach` pointer tracking the furthest index already evaluated. Instead of re-scanning indices, only push newly discovered reachable indices into the queue, ensuring each index is visited at most once.
+- **LC #55 and LC #45 Connection** → Jump Game VII transitions Jump Game reachability from unconstrained max-reach intervals into bounded distance windows $[i + \text{minJump}, i + \text{maxJump}]$. It demonstrates how maintaining sliding window counts or prefix sums eliminates inner loop scans when DP transitions depend on fixed-distance intervals.
+- **Sliding window reachability tracking and range-bounded state transitions generalize** → This template is the industry baseline blueprint for packet buffer delivery with latency window constraints, dynamic game movement validation with min/max distance mechanics, interval-constrained state machine reachability, and scheduling pipelines with bounded cooldown delays. Master the cycle of: 1) Model index reachability using dynamic state flags across a linear timeline, 2) Define upper and lower offset bounds defining valid origin jump windows, 3) Maintain a running window count of active reachability states via two-pointer sliding windows or prefix sums, 4) Mark current position as reachable if valid origin counts exceed zero and constraints match, 5) Return final destination state status at array termination.
+
+```cpp
+class Solution {
+public:
+    bool canReach(string s, int minJump, int maxJump) {
+        // vector<bool> dp(s.length(), false);
+
+        // dp[0] = true;
+
+        // for(int i = 1; i < s.length(); i++){
+        //     if(s[i] != '0' || dp[i] != true) continue; 
+        //     for(int j = i + minJump; j <= (min((int) s.length() - 1, i + maxJump)); j++){
+        //         if(s[j] == '0') dp[j] = true;
+        //     }
+        // }
+
+
+        // return dp[s.length() - 1];
+
+        queue<int> q;
+        int furthest = 0;
+
+        q.push(0);
+
+        while(!q.empty()){
+            auto curr = q.front();
+            q.pop();
+
+            if(curr == s.length() - 1) return true;
+
+            int start = max(curr + minJump, furthest + 1); //we start from the maximum of the current index plus the minimum jump and the 
+            //furthest index we have reached so far plus one. This ensures that we do not revisit indices that we have already processed, which helps to optimize the algorithm and avoid unnecessary computations.
+            int end = min((int)s.length() - 1, curr + maxJump); //we end at the minimum of the last index of the string and the 
+            //current index plus the maximum jump. This ensures that we do not go out of bounds of the string while checking for reachable indices.
+
+            for (int i = start; i <= end; i++){
+                if(s[i] == '0') q.push(i);
+                furthest = max(i, furthest); //we update the furthest index we have reached so far to be the maximum of the current index and the previous furthest index. 
+                //This helps to keep track of the furthest point we can reach in the string, which is important for determining if we can reach the last index.
+            }
+        }
+        return false;
+
+    }
+};
+```
+
+## Merge Triplets to Form Target Triplet LC 1899
+
+<!-- notecardId: 1784602379328 -->
+
+A triplet is an array of three integers. You are given a 2D integer array triplets, where triplets[i] = [ai, bi, ci] describes the ith triplet. You are also given an integer array target = [x, y, z] that describes the triplet you want to obtain.
+
+To obtain target, you may apply the following operation on triplets any number of times (possibly zero):
+
+Choose two indices (0-indexed) i and j (i != j) and update triplets[j] to become [max(ai, aj), max(bi, bj), max(ci, cj)].
+For example, if triplets[i] = [2, 5, 3] and triplets[j] = [1, 7, 5], triplets[j] will be updated to [max(2, 1), max(5, 7), max(3, 5)] = [2, 7, 5].
+Return true if it is possible to obtain the target triplet [x, y, z] as an element of triplets, or false otherwise.
+
+ 
+
+Example 1:
+
+Input: triplets = [[2,5,3],[1,8,4],[1,7,5]], target = [2,7,5]
+Output: true
+Explanation: Perform the following operations:
+- Choose the first and last triplets [[2,5,3],[1,8,4],[1,7,5]]. Update the last triplet to be [max(2,1), max(5,7), max(3,5)] = [2,7,5]. triplets = [[2,5,3],[1,8,4],[2,7,5]]
+The target triplet [2,7,5] is now an element of triplets.
+Example 2:
+
+Input: triplets = [[3,4,5],[4,5,6]], target = [3,2,5]
+Output: false
+Explanation: It is impossible to have [3,2,5] as an element because there is no 2 in any of the triplets.
+Example 3:
+
+Input: triplets = [[2,5,3],[2,3,4],[1,2,5],[5,2,3]], target = [5,5,5]
+Output: true
+Explanation: Perform the following operations:
+- Choose the first and third triplets [[2,5,3],[2,3,4],[1,2,5],[5,2,3]]. Update the third triplet to be [max(2,1), max(5,2), max(3,5)] = [2,5,5]. triplets = [[2,5,3],[2,3,4],[2,5,5],[5,2,3]].
+- Choose the third and fourth triplets [[2,5,3],[2,3,4],[2,5,5],[5,2,3]]. Update the fourth triplet to be [max(2,5), max(5,2), max(5,3)] = [5,5,5]. triplets = [[2,5,3],[2,3,4],[2,5,5],[5,5,5]].
+The target triplet [5,5,5] is now an element of triplets.
+ 
+
+Constraints:
+
+1 <= triplets.length <= 105
+triplets[i].length == target.length == 3
+1 <= ai, bi, ci, x, y, z <= 1000
+
+**Link**: [text](https://leetcode.com/problems/merge-triplets-to-form-target-triplet/)
+
+%
+
+**Pattern:** Greedy, Set Tracking
+
+**Approach:** Use a greedy approach to track the maximum values for each position in the triplets. Iterate through the triplets and for each triplet, check if it can contribute to forming the target triplet. If a triplet has all its elements less than or equal to the corresponding elements in the target triplet, update the maximum values for each position. After processing all triplets, check if the maximum values match the target triplet.
+
+**Key Insight:** The key insight is that to form the target triplet, you need to find triplets that can contribute to each position of the target. A triplet can only contribute if all its elements are less than or equal to the corresponding elements in the target triplet. By tracking the maximum values for each position, you can determine if it's possible to form the target triplet.
+
+**Gotchas:** Be careful with the case where a triplet has an element greater than the corresponding element in the target triplet, as it cannot contribute to forming the target. Also, ensure that you handle cases where multiple triplets contribute to the same position in the target triplet.
+
+**Complexity:** Time: O(n) where n is the number of triplets, since we are iterating through the triplets once. | Space: O(1) since we are using a constant amount of extra space for the maximum values.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Non-overlapping Intervals — LC #435 | Erase minimum intervals to remove overlap → sorts by end times to greedily prune overlapping ranges rather than accumulating component-wise maximums | Partial — greedy pruning |
+| Car Fleet — LC #853 | Count car fleets reaching target position → processes positions/speeds via monotonic stack sorting rather than independent component filter checks | No — monotonic stack processing |
+| Maximum Length of Pair Chain — LC #646 | Find longest chain of non-overlapping pairs → uses dynamic programming or greedy sorting on pair bounds rather than component-wise element filtering | Partial — greedy filtering |
+| Minimum Number of Taps to Open to Water a Garden — LC #1326 | Cover an entire interval range using overlapping tap radiuses → converts tap radiuses into max jump limits before applying a single-pass greedy window expansion | Partial — greedy max boundary |
+
+**How this pattern scales:**
+- **The Element-Wise Poisoning Invariant ($O(N)$)** is the absolute core rule — merging two triplets $[a, b, c]$ and $[d, e, f]$ takes their element-wise maximums: $[\max(a, d), \max(b, e), \max(c, f)]$. Because the $\max$ operation is **monotonically non-decreasing**, including any triplet that has *even one element greater* than its corresponding target component ($t[0], t[1],$ or $t[2]$) will permanently "poison" that index, making it impossible to ever shrink back down to the target value.
+- **The Strict Filtering Elimination Rule** — A triplet $T = [a, b, c]$ can be safely considered for merging if and only if **all three components** are less than or equal to their respective target values:
+  $$a \le \text{target}[0] \quad \text{and} \quad b \le \text{target}[1] \quad \text{and} \quad c \le \text{target}[2]$$
+  Any triplet violating even one of these three conditions must be discarded immediately.
+- **Component Match Set Tracking** — Maintain three boolean flags (`found_x`, `found_y`, `found_z`) initialized to `false`, or an active set of satisfied target indices. Sweep linearly through all triplets:
+  * Check if the current triplet is valid (passes the filtering elimination rule).
+  * If valid, check if its individual components match the target values:
+    * If $a == \text{target}[0]$, set `found_x = true`.
+    * If $b == \text{target}[1]$, set `found_y = true`.
+    * If $c == \text{target}[2]$, set `found_z = true`.
+- **Early-Exit & Final Validation** — After processing all triplets (or early-exiting as soon as all three flags become `true`), the answer is `true` if and only if `found_x && found_y && found_z` are all `true`.
+- **Why Local Greedy Filtering Works (No Combination Search Needed)** — You do not need to test subsets or combinations of triplets using backtracking. Because merging valid triplets only increases values up to the target cap without exceeding it, you can greedily merge **every single valid triplet** in the dataset. If the union of all valid triplets covers the target values across all three dimensions, a solution exists.
+- **Component-wise monotonic bounds and invalid-element pruning generalize** → This template is the industry baseline blueprint for multi-attribute capacity planning, feature-flag entitlement evaluation, multi-dimensional SLA quota matching, and resource profile synthesis in cloud infrastructure configuration engines. Master the cycle of: 1) Identify monotonically non-decreasing operations ($\max$, $\text{OR}$, union), 2) Filter out any candidate vector whose components exceed target limit caps, 3) Track component-wise match coverage across remaining valid candidate vectors, 4) Accumulate valid candidate attributes into a running union, 5) Validate that all target dimension requirements are fully satisfied.
+
+```cpp
+class Solution {
+public:
+    bool mergeTriplets(vector<vector<int>>& triplets, vector<int>& target) {
+        bool found1 = false;
+        bool found2 = false;
+        bool found3 = false;
+        for(auto triplet : triplets){
+            if(triplet[0] > target[0] || triplet[1] > target[1] ||triplet[2] > target[2]) continue;
+            //this is key, we are pruning here, any truplets with vals larger than target are GUARANTEED not to be in the result
+
+            if(triplet[0] == target[0]) found1 = true;
+            if(triplet[1] == target[1]) found2 = true;
+            if(triplet[2] == target[2]) found3 = true;
+
+            if(found1 && found2 && found3) return true;
+
+        }
+        return (found1 && found2 && found3);
+    }
+};
+```
+
