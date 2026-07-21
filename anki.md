@@ -22388,3 +22388,1375 @@ public:
 };
 ```
 
+## Multiply Strings LC 43
+
+<!-- notecardId: 1784665316302 -->
+
+Given two non-negative integers num1 and num2 represented as strings, return the product of num1 and num2, also represented as a string.
+
+Note: You must not use any built-in BigInteger library or convert the inputs to integer directly.
+
+ 
+
+Example 1:
+
+Input: num1 = "2", num2 = "3"
+Output: "6"
+Example 2:
+
+Input: num1 = "123", num2 = "456"
+Output: "56088"
+ 
+
+Constraints:
+
+1 <= num1.length, num2.length <= 200
+num1 and num2 consist of digits only.
+Both num1 and num2 do not contain any leading zero, except the number 0 itself.
+
+**Link**: [text](https://leetcode.com/problems/multiply-strings/)
+
+%
+
+**Pattern:** String Manipulation, Simulation, Elementary Math
+
+**Approach:** Use elementary school multiplication to simulate the multiplication of two numbers represented as strings. The idea is to multiply each digit of num1 with each digit of num2 and store the results in an array, taking care of the carry for each position. Finally, convert the result array back to a string.
+
+**Key Insight:** The key insight is that multiplying two numbers can be broken down into multiplying each digit of the first number by each digit of the second number, similar to how multiplication is done by hand. Each product contributes to a specific position in the result based on the indices of the digits being multiplied. By storing intermediate results in an array and managing carries, we can construct the final product without converting the entire strings to integers.
+
+**Gotchas:** Be careful with the input constraints and ensure that the strings are valid representations of non-negative integers. The solution assumes that the strings do not contain leading zeros (except for "0" itself) and consist only of digits. Additionally, handle the case where either number is "0" to return "0" immediately.
+
+**Complexity:** Time: O(m * n) where m and n are the lengths of num1 and num2, respectively, as we multiply each digit of num1 with each digit of num2. | Space: O(m + n) for the result array that holds the intermediate sums.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Add Strings — LC #415 | Add two large non-negative integers represented as strings → single right-to-left loop adding positional digits with carry propagation. | Yes — string-based arithmetic twin |
+| Add Binary — LC #67 | Add two binary numbers represented as strings → right-to-left string traversal with carry propagation operating in base 2 instead of base 10. | Yes — string-based carry propagation |
+| Plus One — LC #66 | Increment a large integer represented as an array of digits by one → right-to-left array traversal with early termination when carry dissipates. | Yes — single-operand carry propagation |
+| String to Integer (atoi) — LC #8 | Parse a string into a 32-bit signed integer handling whitespace, signs, and invalid characters → digit-by-digit parsing with boundary overflow checks. | Yes — string digit extraction twin |
+
+**How this pattern scales:**
+- **Simulating Grade-School Multiplication ($O(N \cdot M)$ Time, $O(N + M)$ Space)** — Direct parsing of strings to native integer types fails because input strings exceed standard 64-bit integer ranges ($N, M \le 200$ digits). Instead, emulate manual column-by-column multiplication:
+  * Multiplying a number of length $N$ by a number of length $M$ produces a result of length at most $N + M$.
+  * Initialize an array `pos` of size $N + M$ filled with zeros to accumulate intermediate cross-products.
+- **Positional Index Mapping** — For a digit at index `i` in `num1` and a digit at index `j` in `num2`:
+  * Their product `mul = (num1[i] - '0') * (num2[j] - '0')` contributes directly to two indices in the result array:
+    $$\text{p1} = i + j \quad (\text{tens / carry position}), \quad \text{p2} = i + j + 1 \quad (\text{ones / current position})$$
+  * Compute total sum at position `p2`: $\text{sum} = \text{mul} + \text{pos}[\text{p2}]$.
+  * Update current position: $\text{pos}[\text{p2}] = \text{sum} \pmod{10}$.
+  * Carry over to higher position: $\text{pos}[\text{p1}] += \lfloor \text{sum} / 10 \rfloor$.
+
+- **Edge Case Intercept: Zero Product Guard** —
+  * If either `num1 == "0"` or `num2 == "0"`, return `"0"` immediately to avoid trailing or leading zero processing artifacts.
+- **String Reconstruction & Leading Zero Truncation** —
+  * Convert the populated `pos` array into a string sequence.
+  * Skip leading zeros (which appear at index $0$ if the product does not use all $N + M$ available digits).
+  * If all digits are zero, return `"0"`.
+- **Advanced Sub-Quadratic Scaling (Karatsuba Algorithm)** —
+  * Standard nested loop approach runs in $O(N \cdot M)$ time.
+  * For extremely large inputs ($N, M > 10^4$), divide digits into high and low halves to reduce four sub-multiplications down to three:
+    $$T(N) = 3 T(N/2) + O(N) \implies O(N^{\log_2 3}) \approx O(N^{1.585})$$
+- **LC #415 and LC #67 Connection** → Multiply Strings extends low-level string arithmetic into two dimensions. It uses the right-to-left carry mechanics established in LC #415 (Add Strings) and LC #67 (Add Binary), while demonstrating how to organize multidimensional cross-products directly inside a flat positional accumulator array.
+- **Positional array accumulation, index mapping ($i + j$), and carry propagation generalize** → This template is the industry baseline blueprint for high-precision scientific computing, BigInt mathematical engines (e.g., Python's native long-integer implementation), cryptographic RSA key generation libraries (large modular multiplication), and financial ledger precision calculators. Master the cycle of: 1) Allocate a fixed result buffer of size $N + M$, 2) Process digits in reverse loops while mapping cross-products to indices $i + j$ and $i + j + 1$, 3) Accumulate intermediate products into the lower index and propagate carries to the higher index, 4) Intercept zero-value edge cases early, 5) Trim leading zeros when building the output string.
+
+```cpp
+class Solution {
+public:
+    string multiply(string num1, string num2) {
+        string res = "";
+        if (num1 == "0" || num2 == "0") return "0"; //if either number is 0, the product is 0
+        vector<int> product(num1.length() + num2.length(), 0); //the maximum length of the product of two numbers is the sum of their lengths
+        for(int i = num1.length() -1; i >= 0; i--){
+            for(int j = num2.length() - 1; j >= 0; j--){
+                product[i + j + 1] += (num1[i] - '0') * (num2[j] - '0'); //we add the product of the two digits to the appropriate index in the product vector
+                product[i+j] += product[i+j+1] / 10; //we add the carry to the next index
+                product[i + j + 1] %= 10; //we keep only the last digit in the current index
+            }
+        }
+
+        for(int i = 0; i < product.size(); i++){
+            if((product[i] == 0) && res.length() == 0) continue; //skip leading zeros
+                res += to_string(product[i]);
+        }
+        return res;
+    }
+};
+```
+
+## Rotate Image LC 48
+
+<!-- notecardId: 1784665561056 -->
+
+You are given an n x n 2D matrix representing an image, rotate the image by 90 degrees (clockwise).
+
+You have to rotate the image in-place, which means you have to modify the input 2D matrix directly. DO NOT allocate another 2D matrix and do the rotation.
+
+ 
+
+Example 1:
+
+
+Input: matrix = [[1,2,3],[4,5,6],[7,8,9]]
+Output: [[7,4,1],[8,5,2],[9,6,3]]
+Example 2:
+
+
+Input: matrix = [[5,1,9,11],[2,4,8,10],[13,3,6,7],[15,14,12,16]]
+Output: [[15,13,2,5],[14,3,4,1],[12,6,8,9],[16,7,10,11]]
+ 
+
+Constraints:
+
+n == matrix.length == matrix[i].length
+1 <= n <= 20
+-1000 <= matrix[i][j] <= 1000
+
+**Link**: [text](https://leetcode.com/problems/rotate-image/)
+
+%
+
+**Pattern:** Matrix Manipulation, In-Place Transformation, Layered Rotation
+
+**Approach:** Use a two-step process to rotate the matrix in place. First, transpose the matrix by swapping elements across the diagonal. Then, reverse each row to achieve the 90-degree clockwise rotation.
+
+**Key Insight:** The key insight is that a 90-degree clockwise rotation can be achieved by first transposing the matrix (flipping it over its diagonal) and then reversing each row. This approach allows for in-place modification without the need for additional space.
+
+**Gotchas:** Be careful with the indices when transposing and reversing. Ensure that you only swap elements once during the transpose step to avoid undoing your work. Also, remember that reversing each row is necessary to complete the rotation.
+
+**Complexity:** Time: O(n^2) where n is the dimension of the matrix, as we need to visit each element twice (once for transposing and once for reversing). | Space: O(1) since we are modifying the matrix in place without using additional space.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Spiral Matrix — LC #54 | Traverse a 2D matrix in spiral order → 4-boundary pointer reduction without in-place element swapping. | Partial — 2D matrix traversal |
+| Set Matrix Zeroes — LC #73 | Set entire row and column to zero if an element is 0 → in-place status tracking using the first row and column as flags. | Partial — in-place matrix mutation |
+| Transpose Matrix — LC #867 | Swap matrix rows and columns across the main diagonal → non-square grid support returning a newly allocated matrix. | Yes — diagonal index transformation twin |
+| Valid Sudoku — LC #36 | Validate $9 \times 9$ board row, column, and sub-box uniqueness → 2D index mapping and hashing without element position modification. | Partial — 2D grid index mapping |
+
+**How this pattern scales:**
+- **In-Place Matrix Transformation Decomposition ($O(N^2)$ Time, $O(1)$ Space)** — Rotating an $N \times N$ matrix $90^\circ$ clockwise directly requires swapping four cells simultaneously in concentric rings. However, any geometric rotation can be decomposed into two simpler linear algebra operations:
+  $$\text{Rotate } 90^\circ \text{ Clockwise} = \text{Transpose} \to \text{Reverse Each Row}$$
+- **Step 1: Matrix Transposition Across Main Diagonal** — Swap elements `matrix[i][j]` and `matrix[j][i]` for all $i < j$:
+  * Traverse only the upper triangle ($i$ from $0$ to $N-1$, $j$ from $i+1$ to $N-1$) to prevent double-swapping elements back to their original positions:
+    $$\text{swap}(\text{matrix}[i][j], \text{matrix}[j][i])$$
+- **Step 2: Horizontal Row Reversal** — Reverse the elements of each row independently:
+  * For each row $i$, swap `matrix[i][j]` with `matrix[i][N - 1 - j]` for $j$ from $0$ to $\lfloor N/2 \rfloor - 1$:
+    $$\text{swap}(\text{matrix}[i][j], \text{matrix}[i][N - 1 - j])$$
+- **Geometric Variations Scaling Matrix Operations** —
+  * **Rotate $90^\circ$ Counter-Clockwise:** Reverse each row first, then transpose (or transpose, then reverse vertically across columns).
+  * **Rotate $180^\circ$:** Reverse each row, then reverse vertically across columns (or reverse the entire array of rows).
+- **Four-Cell Cyclic Rotation Alternative** — Rotate 4 elements in a single loop by tracking ring boundaries:
+  * Top-Left $\to$ Top-Right $\to$ Bottom-Right $\to$ Bottom-Left $\to$ Top-Left.
+  * Outer loop $i$ from $0$ to $\lfloor N/2 \rfloor - 1$, inner loop $j$ from $i$ to $N - 1 - i$.
+- **LC #867 and LC #54 Connection** → Rotate Image bridges coordinate geometry with in-place matrix mutation. It directly utilizes matrix transposition from LC #867 (Transpose Matrix) as its core building block, while sharing index boundary constraints with grid-traversal problems like LC #54 (Spiral Matrix).
+- **Matrix decomposition (Transpose + Reverse) and diagonal symmetry swaps generalize** → This template is the industry baseline blueprint for image processing filters (lossless bitmap orientation adjustments), computer graphics rendering transformations, spatial geospatial grid re-projections, and parallel matrix algebra kernels in deep learning frameworks. Master the cycle of: 1) Break down complex spatial rotations into orthogonal linear algebra steps (transposition and reflection), 2) Restrict loop bounds to upper triangles ($j > i$) to enforce in-place swaps without redundant double-swapping, 3) Process row-level reflections using two-pointer reversals, 4) Handle asymmetric non-square grids by allocating destination buffers when needed, 5) Retain $O(1)$ auxiliary space without duplicate grid clones.
+
+```cpp
+class Solution {
+public:
+    void rotate(vector<vector<int>>& matrix) {
+       for(int i = 0; i < matrix.size() - 1; i++) {
+        for(int j = i + 1; j< matrix[0].size(); j++){
+            std::swap( matrix[i][j], matrix[j][i]);
+        }
+       }
+
+        for(int i = 0; i < matrix.size(); i++){
+            std::reverse(matrix[i].begin(), matrix[i].end());
+        }
+    }
+};
+```
+
+## Pow (x, n) LC 50
+
+<!-- notecardId: 1784666050146 -->
+
+Implement pow(x, n), which calculates x raised to the power n (i.e., xn).
+
+ 
+
+Example 1:
+
+Input: x = 2.00000, n = 10
+Output: 1024.00000
+Example 2:
+
+Input: x = 2.10000, n = 3
+Output: 9.26100
+Example 3:
+
+Input: x = 2.00000, n = -2
+Output: 0.25000
+Explanation: 2-2 = 1/22 = 1/4 = 0.25
+ 
+
+Constraints:
+
+-100.0 < x < 100.0
+-231 <= n <= 231-1
+n is an integer.
+Either x is not zero or n > 0.
+-104 <= xn <= 104
+
+**Link**: [text](https://leetcode.com/problems/powx-n/)
+
+%
+
+**Pattern:** Divide and Conquer, Exponentiation by Squaring, Recursive Power Calculation
+
+**Approach:** Use the divide-and-conquer method to calculate the power. The idea is to recursively break down the exponentiation into smaller subproblems, leveraging the property that x^n can be expressed as (x^(n/2))^2 when n is even, and x * (x^(n-1)) when n is odd. This reduces the number of multiplications needed. This is called fast exponentiation and is the core trick to passing the runtime.
+
+**Key Insight:** The key insight is that exponentiation can be optimized by recognizing that squaring a number is more efficient than multiplying it repeatedly. By halving the exponent at each step, we can reduce the total number of multiplications from O(n) to O(log n). This is particularly important for large exponents.
+
+**Gotchas:** Be careful with negative exponents, as they require taking the reciprocal of the base. Also, handle the case when n is zero, as any number raised to the power of zero is one. Additionally, be cautious with floating-point precision and potential overflow issues.
+
+**Complexity:** Time: O(log n) since we halve the exponent at each step, leading to a logarithmic number of multiplications. | Space: O(1) for the iterative approach, or O(log n) for the recursive approach due to the call stack.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Sqrt(x) — LC #69 | Compute integer square root of non-negative integer → binary search on value range $[0, x]$ to locate largest floor square. | Partial — logarithmic search analog |
+| Super Pow — LC #372 | Calculate $a^b \pmod{1337}$ where $b$ is an array of digits → recursive modular exponentiation combined with Euler's totient reduction. | Yes — modular binary exponentiation twin |
+| Multiply Strings — LC #43 | Multiply two non-negative numbers represented as strings → simulate grade-school multiplication storing cross-products in a positional array. | Partial — large-number arithmetic |
+| Count Unreachable Pairs of Nodes — LC #2316 | Graph component size product aggregation → basic multiplication without logarithmic power reduction. | Partial — mathematical reduction |
+
+**How this pattern scales:**
+- **Binary Exponentiation / Exponentiation by Squaring ($O(\log N)$ Time, $O(1)$ Space)** — Naive linear multiplication ($x \cdot x \dots \cdot x$) requires $O(N)$ operations, which times out for $N = 2^{31} - 1 \approx 2.14 \times 10^9$. Binary exponentiation reduces time complexity to $O(\log N)$ by halving the exponent at each step:
+  $$x^n = \begin{cases} (x^2)^{n/2} & \text{if } n \text{ is even} \\ x \cdot (x^2)^{(n-1)/2} & \text{if } n \text{ is odd} \end{cases}$$
+- **Iterative Bitwise Binary Exponentiation** — Interpret the exponent $N$ in its binary representation:
+  1. Initialize `ans = 1.0` and set base `current_product = x`.
+  2. While $N > 0$:
+     * If the lowest bit of $N$ is set (`N % 2 == 1` or `N & 1`): multiply `ans *= current_product`.
+     * Square the base: `current_product *= current_product`.
+     * Halve the exponent: `N /= 2` or `N >>= 1`.
+  3. Return `ans`.
+- **Handling Negative Exponents & Integer Overflow** —
+  * If $n < 0$, $x^{-n} = \left(\frac{1}{x}\right)^n$.
+  * **Critical Edge Case:** In 32-bit signed integers, $N \in [-2^{31}, 2^{31} - 1]$. Negating $n = -2^{31}$ causes integer overflow because $2^{31}$ exceeds `INT_MAX`.
+  * **Fix:** Convert $n$ to a 64-bit integer (`long` / `long long`) before performing $N = -N$, or process $n$ in reciprocal space:
+    ```python
+    N = abs(n)  # handle as 64-bit integer
+    if n < 0:
+        x = 1 / x
+    ```
+- **Modular Exponentiation Generalization ($(A^B) \pmod M$)** —
+  * When working with cryptographic or large combinatorial outputs, apply modulo arithmetic at every multiplication step to prevent numeric overflow:
+    $$\text{ans} = (\text{ans} \cdot \text{current\_product}) \pmod M, \quad \text{current\_product} = (\text{current\_product}^2) \pmod M$$
+- **LC #372 and LC #69 Connection** → Pow(x, n) represents the foundational standard for logarithmic numerical reduction. It powers modular exponential arithmetic needed in LC #372 (Super Pow), while providing the logarithmic divide-and-conquer mindset applied to value ranges in LC #69 (Sqrt(x)).
+- **Exponentiation by squaring and 64-bit boundary conversion generalize** → This template is the industry baseline blueprint for RSA public-key cryptographic key verification (fast modular exponentiation $m^e \pmod n$), 2D transform matrix powers in graph path counting ($A^k$), financial compound interest projection models, and fast Fibonacci sequence calculation via $2 \times 2$ matrix exponentiation. Master the cycle of: 1) Convert exponents to 64-bit types to prevent edge-case overflow when $n = -2^{31}$, 2) Invert base $x \to 1/x$ for negative power representations, 3) Process bit positions by halving exponents and squaring base accumulators, 4) Accumulate products into the result whenever LSB is active, 5) Achieve $O(\log N)$ logarithmic speedup without linear loop iterations.
+
+```cpp
+class Solution {
+public:
+    double myPow(double x, int n) {
+        long long N = n; //convert to long long to avoid overflow when n = INT_MIN
+        if (N < 0){
+            x = 1 / x;
+            N = -N;
+        }
+
+        double res = 1.0;
+
+        while(N > 0){
+          if(N % 2 == 1){ //if N is odd, we multiply res by x and decrement N by 1 to make it even
+            res *= x;
+            N--;
+          }
+          N /=2; //if even, we can use fast power, so we divide N by 2 and square x, this way we can reduce the number of multiplications needed to compute x^n
+          //ex, 2^8 = (2^2)^4 = 4^4 = (4^2)^2 = 16^2 = 256, so we can compute 2^8 in 3 multiplications instead of 7
+          x *= x;
+        }
+
+        return res;
+    }
+};
+```
+
+## Spiral Matrix LC 54
+
+<!-- notecardId: 1784666224091 -->
+
+Given an m x n matrix, return all elements of the matrix in spiral order.
+
+ 
+
+Example 1:
+
+
+Input: matrix = [[1,2,3],[4,5,6],[7,8,9]]
+Output: [1,2,3,6,9,8,7,4,5]
+Example 2:
+
+
+Input: matrix = [[1,2,3,4],[5,6,7,8],[9,10,11,12]]
+Output: [1,2,3,4,8,12,11,10,9,5,6,7]
+ 
+
+Constraints:
+
+m == matrix.length
+n == matrix[i].length
+1 <= m, n <= 10
+-100 <= matrix[i][j] <= 100
+
+**Link**: [text](https://leetcode.com/problems/spiral-matrix/)
+
+%
+
+**Pattern:** Matrix Traversal, Boundary Tracking, Layered Iteration
+
+**Approach:** Use boundary pointers to track the current layer of the matrix being traversed. Start from the outermost layer and move inward, collecting elements in a spiral order by traversing the top row, right column, bottom row, and left column in sequence. Adjust the boundaries after completing each layer.
+
+**Key Insight:** The key insight is that a spiral traversal can be achieved by maintaining four boundaries (top, bottom, left, right) and iteratively moving inward. By carefully updating these boundaries after each complete traversal of a layer, we can ensure that all elements are visited in the correct order without revisiting any elements.
+
+**Gotchas:** Be careful with the boundary conditions, especially when the matrix has an odd number of rows or columns. Ensure that you do not traverse the same row or column more than once. Also, handle edge cases where the matrix has only one row or one column.
+
+**Complexity:** Time: O(m * n) where m and n are the dimensions of the matrix, as we need to visit each element exactly once. | Space: O(1) for the output list, but O(m * n) if we consider the space used to store the result.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Spiral Matrix II — LC #59 | Generate an $N \times N$ matrix filled with elements $1$ to $N^2$ in spiral order → 4-boundary pointer traversal populating values instead of reading them. | Yes — direct spiral construction twin |
+| Rotate Image — LC #48 | Rotate $N \times N$ matrix $90^\circ$ clockwise in-place → matrix transposition across diagonal followed by row reversals. | Yes — 2D matrix coordinate transformation |
+| Spiral Matrix III — LC #885 | Walk in a clockwise spiral starting from $(r_{\text{start}}, c_{\text{start}})$ on a grid → step-length expansion pattern with out-of-bounds coordinate skipping. | Yes — expanding spiral traversal |
+| Set Matrix Zeroes — LC #73 | Set entire row and column to zero if an element is 0 → status tracking using the first row and column as flag storage. | Partial — in-place grid modification |
+
+**How this pattern scales:**
+- **Layer-by-Layer Boundary Shrinking ($O(M \cdot N)$ Time, $O(1)$ Auxiliary Space)** — Maintain 4 boundary pointers to track the active perimeter of the grid:
+  $$\text{top} = 0, \quad \text{bottom} = M - 1, \quad \text{left} = 0, \quad \text{right} = N - 1$$
+- **Clockwise Traversal Order** — Loop while $\text{top} \le \text{bottom}$ and $\text{left} \le \text{right}$:
+  1. **Left to Right:** Traverse row $\text{top}$ from $\text{left}$ to $\text{right}$, then increment $\text{top} += 1$.
+  2. **Top to Bottom:** Traverse column $\text{right}$ from $\text{top}$ to $\text{bottom}$, then decrement $\text{right} -= 1$.
+  3. **Right to Left (Conditional Guard):** Check if $\text{top} \le \text{bottom}$. If valid, traverse row $\text{bottom}$ from $\text{right}$ to $\text{left}$, then decrement $\text{bottom} -= 1$.
+  4. **Bottom to Top (Conditional Guard):** Check if $\text{left} \le \text{right}$. If valid, traverse column $\text{left}$ from $\text{bottom}$ to $\text{top}$, then increment $\text{left} += 1$.
+
+- **Preventing Double-Traversal Duplicate Artifacts** —
+  * For non-square matrices (e.g., $1 \times N$ or $M \times 1$), the initial top-to-bottom or left-to-right pass can collapse the boundaries ($\text{top} > \text{bottom}$ or $\text{left} > \text{right}$) mid-iteration.
+  * Always re-check $\text{top} \le \text{bottom}$ before executing the Right-to-Left sweep and $\text{left} \le \text{right}$ before executing the Bottom-to-Top sweep.
+- **Direction Vector Simulation Alternative** —
+  * Use a direction vector array $dr = [0, 1, 0, -1]$ and $dc = [1, 0, -1, 0]$ representing (Right, Down, Left, Up).
+  * Change directions when hitting visited boundaries or grid limits. Mark visited cells in-place or via a boolean matrix.
+- **LC #59 and LC #885 Connection** → Spiral Matrix serves as the classic foundational problem for coordinate direction switching and matrix boundary management. It directly powers constructor problems like LC #59 (Spiral Matrix II), while laying the groundwork for unconstrained grid-walking algorithms like LC #885 (Spiral Matrix III).
+- **Four-pointer boundary contraction and conditional directional sweeps generalize** → This template is the industry baseline blueprint for 2D image pixel rasterization, game engine map rendering, matrix memory layout serialization, and dynamic coordinate grid compression. Master the cycle of: 1) Initialize 4 pointers representing outer bounds, 2) Execute clockwise perimeter loops in sequence (L$\to$R, T$\to$B, R$\to$L, B$\to$T), 3) Shrink active boundaries immediately after finishing each direction, 4) Guard against single row/column overlap duplicates using midpoint condition checks, 5) Complete traversal in $O(M \cdot N)$ time visiting each cell exactly once.
+
+```cpp
+class Solution {
+public:
+    vector<int> spiralOrder(vector<vector<int>>& matrix) {
+        vector<int> res;
+        int top = 0; 
+        int left = 0;
+        int bottom = matrix.size() - 1;
+        int right = matrix[0].size() - 1;
+
+        while(top <= bottom && left <= right){ //keep going until we have covered all rows and columns
+            for(int i = left; i <= right; i++){
+                res.push_back(matrix[top][i]); //push the top row from left to right
+            }
+            top++;
+            for(int i = top; i <= bottom; i++){
+                res.push_back(matrix[i][right]); //push the right column from top to bottom
+            }
+            right--;
+
+            if(top <= bottom){ //check if we still have rows to cover, if so, push the bottom row from right to left
+            for(int i = right; i >=left; i--){
+                res.push_back(matrix[bottom][i]);
+            }
+            bottom--;}
+
+            if(left <= right) //check if we still have columns to cover, if so, push the left column from bottom to top
+            {for(int i = bottom; i >= top; i--){
+                res.push_back(matrix[i][left]);
+            }
+            left++;}
+        }
+    return res;
+    }
+};
+```
+
+## Plus One LC 66
+
+<!-- notecardId: 1784666528457 -->
+
+You are given a large integer represented as an integer array digits, where each digits[i] is the ith digit of the integer. The digits are ordered from most significant to least significant in left-to-right order. The large integer does not contain any leading 0's.
+
+Increment the large integer by one and return the resulting array of digits.
+
+ 
+
+Example 1:
+
+Input: digits = [1,2,3]
+Output: [1,2,4]
+Explanation: The array represents the integer 123.
+Incrementing by one gives 123 + 1 = 124.
+Thus, the result should be [1,2,4].
+Example 2:
+
+Input: digits = [4,3,2,1]
+Output: [4,3,2,2]
+Explanation: The array represents the integer 4321.
+Incrementing by one gives 4321 + 1 = 4322.
+Thus, the result should be [4,3,2,2].
+Example 3:
+
+Input: digits = [9]
+Output: [1,0]
+Explanation: The array represents the integer 9.
+Incrementing by one gives 9 + 1 = 10.
+Thus, the result should be [1,0].
+ 
+
+Constraints:
+
+1 <= digits.length <= 100
+0 <= digits[i] <= 9
+digits does not contain any leading 0's.
+
+**Link**: [text](https://leetcode.com/problems/plus-one/)
+
+%
+
+**Pattern:** Array Manipulation, Carry Propagation, Incrementing Large Numbers
+
+**Approach:** Start from the least significant digit (the end of the array) and increment it by one. If the result is less than 10, return the array. If it equals 10, set the current digit to 0 and carry over 1 to the next significant digit. Repeat this process until there are no more digits left or until there is no carry. If there is still a carry after processing all digits, insert a new digit at the beginning of the array.
+
+**Key Insight:** The key insight is that incrementing a number can be done in a single pass from the least significant digit to the most significant digit, handling carries as needed. This is similar to how addition is performed manually, where you start from the rightmost digit and move left, carrying over when necessary.
+
+**Gotchas:** Be careful with the case where all digits are 9, as this will result in a new digit being added to the front of the array (e.g., [9,9,9] becomes [1,0,0,0]). Also, ensure that you handle the carry correctly and do not forget to check for it after processing all digits.
+
+**Complexity:** Time: O(n) where n is the length of the digits array, as we may need to traverse the entire array in the worst case. | Space: O(1) if we modify the input array in place, or O(n) if we create a new array for the result.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Add Binary — LC #67 | Add two binary strings → right-to-left traversal with carry propagation in base 2 instead of base 10. | Yes — string-based carry propagation twin |
+| Add Strings — LC #415 | Add two large integers represented as strings → dual right-to-left pointer traversal handling positional carries. | Yes — string-based digit addition |
+| Add to Array-Form of Integer — LC #989 | Add an integer $K$ to a digit array `num` → right-to-left array sweep carrying $K$ directly into array positions. | Yes — array digit addition extension |
+| Multiply Strings — LC #43 | Multiply two numbers represented as strings → 2D positional cross-products accumulating into a fixed-size result buffer. | Yes — multidimensional carry array math |
+
+**How this pattern scales:**
+- **Right-to-Left Carry Propagation ($O(N)$ Time, $O(1)$ Auxiliary Space)** — Standard integer addition starts from the least significant digit (rightmost index $N - 1$) and moves left toward the most significant digit (index $0$):
+  * Traverse `digits` in reverse from index $N - 1$ down to $0$.
+  * If `digits[i] < 9`: increment `digits[i] += 1` and return `digits` immediately (no further carry propagates).
+  * If `digits[i] == 9`: set `digits[i] = 0` and continue the loop to pass a carry of $1$ to the next higher digit position (`i - 1`).
+- **The All-Nines Boundary Case ($999 \dots 9 \to 1000 \dots 0$)** —
+  * If the loop completes without an early return, every single digit was a $9$ (e.g., `[9, 9, 9]` becomes `[0, 0, 0]`).
+  * Construct a new array of size $N + 1$ with the first digit set to `1` (e.g., `[1, 0, 0, 0]`) and return it:
+    ```python
+    # If loop finishes, all digits were 9
+    return [1] + [0] * len(digits)
+    ```
+- **Base Generalization across Number Systems** —
+  * The right-to-left carry loop applies universally across any number base $B$:
+    $$\text{digit}[i] = (\text{digit}[i] + \text{carry}) \pmod B, \quad \text{carry} = \lfloor (\text{digit}[i] + \text{carry}) / B \rfloor$$
+  * For base 10 (LC #66), $B = 10$. For binary (LC #67), $B = 2$.
+- **LC #67 and LC #989 Connection** → Plus One is the simplest single-operand representation of carry propagation in array data structures. It acts as the fundamental building block for general string/array addition in LC #67 (Add Binary) and LC #415 (Add Strings), while serving as a direct stepping stone to multi-digit additions in LC #989 (Add to Array-Form of Integer).
+- **Reverse array iteration, early exit on non-carry digits, and size expansion generalize** → This template is the industry baseline blueprint for arbitrary-precision arithmetic libraries (BigInt incremental counting), hardware incrementor circuits, software transaction counter updates, and odometer-style state machine transitions. Master the cycle of: 1) Iterate backwards from the LSB to MSB, 2) Apply local digit modifications and carry updates, 3) Short-circuit early whenever carry drops to $0$, 4) Prepended high-order `1` reallocation for all-9 boundary conditions, 5) Avoid full array reallocations for standard non-overflow cases.
+
+```cpp
+class Solution {
+public:
+    vector<int> plusOne(vector<int>& digits) {
+        // vector<int> res;
+        // int carry = 1; //adding 1
+        // int digitsPtr = digits.size() - 1;
+
+
+        // while(digitsPtr >= 0){
+        //     if(digits[digitsPtr] + carry == 10){
+        //         res.push_back(0);
+        //         carry = 1;
+        //     }
+        //     else{
+        //         res.push_back(digits[digitsPtr] + carry);
+        //         carry = 0;
+        //     }
+        //     digitsPtr--;
+        // }
+        // if (carry == 1) res.push_back(1);
+        // reverse(res.begin(), res.end());
+        // return res;
+
+        //above solution works, but we can do this in O(1) space below
+
+        for(int i = digits.size() - 1; i >= 0; i--){
+            if(digits[i] == 9){
+                digits[i] = 0;
+            }
+            else{
+                digits[i]++;
+                return digits;
+            }
+        }
+
+        digits.insert(digits.begin(), 1);
+        return digits;
+    }
+};
+```
+
+## Set Matrix Zeroes LC 73
+
+<!-- notecardId: 1784666661449 -->
+
+Given an m x n integer matrix matrix, if an element is 0, set its entire row and column to 0's.
+
+You must do it in place.
+
+ 
+
+Example 1:
+
+
+Input: matrix = [[1,1,1],[1,0,1],[1,1,1]]
+Output: [[1,0,1],[0,0,0],[1,0,1]]
+Example 2:
+
+
+Input: matrix = [[0,1,2,0],[3,4,5,2],[1,3,1,5]]
+Output: [[0,0,0,0],[0,4,5,0],[0,3,1,0]]
+ 
+
+Constraints:
+
+m == matrix.length
+n == matrix[0].length
+1 <= m, n <= 200
+-231 <= matrix[i][j] <= 231 - 1
+ 
+
+Follow up:
+
+A straightforward solution using O(mn) space is probably a bad idea.
+A simple improvement uses O(m + n) space, but still not the best solution.
+Could you devise a constant space solution?
+
+**Link**: [text](https://leetcode.com/problems/set-matrix-zeroes/)
+
+%
+
+**Pattern:** In-Place Matrix Mutation, Flagging Rows and Columns, Space Optimization
+
+**Approach:** Use the first row and first column of the matrix as flags to indicate whether a particular row or column should be set to zero. First, iterate through the matrix to identify which rows and columns need to be zeroed. Then, iterate through the matrix again to set the appropriate rows and columns to zero based on the flags. Finally, handle the first row and first column separately if they were flagged.
+
+**Key Insight:** The key insight is that we can use the first row and first column of the matrix itself to store the information about which rows and columns need to be zeroed, thus avoiding the need for additional space. This allows us to achieve the desired result in constant space.
+
+**Gotchas:** Be careful with the first row and first column, as they are being used as flags. You need to check if the first row or first column originally contained any zeros before using them as flags. If they did, you will need to zero them out at the end of the process.
+
+**Complexity:** Time: O(m * n) where m and n are the dimensions of the matrix, as we need to visit each element multiple times. | Space: O(1) since we are using the matrix itself for flagging and not using any additional data structures.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Game of Life — LC #289 | Update 2D grid cells simultaneously based on neighbor counts → in-place multi-state bit encoding storing current and future states. | Yes — in-place state encoding twin |
+| Rotate Image — LC #48 | Rotate an $N \times N$ matrix $90^\circ$ clockwise → in-place coordinate transformation using transposition and horizontal reflection. | Partial — 2D in-place grid modification |
+| Spiral Matrix — LC #54 | Traverse 2D matrix in spiral order → 4-boundary pointer contraction without grid modification. | Partial — 2D grid navigation |
+| Valid Sudoku — LC #36 | Validate $9 \times 9$ board rows, columns, and $3 \times 3$ sub-grids → 2D index bitmask hashing without mutating the input matrix. | Partial — 2D row/column tracking |
+
+**How this pattern scales:**
+- **The Naive Space Overhead Problem ($O(M \cdot N)$ Time, $O(M + N)$ Space)** — Setting rows/columns to zero immediately during the first pass overwrites non-zero values, leading to a cascade where the entire matrix becomes zero. Using auxiliary boolean arrays `row_zero[M]` and `col_zero[N]` tracks zero locations safely, but consumes $O(M + N)$ extra memory.
+- **In-Place State Storage Optimization ($O(M \cdot N)$ Time, $O(1)$ Space)** — Use the **first row (`matrix[0][j]`)** and **first column (`matrix[i][0]`)** as storage markers to replace external tracking arrays:
+  1. Determine if the first row and first column originally contain zeros using two boolean flags (`first_row_has_zero`, `first_col_has_zero`).
+  2. Iterate through the inner matrix ($i \in [1, M-1]$, $j \in [1, N-1]$). If `matrix[i][j] == 0`, mark its row and column headers:
+     $$\text{matrix}[i][0] = 0, \quad \text{matrix}[0][j] = 0$$
+  3. Re-examine the inner matrix ($i \in [1, M-1]$, $j \in [1, N-1]$). If either `matrix[i][0] == 0` or `matrix[0][j] == 0`, set `matrix[i][j] = 0`.
+  4. Finally, process the first row and column using the stored flags: if `first_row_has_zero` is true, set all cells in row $0$ to zero; if `first_col_has_zero` is true, set all cells in column $0$ to zero.
+
+- **Order of Resolution Dependency Guard** —
+  * Never update the header markers (`matrix[0][j]` and `matrix[i][0]`) before processing the inner matrix ($1 \dots M-1, 1 \dots N-1$). Doing so early wipes out row/column flags before they can be read.
+  * Resolve inner cells first, then resolve the header row/column last using the saved booleans.
+- **LC #289 Connection** → Set Matrix Zeroes introduces the concept of using the input array's existing structure as its own auxiliary memory. It acts as the direct conceptual precursor to LC #289 (Game of Life), where extra state bits are encoded directly into matrix elements to achieve true $O(1)$ space board mutations.
+- **First row/column state marking, delayed boundary updates, and bit/flag encoding generalize** → This template is the industry baseline blueprint for low-level GPU frame-buffer clearing, memory-mapped bitmap row invalidation, database sparse matrix compression filters, and zero-allocation grid state machines. Master the cycle of: 1) Save boundary state invariants using $O(1)$ flags, 2) Use edge rows/columns as internal hash flags for inner cells, 3) Mutate inner grid elements using header markers, 4) Apply boundary transformations last to prevent flag corruption, 5) Achieve $O(1)$ auxiliary space without memory reallocation.
+
+```cpp
+class Solution {
+public:
+    void setZeroes(vector<vector<int>>& matrix) {
+        bool firstRowZero = false; //check if the first row has a zero, if so, we will need to set the entire first row to zero at the end
+        bool firstColZero = false; //check if the first column has a zero, if so, we will need to set the entire first column to zero at the end
+        for(int i = 0; i < matrix.size(); i++){
+            if (matrix[i][0] == 0) firstColZero = true; //if we find a 0 in the first column, we set firstColZero to true
+        }
+        for(int i = 0; i < matrix[0].size(); i++){
+            if (matrix[0][i] == 0) firstRowZero = true;
+        }
+
+        for(int i = 1; i < matrix.size(); i++){
+            for(int j = 1; j < matrix[0].size(); j++){
+                if(matrix[i][j] == 0){
+                    matrix[i][0] = 0; //if we find a 0 , set the indicator row/col to 0
+                    matrix[0][j] = 0;
+                }
+            }
+        }
+        for(int i = 1; i < matrix.size(); i++){
+            if(matrix[i][0] == 0){
+                for(int j = 1; j < matrix[0].size(); j++){
+                    matrix[i][j] = 0;
+                    //if we found a 0 in the indicator row/col, we set the entire row/col to 0
+                }
+            }
+        }
+
+        for(int j = 1; j < matrix[0].size(); j++){
+            if(matrix[0][j] == 0){
+                for(int i = 1; i < matrix.size(); i++){
+                    matrix[i][j] = 0;
+                }
+            }
+        }
+
+        if(firstColZero){
+            for(int i = 0; i < matrix.size(); i++) matrix[i][0] = 0; //found a 0 originally in the indicator row/col, so we set the entire row/col to 0
+        }
+        if(firstRowZero){
+            for(int i = 0; i < matrix[0].size(); i++) matrix[0][i] = 0;
+        }
+    }
+};
+```
+
+## Excel Sheet Column Title LC 168
+
+<!-- notecardId: 1784666839529 -->
+
+Given an integer columnNumber, return its corresponding column title as it appears in an Excel sheet.
+
+For example:
+
+A -> 1
+B -> 2
+C -> 3
+...
+Z -> 26
+AA -> 27
+AB -> 28 
+...
+ 
+
+Example 1:
+
+Input: columnNumber = 1
+Output: "A"
+Example 2:
+
+Input: columnNumber = 28
+Output: "AB"
+Example 3:
+
+Input: columnNumber = 701
+Output: "ZY"
+ 
+
+Constraints:
+
+1 <= columnNumber <= 231 - 1
+
+**Link**: [text](https://leetcode.com/problems/excel-sheet-column-title/)
+
+%
+
+**Pattern:** Base Conversion, String Construction, Reverse Accumulation
+
+**Approach:** Treat the column number as a base-26 number, where 'A' corresponds to 1 and 'Z' corresponds to 26. Repeatedly divide the column number by 26, adjusting for the fact that there is no zero in this system (i.e., when the remainder is 0, it corresponds to 'Z'). Construct the string in reverse order and then reverse it at the end. The key thing I messed up when I first did this quesiton is that I didn't note that the columns are 1-indexed, so we need to subtract 1 from the column number before doing the modulo operation.
+
+**Key Insight:** The key insight is that the Excel column title system is essentially a modified base-26 numbering system without a zero digit. This means that when calculating the character for each position, we need to adjust the column number by subtracting 1 before performing the modulo operation to correctly map to the characters 'A' to 'Z'.
+
+**Gotchas:** Be careful with the 1-indexed nature of the problem. When performing the modulo operation, if the remainder is 0, it corresponds to 'Z', and you need to adjust the column number accordingly. Also, remember to reverse the constructed string at the end since you build it from least significant to most significant digit.
+
+**Complexity:** Time: O(log(columnNumber)) since we are dividing the column number by 26 in each iteration, which reduces the number of digits we need to process. | Space: O(log(columnNumber)) for the string that stores the result, as it will have a length proportional to the number of digits in base-26.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Excel Sheet Column Number — LC #171 | Convert Excel column title string back to integer (e.g., `"AB"` $\to 28$) → left-to-right base-26 positional evaluation ($26 \cdot \text{acc} + \text{val}$). | Yes — inverse base-26 mapping twin |
+| Base 7 — LC #504 | Convert an integer to a base-7 string representation → standard positional base conversion using modulo (`n % 7`) and division (`n // 7`). | Yes — standard positional base conversion |
+| Convert to Base -2 — LC #1017 | Convert an integer to a binary string in base -2 → negative base division with remainder adjustments to ensure non-negative digits. | Yes — non-standard base conversion |
+| Integer to Roman — LC #12 | Convert an integer to a Roman numeral string → greedy subtraction mapping using fixed positional symbol lookup tables. | Partial — value-to-string representation |
+
+**How this pattern scales:**
+- **Non-Zero-Indexed Base Conversion ($O(\log_{26} N)$ Time, $O(1)$ Auxiliary Space)** — Standard base-$B$ conversions map numbers to digits in the range $[0, B - 1]$ (e.g., Base 10 uses $0\dots9$, Base 2 uses $0\dots1$). Excel column titles use a 1-indexed alphabet system ($1 \to \text{'A'}$, $26 \to \text{'Z'}$):
+  * There is no symbol representing `0`.
+  * Every digit position spans $[1, 26]$ instead of $[0, 25]$.
+- **1-Offset Alignment Adjustment** — To map the range $[1, 26]$ into standard zero-indexed modulo arithmetic ($[0, 25] \to \text{'A'}\dots\text{'Z'}$), subtract `1` from $N$ at the start of every division iteration:
+  1. While $N > 0$:
+     * Adjust offset: $N = N - 1$.
+     * Extract current rightmost character: $\text{rem} = N \pmod{26} \implies \text{chr}(\text{ord}('A') + \text{rem})$.
+     * Shift to next higher significance column: $N = \lfloor N / 26 \rfloor$.
+  2. Reverse the accumulated character sequence to produce the left-to-right title.
+- **Why $N = N - 1$ fixes the 'Z' Boundary Edge Case** —
+  * Without the offset, when $N = 26$: $26 \pmod{26} = 0$, which would incorrectly map to `'A'`, and $26 / 26 = 1$, generating an erroneous extra column `'A'`.
+  * With the offset, when $N = 26$: $(26 - 1) \pmod{26} = 25 \implies \text{'Z'}$, and $\lfloor (26 - 1) / 26 \rfloor = 0$, terminating the loop cleanly.
+- **LC #171 and LC #504 Connection** → Excel Sheet Column Title serves as the primary example of 1-indexed base conversion. It directly complements LC #171 (Excel Sheet Column Number), which reverses this operation, while demonstrating how to modify standard base-conversion algorithms like LC #504 (Base 7) when the target alphabet lacks a zero symbol.
+- **1-indexed radix alignment, modulo character extraction, and string reversal generalize** → This template is the industry baseline blueprint for bijective base-26/36 short-link encoding (URL shorteners without confusing zero characters), custom spreadsheet coordinate systems, bi-directional column indexing in data frame libraries (e.g., Pandas/Excel exporters), and custom alphanumeric sequence generators. Master the cycle of: 1) Identify if the target representation contains a zero character, 2) Subtract 1 prior to modulo reduction to map 1-indexed systems onto 0-indexed arrays, 3) Extract character symbols via standard ASCII offset shifting (`'A' + rem`), 4) Divide by radix base $B$, 5) Reverse the character stack for MSB-first output.
+
+```cpp
+class Solution {
+public:
+    string convertToTitle(int columnNumber) {
+        string res = "";
+        while(columnNumber != 0){
+            columnNumber--; //fix because columns are 1-indexed, this will fix it to become 0 indeced
+            res += (columnNumber % 26) + 'A';
+            columnNumber /= 26;
+        }
+        reverse(res.begin(), res.end());
+        return res;
+    }
+};
+```
+
+## Roman to Integer LC 13
+
+<!-- notecardId: 1784667035348 -->
+
+Roman numerals are represented by seven different symbols: I, V, X, L, C, D and M.
+
+Symbol       Value
+I             1
+V             5
+X             10
+L             50
+C             100
+D             500
+M             1000
+For example, 2 is written as II in Roman numeral, just two ones added together. 12 is written as XII, which is simply X + II. The number 27 is written as XXVII, which is XX + V + II.
+
+Roman numerals are usually written largest to smallest from left to right. However, the numeral for four is not IIII. Instead, the number four is written as IV. Because the one is before the five we subtract it making four. The same principle applies to the number nine, which is written as IX. There are six instances where subtraction is used:
+
+I can be placed before V (5) and X (10) to make 4 and 9. 
+X can be placed before L (50) and C (100) to make 40 and 90. 
+C can be placed before D (500) and M (1000) to make 400 and 900.
+Given a roman numeral, convert it to an integer.
+
+ 
+
+Example 1:
+
+Input: s = "III"
+Output: 3
+Explanation: III = 3.
+Example 2:
+
+Input: s = "LVIII"
+Output: 58
+Explanation: L = 50, V= 5, III = 3.
+Example 3:
+
+Input: s = "MCMXCIV"
+Output: 1994
+Explanation: M = 1000, CM = 900, XC = 90 and IV = 4.
+ 
+
+Constraints:
+
+1 <= s.length <= 15
+s contains only the characters ('I', 'V', 'X', 'L', 'C', 'D', 'M').
+It is guaranteed that s is a valid roman numeral in the range [1, 3999].
+
+**Link**: [text](https://leetcode.com/problems/roman-to-integer/)
+
+%
+
+**Pattern:** String Parsing, Value Mapping, Subtractive Notation Handling
+
+**Approach:** Create a mapping of Roman numeral characters to their integer values. Iterate through the string from left to right, adding the value of each character to a total. If a character has a smaller value than the character that follows it, subtract its value instead of adding it. This handles the subtractive notation used in Roman numerals.
+
+**Key Insight:** The key insight is that in Roman numerals, when a smaller numeral appears before a larger numeral, it indicates subtraction. By comparing each character with the next one, we can determine whether to add or subtract its value from the total.
+
+**Gotchas:** Be careful with the last character in the string, as it does not have a next character to compare with. Ensure that you handle this case correctly by always adding the value of the last character to the total.
+
+**Complexity:** Time: O(n) where n is the length of the string, as we need to iterate through each character once. | Space: O(1) since we are using a fixed-size mapping for the Roman numeral characters.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Integer to Roman — LC #12 | Convert integer to Roman numeral string → greedy value-subtraction loop using a pre-sorted value-to-symbol mapping table. | Yes — inverse Roman numeral twin |
+| Roman to Integer II / Validation — LC #273 | Integer to English Words → 3-digit chunking with scale labels (Thousand, Million) without subtractive prefix rules. | Partial — number-to-string parsing |
+| Basic Calculator II — LC #227 | Evaluate string arithmetic expressions with precedence → operator-precedence parsing using a stack or running accumulator. | Partial — left-to-right operator parsing |
+| String to Integer (atoi) — LC #8 | Parse string representation to signed 32-bit integer → character classification, overflow checking, and sign tracking. | Partial — character-by-character numeric parsing |
+
+**How this pattern scales:**
+- **Single-Pass Subtractive Pair Evaluation ($O(N)$ Time, $O(1)$ Space)** — Roman numerals follow an additive rule (larger/equal symbol precedes smaller symbol) except when a smaller symbol precedes a larger one (subtractive rule):
+  * **Additive:** `VI` $\to 5 + 1 = 6$
+  * **Subtractive:** `IV` $\to 5 - 1 = 4$
+- **Left-to-Right Comparison Strategy** — Compare the current character's numerical value `val(s[i])` with the next character's value `val(s[i+1])`:
+  1. Initialize `total = 0`.
+  2. For each index $i$ from $0$ to $N - 1$:
+     * If $i < N - 1$ and `val(s[i]) < val(s[i+1])`: subtract `val(s[i])` from `total`.
+     * Otherwise: add `val(s[i])` to `total`.
+  3. Return `total`.
+- **Alternative Right-to-Left Accumulation Strategy** — Traverse the string backwards from right to left while maintaining a `max_seen` tracker:
+  * If `val(s[i]) >= max_seen`: add `val(s[i])` to total and update `max_seen = val(s[i])`.
+  * If `val(s[i]) < max_seen`: subtract `val(s[i])` from total.
+- **Fixed Symbol Mapping Table ($O(1)$ Lookup)** —
+  * Map symbols directly using a hash table or fixed array:
+    $$\text{'I'}: 1, \quad \text{'V'}: 5, \quad \text{'X'}: 10, \quad \text{'L'}: 50, \quad \text{'C'}: 100, \quad \text{'D'}: 500, \quad \text{'M'}: 1000$$
+- **LC #12 Connection** → Roman to Integer is the standard entry point for single-pass state-dependent parsing. It directly complements LC #12 (Integer to Roman), which reverses this logic, while illustrating how lookahead comparison (`s[i] < s[i+1]`) simplifies multi-character token parsing in custom string parsers like LC #227 (Basic Calculator II).
+- **Lookahead state comparison, subtractive prefix evaluation, and linear accumulator loops generalize** → This template is the industry baseline blueprint for custom token parsing engines, domain-specific markup evaluators, financial currency symbol translation, and legacy format decoder modules. Master the cycle of: 1) Map static symbols to numeric values via constant-time lookups, 2) Evaluate relative ordering of adjacent tokens using lookahead or reverse-pass tracking, 3) Apply subtractive updates when a token is smaller than its successor, 4) Accumulate values linearly in $O(N)$ time, 5) Avoid complex regex overhead by leveraging fixed symbol properties.
+
+```cpp
+class Solution {
+public:
+    int romanToInt(string s) {
+        int idx = s.size() - 1;
+        int result = 0;
+unordered_map<string, int> romanMap = {
+    {"M", 1000}, {"CM", 900}, {"D", 500}, {"CD", 400},
+    {"C", 100},  {"XC", 90},  {"L", 50},  {"XL", 40},
+    {"X", 10},   {"IX", 9},   {"V", 5},   {"IV", 4},
+    {"I", 1}
+};
+        while (idx>= 0){
+            if(idx > 0){
+            if(romanMap.find(s.substr(idx - 1, 2)) != romanMap.end()){
+                        result += romanMap[s.substr(idx - 1, 2)];
+                        idx -= 2;
+                        continue;
+            }
+            }
+
+            result += romanMap[string(1, s[idx])];
+            idx -= 1;
+        }
+        return result;
+    }
+};
+```
+
+## Happy Number LC 202
+
+<!-- notecardId: 1784667364005 -->
+
+Write an algorithm to determine if a number n is happy.
+
+A happy number is a number defined by the following process:
+
+Starting with any positive integer, replace the number by the sum of the squares of its digits.
+Repeat the process until the number equals 1 (where it will stay), or it loops endlessly in a cycle which does not include 1.
+Those numbers for which this process ends in 1 are happy.
+Return true if n is a happy number, and false if not.
+
+ 
+
+Example 1:
+
+Input: n = 19
+Output: true
+Explanation:
+12 + 92 = 82
+82 + 22 = 68
+62 + 82 = 100
+12 + 02 + 02 = 1
+Example 2:
+
+Input: n = 2
+Output: false
+ 
+
+Constraints:
+
+1 <= n <= 231 - 1
+
+**Link**: [text](https://leetcode.com/problems/happy-number/)
+
+%
+
+**Pattern:** Cycle Detection, Digit Manipulation, Sum of Squares
+
+**Approach:** Use a set to track numbers that have been seen during the process of summing the squares of the digits. If we reach 1, return true. If we encounter a number that we've seen before, return false, as this indicates a cycle.
+
+**Key Insight:** The key insight is that if a number is not happy, the process will eventually enter a cycle that does not include 1. By keeping track of the numbers we've seen, we can detect when we've entered such a cycle.
+
+**Gotchas:** Be careful with the implementation of the sum of squares calculation. Make sure to correctly extract each digit and square it before summing. Also, ensure that you handle the case where n is already 1 at the start.
+
+**Complexity:** Time: O(log(n)) for each iteration of the sum of squares, and in the worst case, we may have to perform this operation multiple times until we either reach 1 or detect a cycle. | Space: O(log(n)) for the set that tracks seen numbers, as the number of unique sums of squares is limited.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Linked List Cycle — LC #141 | Detect if a linked list has a cycle → two-pointer Floyd's tortoise and hare traversal over node memory references. | Yes — cycle detection twin |
+| Ugly Number — LC #263 | Check if prime factors are limited to 2, 3, and 5 → repeated division by permitted prime bases until reaching 1. | Partial — numeric reduction validation |
+| Add Digits — LC #258 | Repeatedly add all digits until result is single digit → Digital Root mathematical modulo arithmetic formula ($O(1)$ time). | Partial — digit manipulation reduction |
+| Circular Array Loop — LC #457 | Detect if an array contains a cycle under index-jump rules → fast/slow pointer cycle detection with direction constraints. | Yes — implicit state graph cycle detection |
+
+**How this pattern scales:**
+- **Implicit State Graph Traversal ($O(\log N)$ Time, $O(1)$ Auxiliary Space)** — Transform a number $N$ into the sum of the squares of its digits. Repeating this process creates an implicit directed graph where each number points to its successor:
+  $$\text{next\_num}(n) = \sum_{d \in \text{digits}(n)} d^2$$
+  * If the sequence reaches $1$, $1$ loops infinitely to itself ($1^2 = 1$), confirming the number is "Happy".
+  * If $N$ is not Happy, the sequence gets trapped in a closed cycle that never contains $1$ (specifically the 8-number cycle: $4 \to 16 \to 37 \to 58 \to 89 \to 145 \to 42 \to 20 \to 4$).
+- **Cycle Detection via Floyd's Tortoise and Hare ($O(1)$ Space)** — Avoid allocating memory for a `HashSet` of visited numbers by deploying two pointers running at different speeds:
+  1. Initialize `slow = n` and `fast = get_next(n)`.
+  2. While `fast != 1` and `slow != fast`:
+     * Advance `slow` by 1 step: `slow = get_next(slow)`.
+     * Advance `fast` by 2 steps: `fast = get_next(get_next(fast))`.
+  3. If `fast == 1`, return `True` (Happy number). If `slow == fast`, return `False` (trapped in a cycle).
+- **HashSet Traversal Alternative ($O(\text{cycle length})$ Space)** —
+  * Maintain a `seen = set()` to store visited values.
+  * Stop when $N == 1$ (return `True`) or when $N \in \text{seen}$ (return `False`).
+- **Logarithmic State Space Upper Bound** —
+  * For a large number like $999,999,999$ ($9$ digits), the sum of squares is $9 \times 9^2 = 729$.
+  * Any number greater than $243$ strictly decreases after one step, bounding the state space to three-digit numbers ($< 1000$) where cycle detection runs in near-instant constant time.
+- **LC #141 and LC #457 Connection** → Happy Number demonstrates that Floyd's Cycle Detection algorithm extends far beyond explicit pointer structures like LC #141 (Linked List Cycle). It shows how to apply pointer-based cycle detection to implicit numeric transitions, serving as the entry point to array-based state cycles like LC #457 (Circular Array Loop).
+- **Implicit state transition functions, Floyd's tortoise/hare pointers, and digit-square reductions generalize** → This template is the industry baseline blueprint for pseudo-random number generator cycle verification (e.g., Pollard's rho algorithm for integer factorization), infinite loop detection in functional pipelines, state machine dead-lock auditing, and hash collision cycle detection. Master the cycle of: 1) Define explicit state transitions as a single-input single-output function, 2) Use fast/slow pointers to detect loops without extra memory overhead, 3) Process digit extraction efficiently using modulo and division (`n % 10`, `n // 10`), 4) Prove upper bounds on state spaces to guarantee termination, 5) Return success upon reaching terminal sink states (like 1).
+
+```cpp
+class Solution {
+public:
+    int getNext(int n){
+        int totalSum = 0;
+        while(n > 0){
+            int currDigit = n % 10; 
+            totalSum += currDigit * currDigit;
+            n /=10;
+        }
+        return totalSum;
+    }
+    bool isHappy(int n) {
+        unordered_set<int> seen;
+        while(n != 1 && seen.find(n) == seen.end()){ //use a set to keep track of numbers we have seen, if we see a number again, then we are in a cycle and will never reach 1
+            seen.insert(n);
+            n = getNext(n);
+        }
+        return n == 1;
+    }
+};
+```
+
+## Transpose Matrix LC 867
+
+<!-- notecardId: 1784667497333 -->
+
+Given a 2D integer array matrix, return the transpose of matrix.
+
+The transpose of a matrix is the matrix flipped over its main diagonal, switching the matrix's row and column indices.
+
+
+
+ 
+
+Example 1:
+
+Input: matrix = [[1,2,3],[4,5,6],[7,8,9]]
+Output: [[1,4,7],[2,5,8],[3,6,9]]
+Example 2:
+
+Input: matrix = [[1,2,3],[4,5,6]]
+Output: [[1,4],[2,5],[3,6]]
+ 
+
+Constraints:
+
+m == matrix.length
+n == matrix[i].length
+1 <= m, n <= 1000
+1 <= m * n <= 105
+-109 <= matrix[i][j] <= 109
+
+**Link**: [text](https://leetcode.com/problems/transpose-matrix/)
+
+%
+
+**Pattern:** Matrix Manipulation, Index Swapping, New Matrix Construction
+
+**Approach:** Create a new matrix with dimensions swapped (rows become columns and vice versa). Iterate through the original matrix and assign each element to its transposed position in the new matrix. Specifically, the element at position `(i, j)` in the original matrix will be placed at position `(j, i)` in the transposed matrix.
+
+**Key Insight:** The key insight is that transposing a matrix involves swapping the row and column indices of each element. This can be achieved by creating a new matrix with the number of rows equal to the number of columns in the original matrix and vice versa.
+
+**Gotchas:** Be careful with the dimensions of the new matrix. Ensure that you initialize it with the correct number of rows and columns. Also, remember that the original matrix may not be square, so you cannot perform the transpose in place without additional space.
+
+**Complexity:** Time: O(m * n) where m is the number of rows and n is the number of columns in the original matrix, as we need to visit each element once. | Space: O(m * n) for the new transposed matrix.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Rotate Image — LC #48 | Rotate an $N \times N$ matrix $90^\circ$ clockwise in-place → transposition followed by row reversals restricted to square grids. | Yes — in-place transposition twin |
+| Spiral Matrix — LC #54 | Traverse a 2D matrix in spiral order → 4-boundary pointer contraction reading elements linearly without row/column swapping. | Partial — 2D matrix coordinate mapping |
+| Reshape the Matrix — LC #566 | Reshape an $M \times N$ matrix into a $R \times C$ matrix keeping row-traversal order → 1D flat index mapping ($i \cdot N + j$). | Partial — 2D matrix re-indexing |
+| Valid Sudoku — LC #36 | Validate $9 \times 9$ board row, column, and sub-box constraints → 2D coordinate hashing without grid modification. | Partial — 2D coordinate indexing |
+
+**How this pattern scales:**
+- **Out-of-Place Matrix Transposition ($O(M \cdot N)$ Time, $O(M \cdot N)$ Space)** — Transposition flips a matrix across its main diagonal, swapping its row and column dimensions:
+  * An input matrix of dimensions $M \times N$ ($M$ rows, $N$ columns) becomes a transposed matrix of dimensions $N \times M$ ($N$ rows, $M$ columns).
+  * Element at input coordinate `matrix[r][c]` moves to output coordinate `result[c][r]`.
+- **Handling Non-Square Rectangular Grids ($M \neq N$)** —
+  * Square matrices ($M = N$) can be transposed in-place ($O(1)$ auxiliary space) by swapping elements across the diagonal (`swap(matrix[i][j], matrix[j][i])`).
+  * Rectangular matrices ($M \neq N$) **cannot** be transposed in-place without complex cyclic element shifting. The standard approach allocates a new output matrix of size $N \times M$:
+    1. Initialize `result` grid with dimensions $N \times M$.
+    2. Loop row `r` from $0$ to $M - 1$:
+       * Loop column `c` from $0$ to $N - 1$:
+         * Assign `result[c][r] = matrix[r][c]`.
+    3. Return `result`.
+- **Flat 1D Index Conversion Alternative** —
+  * For memory contiguous representations (e.g., NumPy or flattened arrays), element at row $r$, col $c$ in an $M \times N$ grid sits at flat index $k = r \cdot N + c$.
+  * In the transposed $N \times M$ grid, it maps to flat index $k' = c \cdot M + r$.
+- **LC #48 and LC #566 Connection** → Transpose Matrix isolates the purest form of 2D axis flipping (`[r][c] -> [c][r]`). It acts as the core primitive step inside geometric matrix operations like LC #48 (Rotate Image), while establishing the coordinate index re-mapping techniques used in array reshaping problems like LC #566 (Reshape the Matrix).
+- **Dimension swapping ($M \times N \to N \times M$), coordinate re-indexing (`[r][c] \to [c][r]`), and grid allocation generalize** → This template is the industry baseline blueprint for tensor transformations in deep learning frameworks (e.g., `torch.transpose` / `np.transpose`), tabular data pivoting in database engines, image orientation metadata handling, and linear algebra matrix multiplication algorithms. Master the cycle of: 1) Extract input dimensions $M$ and $N$, 2) Allocate output grid swapped to size $N \times M$, 3) Traverse input grid linearly, 4) Map `matrix[r][c]` to `result[c][r]`, 5) Return newly allocated matrix in optimal $O(M \cdot N)$ time.
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> transpose(vector<vector<int>>& matrix) {
+        vector<vector<int>> res;
+        res.resize(matrix[0].size(), vector<int>(matrix.size(), 0)); //just have to resize the matrix first
+
+        for(int i = 0; i < matrix.size(); i++){
+            for(int j = 0; j < matrix[0].size(); j++){
+                res[j][i] = matrix[i][j];
+            }
+        }
+        return res;
+    }
+};
+```
+
+## Greatest Common Divisor of Strings LC 1071
+
+<!-- notecardId: 1784667600232 -->
+
+For two strings s and t, we say "t divides s" if and only if s = t + t + t + ... + t + t (i.e., t is concatenated with itself one or more times).
+
+Given two strings str1 and str2, return the largest string x such that x divides both str1 and str2.
+
+ 
+
+Example 1:
+
+Input: str1 = "ABCABC", str2 = "ABC"
+
+Output: "ABC"
+
+Example 2:
+
+Input: str1 = "ABABAB", str2 = "ABAB"
+
+Output: "AB"
+
+Example 3:
+
+Input: str1 = "LEET", str2 = "CODE"
+
+Output: ""
+
+Example 4:
+
+Input: str1 = "AAAAAB", str2 = "AAA"
+
+Output: ""​​​​​​​
+
+ 
+
+Constraints:
+
+1 <= str1.length, str2.length <= 1000
+str1 and str2 consist of English uppercase letters.
+
+**Link**: [text](https://leetcode.com/problems/greatest-common-divisor-of-strings/)
+
+%
+
+**Pattern:** String Concatenation, Divisibility, GCD Application
+
+**Approach:** The problem can be reduced to finding the greatest common divisor (GCD) of the lengths of the two strings. If the concatenation of the two strings in both orders is equal (i.e., `str1 + str2 == str2 + str1`), then there exists a common divisor string. The GCD of the lengths of the two strings gives the length of the largest string that divides both.
+
+**Key Insight:** The key insight is that if two strings can be concatenated in any order to produce the same result, they share a common repeating substring. The length of this substring must divide both string lengths, and the GCD of the lengths provides the maximum length of such a substring.
+
+**Gotchas:** Ensure that you check the concatenation condition before calculating the GCD. If the concatenation condition fails, return an empty string immediately. Also, be careful with the implementation of the GCD function to avoid infinite loops or incorrect results.
+
+**Complexity:** Time: O(n + m) where n and m are the lengths of str1 and str2, respectively. This is due to the concatenation check and the GCD calculation. | Space: O(1) since we are using a constant amount of extra space.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Greatest Common Divisor Traversal — LC #2709 | Find connected components using prime factor GCDs → graph BFS/DFS with prime factorization instead of string prefixes. | Partial — mathematical GCD application |
+| Repeated Substring Pattern — LC #459 | Check if a string can be constructed by repeating a substring → check if $S$ is in $(S + S)[1:-1]$ or test substring lengths that divide $N$. | Yes — string periodicity twin |
+| Longest Common Prefix — LC #14 | Find longest common starting prefix across an array of strings → character-by-character scan without divisibility/periodicity constraints. | Partial — string prefix search |
+| Find the Index of the First Occurrence in a String — LC #28 | Locate pattern string inside main text string → KMP pattern matching / rolling hash substring search. | Partial — substring structural analysis |
+
+**How this pattern scales:**
+- **Mathematical GCD Property on Concatenated Strings ($O(N + M)$ Time, $O(N + M)$ Space)** — A string $T$ divides string $S$ if $S$ is composed of $T$ repeated multiple times ($S = T + T + \dots + T$). If a common candidate string $T$ divides both $str1$ (length $N$) and $str2$ (length $M$):
+  * $str1$ and $str2$ must be composed of the exact same repeating base pattern.
+  * Therefore, concatenating them in reverse orders must yield identical strings:
+    $$str1 + str2 == str2 + str1$$
+- **Two-Step Algorithm Execution** —
+  1. **Commutativity Check:** Verify if $str1 + str2 == str2 + str1$. If they are not equal, no common divisor string exists $\implies$ return `""`.
+  2. **Length GCD Calculation:** If the check passes, the length of the greatest common divisor string is guaranteed to be the numerical $\text{gcd}(\text{len}(str1), \text{len}(str2))$:
+     * Compute $k = \text{gcd}(N, M)$ using Euclidean algorithm.
+     * Return substring $str1[0 \dots k-1]$.
+- **Euclidean Algorithm for Length GCD ($O(\log(\min(N, M)))$)** —
+  $$\text{gcd}(a, b) = \begin{cases} a & \text{if } b = 0 \\ \text{gcd}(b, a \pmod b) & \text{otherwise} \end{cases}$$
+- **LC #459 and LC #14 Connection** → Greatest Common Divisor of Strings bridges Euclidean number theory with string pattern matching. It leverages string concatenation tests similar to LC #459 (Repeated Substring Pattern) to verify periodic structure, while using numeric GCD to find the maximal prefix length without performing exhaustive prefix scans like LC #14 (Longest Common Prefix).
+- **String concatenation equivalence ($A + B == B + A$), length-based Euclidean GCD, and periodic reduction generalize** → This template is the industry baseline blueprint for string periodicity analysis, data compression algorithm prefix dictionary construction (e.g., LZW/Huffman base token discovery), bioinformatic DNA repetitive sequence identification, and network packet payload pattern matching. Master the cycle of: 1) Verify string commutativity to confirm a shared base period, 2) Apply numeric Euclidean GCD on string lengths, 3) Slice the candidate prefix up to index $\text{gcd}(N, M)$, 4) Return empty string immediately if commutativity fails, 5) Reduce string matching complexity from $O((N+M) \cdot \min(N, M))$ down to $O(N + M)$ linear time.
+
+```cpp
+class Solution {
+public:
+    string gcdOfStrings(string str1, string str2) {
+        if(str1 + str2 != str2 + str1) return "";
+        return str1.substr(0, gcd(str1.length(), str2.length()));
+    }
+};
+```
+
+## Detect Squares LC 2013
+
+<!-- notecardId: 1784667786080 -->
+
+You are given a stream of points on the X-Y plane. Design an algorithm that:
+
+Adds new points from the stream into a data structure. Duplicate points are allowed and should be treated as different points.
+Given a query point, counts the number of ways to choose three points from the data structure such that the three points and the query point form an axis-aligned square with positive area.
+An axis-aligned square is a square whose edges are all the same length and are either parallel or perpendicular to the x-axis and y-axis.
+
+Implement the DetectSquares class:
+
+DetectSquares() Initializes the object with an empty data structure.
+void add(int[] point) Adds a new point point = [x, y] to the data structure.
+int count(int[] point) Counts the number of ways to form axis-aligned squares with point point = [x, y] as described above.
+ 
+
+Example 1:
+
+
+Input
+["DetectSquares", "add", "add", "add", "count", "count", "add", "count"]
+[[], [[3, 10]], [[11, 2]], [[3, 2]], [[11, 10]], [[14, 8]], [[11, 2]], [[11, 10]]]
+Output
+[null, null, null, null, 1, 0, null, 2]
+
+Explanation
+DetectSquares detectSquares = new DetectSquares();
+detectSquares.add([3, 10]);
+detectSquares.add([11, 2]);
+detectSquares.add([3, 2]);
+detectSquares.count([11, 10]); // return 1. You can choose:
+                               //   - The first, second, and third points
+detectSquares.count([14, 8]);  // return 0. The query point cannot form a square with any points in the data structure.
+detectSquares.add([11, 2]);    // Adding duplicate points is allowed.
+detectSquares.count([11, 10]); // return 2. You can choose:
+                               //   - The first, second, and third points
+                               //   - The first, third, and fourth points
+ 
+
+Constraints:
+
+point.length == 2
+0 <= x, y <= 1000
+At most 3000 calls in total will be made to add and count.
+
+**Link**: [text](https://leetcode.com/problems/detect-squares/)
+
+%
+
+**Pattern:** 2D Coordinate Counting, Hash Map Frequency Tracking, Geometric Shape Detection
+
+**Approach:** Use a hash map to store the frequency of each point added. For the count operation, iterate through all points that share the same x or y coordinate with the query point. For each such point, calculate the potential side length of the square and check if the other two required points exist in the hash map. Multiply their frequencies to get the total number of squares that can be formed.
+
+**Key Insight:** The key insight is that for a square to be formed with a given query point, the other three points must be located at specific coordinates relative to the query point. By leveraging the properties of squares and using a frequency map, we can efficiently count the number of valid squares without checking every combination of points.
+
+**Gotchas:** Be careful with duplicate points. Since duplicates are allowed, you need to multiply the frequencies of the other two points when counting squares. Also, ensure that you only consider points that can form a square with the query point (i.e., they must be at the correct distance and orientation).
+
+**Complexity:** Time: O(N) for the count operation, where N is the number of unique points stored in the hash map. The add operation is O(1). | Space: O(N) for storing the frequency of points in the hash map.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Max Points on a Line — LC #149 | Find max collinear points → calculate pairwise slopes $(dy/dx)$ using GCD reduction and hash table counting. | Partial — 2D point frequency geometry |
+| Minimum Area Rectangle — LC #939 | Find min area of axis-aligned rectangle from points → 2-point diagonal pairing looking up remaining two points in a hash set. | Yes — diagonal lookup geometry twin |
+| Valid Square — LC #593 | Determine if 4 points form a valid square → compute all 6 pairwise distance squares and verify 4 equal sides and 2 equal diagonals. | Partial — square geometric property validation |
+| Minimum Area Rectangle II — LC #963 | Find min area of any (including rotated) rectangle → 3-point vector orthogonal dot product evaluation or complex diagonal midpoint hashing. | Partial — general geometric rectangle search |
+
+**How this pattern scales:**
+- **Point Frequency Tracking + Diagonal Square Matching ($O(N)$ Query Time, $O(N)$ Space)** — Axis-aligned squares have strict geometric constraints. For a query point $Q = (x_1, y_1)$ and any existing candidate point $P = (x_2, y_2)$ in the data structure:
+  * $P$ can form a diagonal of a non-empty square with $Q$ **if and only if**:
+    1. $|x_1 - x_2| == |y_1 - y_2| > 0$ (equal non-zero side lengths).
+    2. $x_1 \neq x_2$ and $y_1 \neq y_2$ (prevents zero-area degenerate squares).
+- **The Remaining Two Vertices Lookup** —
+  * If $Q = (x_1, y_1)$ and $P = (x_2, y_2)$ form a valid diagonal, the other two required corners of the axis-aligned square are fixed at:
+    $$P_3 = (x_1, y_2) \quad \text{and} \quad P_4 = (x_2, y_1)$$
+  * Multiplication Rule for Combination Counting: The number of valid squares formed by this specific point pair is:
+    $$\text{count}(Q, P_3, P_4, P) = \text{count}(x_1, y_2) \times \text{count}(x_2, y_1) \times \text{count}(x_2, y_2)$$
+- **Data Structure Optimization** —
+  * Maintain two containers for `add(point)`:
+    1. A list/array of all added points `points` to iterate through candidate diagonal partners during `count`.
+    2. A hash map or 2D counter `freq[(x, y)]` to lookup coordinate multiplicities in $O(1)$ average time.
+- **Query Algorithm Steps (`count(point)`)** —
+  1. Extract query coordinates $(x_1, y_1)$.
+  2. Initialize `total_squares = 0`.
+  3. Loop through all stored candidate points $(x_2, y_2)$ in `points`:
+     * If $|x_1 - x_2| == |y_1 - y_2|$ and $x_1 \neq x_2$:
+       * Multiply frequencies: $\text{freq}[(x_1, y_2)] \times \text{freq}[(x_2, y_1)]$.
+       * Add product to `total_squares`.
+  4. Return `total_squares`.
+- **LC #939 and LC #149 Connection** → Detect Squares combines 2D coordinate geometry with hash-map counting. It uses the diagonal lookup logic established in LC #939 (Minimum Area Rectangle), while using frequency hash tables similar to LC #149 (Max Points on a Line) to evaluate geometric combinations efficiently.
+- **Diagonal pair identification, coordinate frequency hashing, and Cartesian product counting generalize** → This template is the industry baseline blueprint for computational geometry in spatial indexing, object boundary identification in computer vision, pattern matching in GIS mapping software, and combinatorial grid alignment solvers. Master the cycle of: 1) Store points in both a list for iteration and a hash map for frequency lookups, 2) Filter candidate points using diagonal properties ($|dx| == |dy| > 0$), 3) Compute missing corner coordinates directly from diagonal endpoints, 4) Apply multiplication rule on corner frequencies to account for duplicate points, 5) Sum combinations across all valid diagonals in linear time.
+
+```cpp
+class DetectSquares {
+private:
+    int counts[1001][1001] = {0}; //counts[x][y] = number of points at (x,y)
+    std::vector<pair<int, int>> points; //store all points added so we can iterate through them when counting squares
+public:
+    DetectSquares() {
+        
+    }
+    
+    void add(vector<int> point) {
+        if(counts[point[0]][point[1]] == 0){
+            points.push_back({point[0], point[1]}); //only add to points vector if this is the first time we are adding this point
+        }
+        counts[point[0]][point[1]]++;
+    }
+    
+    int count(vector<int> point) {
+        int totalSquares = 0;
+        int x1 = point[0];
+        int y1 = point[1];
+
+        for(auto point : points){
+            int x2 = point.first;
+            int y2 = point.second;
+
+            if(abs(x1 - x2) != abs(y1 - y2) || (x1 == x2 && y1 == y2)) continue; //if the points are not diagonal from each other, or if they are the same point, skip
+
+            totalSquares += counts[x2][y1] * counts[x1][y2] * counts[x2][y2]; //the number of squares formed by these two points is the product of the number of points at the other two corners of the square, which are (x2, y1) and (x1, y2), and the number of points at (x2, y2) which is the diagonal point
+        }
+        return totalSquares;
+    }
+};
+
+/**
+ * Your DetectSquares object will be instantiated and called as such:
+ * DetectSquares* obj = new DetectSquares();
+ * obj->add(point);
+ * int param_2 = obj->count(point);
+ */
+```
+
+## Insert Greatest Common Divisor In Linked List LC 2807
+
+<!-- notecardId: 1784667932788 -->
+
+Given the head of a linked list head, in which each node contains an integer value.
+
+Between every pair of adjacent nodes, insert a new node with a value equal to the greatest common divisor of them.
+
+Return the linked list after insertion.
+
+The greatest common divisor of two numbers is the largest positive integer that evenly divides both numbers.
+
+ 
+
+Example 1:
+
+
+Input: head = [18,6,10,3]
+Output: [18,6,6,2,10,1,3]
+Explanation: The 1st diagram denotes the initial linked list and the 2nd diagram denotes the linked list after inserting the new nodes (nodes in blue are the inserted nodes).
+- We insert the greatest common divisor of 18 and 6 = 6 between the 1st and the 2nd nodes.
+- We insert the greatest common divisor of 6 and 10 = 2 between the 2nd and the 3rd nodes.
+- We insert the greatest common divisor of 10 and 3 = 1 between the 3rd and the 4th nodes.
+There are no more adjacent nodes, so we return the linked list.
+Example 2:
+
+
+Input: head = [7]
+Output: [7]
+Explanation: The 1st diagram denotes the initial linked list and the 2nd diagram denotes the linked list after inserting the new nodes.
+There are no pairs of adjacent nodes, so we return the initial linked list.
+ 
+
+Constraints:
+
+The number of nodes in the list is in the range [1, 5000].
+1 <= Node.val <= 1000
+
+**Link**: [text](https://leetcode.com/problems/insert-greatest-common-divisor-in-linked-list/)
+
+%
+
+**Pattern:** Linked List Manipulation, GCD Calculation, Node Insertion
+
+**Approach:** Traverse the linked list while keeping track of the current node and its next node. For each pair of adjacent nodes, calculate the GCD of their values and create a new node with this GCD value. Insert this new node between the current node and its next node. Continue this process until reaching the end of the list.
+
+**Key Insight:** The key insight is that the GCD of two numbers can be efficiently calculated using the Euclidean algorithm. By inserting a new node with the GCD value between each pair of adjacent nodes, we can maintain the structure of the linked list while adding the required values.
+
+**Gotchas:** Be careful with the linked list pointers when inserting new nodes. Ensure that you correctly update the `next` pointers of the current node and the new GCD node to maintain the integrity of the list. Also, handle the case where the list has only one node, in which case no insertions are needed. 
+
+**Complexity:** Time: O(N * log(max_val)) where N is the number of nodes in the linked list and max_val is the maximum value of a node, due to the GCD calculation. | Space: O(1) since we are modifying the list in place without using additional data structures.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Remove Zero Sum Consecutive Nodes from Linked List — LC #1171 | Delete consecutive nodes that sum to zero → prefix sum hash map tracking with list node re-linking. | Partial — structural list modification |
+| Delete the Middle Node of a Linked List — LC #2095 | Delete the middle node of a linked list → fast/slow pointer traversal to find midpoint and update next pointers. | Partial — linked list pointer mutation |
+| Merge Two Sorted Lists — LC #21 | Combine two sorted linked lists into one → pointer comparison and re-linking without inserting computed values. | Partial — linked list traversal |
+| Greatest Common Divisor of Strings — LC #1071 | Find largest string that divides two given strings → mathematical Euclidean GCD applied to string lengths after commutativity check. | Yes — Euclidean GCD computation twin |
+
+**How this pattern scales:**
+- **In-Place Linked List Traversal & Interleaved Insertion ($O(N \cdot \log(\min(A, B)))$ Time, $O(1)$ Auxiliary Space)** — Traverse the linked list using a single pointer `curr`, operating on adjacent node pairs (`curr` and `curr.next`):
+  * While `curr` and `curr.next` are both non-null:
+    1. Extract numerical values $a = \text{curr.val}$ and $b = \text{curr.next.val}$.
+    2. Compute $g = \text{gcd}(a, b)$ using the Euclidean algorithm.
+    3. Construct a new node `gcd_node = ListNode(g)`.
+    4. Splice `gcd_node` into the list between `curr` and `curr.next`:
+       $$\text{gcd\_node.next} = \text{curr.next}, \quad \text{curr.next} = \text{gcd\_node}$$
+    5. Advance `curr` by two steps (`curr = gcd_node.next`) to skip past the newly inserted node and move to the next adjacent pair.
+- **Euclidean Algorithm for Node Values** —
+  * Computes the greatest common divisor of two positive integers in logarithmic time relative to the value of the nodes:
+    $$\text{gcd}(a, b) = \begin{cases} a & \text{if } b = 0 \\ \text{gcd}(b, a \pmod b) & \text{otherwise} \end{cases}$$
+- **Boundary & Single-Node Edge Cases** —
+  * If the list has fewer than 2 nodes (`head == None` or `head.next == None`), no pairs exist $\implies$ return `head` directly without modification.
+- **LC #1071 and LC #2095 Connection** → Insert Greatest Common Divisors in Linked List fuses numeric Euclidean reduction from LC #1071 (Greatest Common Divisor of Strings) with pointer manipulation techniques found in problems like LC #2095 (Delete the Middle Node of a Linked List).
+- **In-place linked list node splicing, Euclidean GCD calculation, and pairwise pointer advancement generalize** → This template is the industry baseline blueprint for linked-list interpolation algorithms, signal/data stream smoothing filters (inserting interpolated metrics between data points), real-time memory buffer segment insertion, and custom linked-list data structures. Master the cycle of: 1) Verify presence of at least two adjacent nodes (`curr` and `curr.next`), 2) Compute mathematical transformation on adjacent pair values, 3) Allocate new intermediate node, 4) Re-link pointers in correct order to avoid breaking list connectivity (`node.next = curr.next`, `curr.next = node`), 5) Jump pointer past the inserted node to continue linear traversal.
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* insertGreatestCommonDivisors(ListNode* head) {
+        ListNode* front = head;
+        if(!head->next) return head;
+
+        while(head -> next){
+        int node1 = head -> val;
+        int node2 = head -> next -> val;
+        int nodeGCD = gcd(node1, node2);
+        ListNode* newNode = new ListNode(nodeGCD);
+        newNode->next = head -> next;
+        head -> next = newNode;
+        head = head -> next -> next;
+        }
+
+        return front;
+    }
+};
+```
+
