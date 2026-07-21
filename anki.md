@@ -20114,3 +20114,2277 @@ public:
 };
 ```
 
+## Alien Dictionary LC 269
+
+<!-- notecardId: 1784659072449 -->
+
+There is a new alien language that uses the English alphabet. However, the order of the letters is unknown to you.
+
+You are given a list of strings words from the alien language's dictionary. Now it is claimed that the strings in words are sorted lexicographically by the rules of this new language.
+
+If this claim is incorrect, and the given arrangement of string in words cannot correspond to any order of letters, return "".
+
+Otherwise, return a string of the unique letters in the new alien language sorted in lexicographically increasing order by the new language's rules. If there are multiple solutions, return any of them.
+
+ 
+
+Example 1:
+
+Input: words = ["wrt","wrf","er","ett","rftt"]
+Output: "wertf"
+Example 2:
+
+Input: words = ["z","x"]
+Output: "zx"
+Example 3:
+
+Input: words = ["z","x","z"]
+Output: ""
+Explanation: The order is invalid, so return "".
+ 
+
+Constraints:
+
+1 <= words.length <= 100
+1 <= words[i].length <= 100
+words[i] consists of only lowercase English letters.
+
+**Link**: [text](https://leetcode.com/problems/alien-dictionary/)
+
+%
+
+**Pattern:** Topological Sort, Graph Construction, BFS/DFS
+
+**Approach:** Construct a directed graph based on the order of characters in the given words. For each pair of adjacent words, find the first differing character and create a directed edge from the character in the first word to the character in the second word. Then, perform a topological sort on the graph to determine the order of characters. If there is a cycle in the graph, return an empty string as it indicates an invalid order. In terms of data structures needed to solve this problem, you need an unordered map tracking the indegrees of each character and an unordered map of adjacency lists for the directed graph. You can use a queue to perform a BFS-based topological sort.
+
+**Key Insight:** The key insight is that the order of characters can be inferred from the first differing character between adjacent words. By constructing a directed graph and performing a topological sort, you can determine a valid order of characters if one exists.
+
+**Gotchas:** Be careful with the case where a word is a prefix of another word. For example, if the words are ["abc", "ab"], this is invalid because "ab" should come before "abc" in lexicographical order. Also, ensure that you handle cases where there are multiple valid orders of characters.
+
+**Complexity:** Time: O(C) where C is the total number of characters in all words, since we are iterating through all characters to build the graph and perform topological sort. | Space: O(C) for storing the graph and indegree counts.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Course Schedule II — LC #210 | Order courses based on explicit prerequisites $(u \to v)$ → standard directed graph topological sort via Kahn's algorithm or DFS post-order traversal. | Yes — pure topological sort base |
+| Verifying an Alien Dictionary — LC #953 | Validate if a word list is sorted given a known character order → check pairwise adjacent words using character mapping rather than building a graph. | Partial — pairwise validation without graph synthesis |
+| Course Schedule — LC #207 | Determine if all courses can be finished without returning the sequence → cycle detection in a directed graph via in-degree tracking or 3-color DFS. | Yes — direct graph cycle verification |
+| Sequence Reconstruction — LC #444 | Check if a unique original sequence can be uniquely reconstructed from a list of subsequences → topological sort requiring the BFS queue to strictly maintain a size of 1 at every step. | Yes — constrained topological ordering |
+
+**How this pattern scales:**
+- **Implicit Dependency Graph Construction ($O(C)$)** — The input list is ordered lexicographically. Graph edges are extracted strictly by comparing adjacent word pairs (`words[i]` vs. `words[i+1]`):
+  * Scan until the first differing character: `word1[j] != word2[j]`.
+  * Add a directed edge `word1[j] -> word2[j]` to express precedence (`word1[j]` comes before `word2[j]`).
+  * **Critical:** Stop comparing after finding the first differing character; further character pairs do not provide valid structural constraints.
+- **The Prefix-Invalidity Edge Case Guard** — If `word2` is a prefix of `word1` (e.g., `["abc", "ab"]`), the list violates valid lexicographical ordering rules.
+  * Mathematically, a prefix must appear before its extension.
+  * If `len(word1) > len(word2)` and `word1.startswith(word2)` is true, immediately return `""` as no valid alphabet ordering can exist.
+- **Global Character Representation (Nodes)** — Track every unique character present across all words in the input dictionary. Even disconnected or isolated characters (characters that never differ from adjacent neighbors) are nodes with zero dependencies and must be included in the final topological ordering.
+- **Topological Sorting & Cycle Detection** — Process the directed graph using either Kahn's Algorithm (BFS) or 3-State DFS Traversal:
+  * **Kahn's Algorithm (BFS):** Initialize a queue with all unique characters having an in-degree of `0`. Pop nodes, append to the output string, and decrement the in-degree of connected target nodes.
+  * **Cycle Detection Guard:** If the length of the resulting string is less than the count of total unique characters, a directed cycle exists (e.g., `a -> b -> a`), rendering a valid character sequence impossible $\to$ return `""`.
+- **LC #210 and LC #953 Connection** → Alien Dictionary bridges structural constraint extraction from implicit text layouts with directed acyclic graph (DAG) topological ordering. It generalizes LC #953 (Verifying an Alien Dictionary) by inferring the character order instead of verifying it, while sharing the core cycle detection and dependency ordering mechanisms of LC #210 (Course Schedule II).
+- **Implicit dependency extraction and topological constraint resolution generalize** → This template is the industry baseline blueprint for package manager dependency resolvers (e.g., `npm`/`pip`), build systems resolving target compilation order (e.g., `Make`/`Bazel`), spreadsheet formula execution chains, and execution graph scheduling in distributed data pipelines. Master the cycle of: 1) Initialize nodes for all unique tokens across the dataset, 2) Extract directional edges by isolating the primary point of structural divergence between adjacent sequences, 3) Intercept prefix/containment ordering invalidities, 4) Execute Kahn's algorithm or post-order DFS to construct the topological sequence, 5) Detect cyclic dependency deadlocks by verifying node visit counts against total unique elements.
+
+```cpp
+class Solution {
+public:
+    string alienOrder(vector<string>& words) {
+        //we will use Kahns algo here, top sort
+        //first thing, lets find the unique characters in the words, and create a graph with them
+        unordered_map<char, unordered_set<char>> graph;
+        unordered_map<char, int> indegree;
+        string resString;
+        int result = 0;
+        for(auto word : words){
+            for (auto c: word){
+                graph[c] = unordered_set<char>();
+                indegree[c] = 0;
+            }
+        }
+
+        //here, we will compare each pair of words, and find the first character that is different, and create a directed edge from the first character to the second character, and increment the indegree of the second character
+        for(int i = 0; i < words.size() - 1; i++){
+            string word1 = words[i];
+            string word2 = words[i + 1];
+            int minLength = min(word1.size(), word2.size());
+            for(int j = 0; j < minLength; j++){
+                char c1 = word1[j];
+                char c2 = word2[j];
+                if(c1 != c2){
+                    if(graph[c1].find(c2) == graph[c1].end()){
+                        graph[c1].insert(c2);
+                        indegree[c2]++;
+                    }
+                    break; //we only care about the first different character, because that is the order of the characters
+                }
+            }
+            //check for invalid case, if word1 is longer than word2 and word1 starts with word2, then it is invalid
+            //prefix trap
+            if(word1.size() > word2.size() && word1.substr(0, minLength) == word2.substr(0, minLength)){
+                return "";
+            }
+        }
+
+
+//from here, textbook kahns algo topological sort like Course Schedule
+        queue<char> q;
+        for(auto pair : indegree){
+            if(pair.second ==0){
+                q.push(pair.first);
+            }
+        }
+
+        while(!q.empty()){
+            auto front = q.front();
+            q.pop();
+            result++;
+            resString.push_back(front);
+            for(auto neighbor : graph[front]){
+                indegree[neighbor]--;
+                if(indegree[neighbor] == 0) q.push(neighbor);
+            }
+        }
+
+        if(result != graph.size()) return "";
+        return resString;
+    }
+};
+```
+
+## Reconstruct Itinerary LC 332
+
+<!-- notecardId: 1784659228531 -->
+
+You are given a list of airline tickets where tickets[i] = [fromi, toi] represent the departure and the arrival airports of one flight. Reconstruct the itinerary in order and return it.
+
+All of the tickets belong to a man who departs from "JFK", thus, the itinerary must begin with "JFK". If there are multiple valid itineraries, you should return the itinerary that has the smallest lexical order when read as a single string.
+
+For example, the itinerary ["JFK", "LGA"] has a smaller lexical order than ["JFK", "LGB"].
+You may assume all tickets form at least one valid itinerary. You must use all the tickets once and only once.
+
+ 
+
+Example 1:
+
+
+Input: tickets = [["MUC","LHR"],["JFK","MUC"],["SFO","SJC"],["LHR","SFO"]]
+Output: ["JFK","MUC","LHR","SFO","SJC"]
+Example 2:
+
+
+Input: tickets = [["JFK","SFO"],["JFK","ATL"],["SFO","ATL"],["ATL","JFK"],["ATL","SFO"]]
+Output: ["JFK","ATL","JFK","SFO","ATL","SFO"]
+Explanation: Another possible reconstruction is ["JFK","SFO","ATL","JFK","ATL","SFO"] but it is larger in lexical order.
+ 
+
+Constraints:
+
+1 <= tickets.length <= 300
+tickets[i].length == 2
+fromi.length == 3
+toi.length == 3
+fromi and toi consist of uppercase English letters.
+fromi != toi
+
+**Link**: [text](https://leetcode.com/problems/reconstruct-itinerary/)
+
+%
+
+**Pattern:** Eulerian Path, Graph Traversal, DFS
+
+**Approach:** Construct a directed graph where each airport is a node and each ticket represents a directed edge from the departure airport to the arrival airport. Use Hierholzer's algorithm to find an Eulerian path in the graph, which is a path that visits every edge exactly once. Start the traversal from "JFK" and use a stack to perform a depth-first search (DFS). When you reach an airport with no further outgoing edges, backtrack and add the airport to the itinerary. Finally, reverse the itinerary to get the correct order. Use an unordered map of priority queues to ensure that the next airport is chosen in lexicographical order.
+
+**Key Insight:** The key insight is that the problem can be modeled as finding an Eulerian path in a directed graph. Since each ticket must be used exactly once, the path must traverse every edge in the graph. By using a priority queue for the adjacency list, we can ensure that we always choose the next airport in lexicographical order.
+
+**Gotchas:** Be careful with the case where there are multiple tickets between the same pair of airports. You need to ensure that each ticket is used exactly once, which can be handled by using a multiset or priority queue for the adjacency list. Also, make sure to reverse the itinerary at the end, as the DFS will add airports in reverse order.
+
+**Complexity:** Time: O(E log E) where E is the number of tickets, since we are using a priority queue to sort the outgoing edges for each airport. | Space: O(E) for storing the graph and the itinerary.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Valid Arrangement of Pairs — LC #2097 | Find a valid path traversing every directed edge exactly once with arbitrary start/end nodes → standard Eulerian path via Hierholzer's algorithm requiring explicit start node identification using in-degree/out-degree balance checks. | Yes — pure Eulerian path base |
+| Reconstruct Itinerary — LC #332 | Traversal starting strictly at `"JFK"` using all edges, resolved in smallest lexical order → Eulerian path utilizing min-heaps/sorted adjacency lists for deterministic node selection during Hierholzer's traversal. | Target Problem |
+| Course Schedule II — LC #210 | Order nodes such that all directed dependency edges point forward → topological sort on a DAG (visits every node) rather than an Eulerian path (traverses every edge). | Partial — graph traversal with structural constraints |
+| Open the Lock — LC #752 | Find the shortest sequence of state transitions to reach a target configuration → dynamic shortest path discovery via Breadth-First Search (BFS) rather than edge-exhaustive traversal. | No — BFS shortest path |
+
+**How this pattern scales:**
+- **Eulerian Path Formulation ($O(E \log E)$)** — The problem requires constructing a continuous route that uses **every directed ticket (edge)** exactly once. This is structurally an Eulerian Path problem on a directed graph:
+  * In a standard graph, an Eulerian path exists if at most one vertex has $\text{out-degree} - \text{in-degree} = 1$ (start) and one has $\text{in-degree} - \text{out-degree} = 1$ (end).
+  * Here, the starting airport is guaranteed and fixed to `"JFK"`.
+- **Lexicographical Greedy Traversal via Min-Heaps** — To ensure the itinerary yields the smallest lexical order:
+  * Construct an adjacency list mapping each origin airport to a Priority Queue / Min-Heap of destination airports (or a sorted list evaluated in reverse order).
+  * At every step, greedily venture to the lexicographically smallest available neighbor.
+- **Hierholzer's Post-Order Edge Traversal Algorithm** — Standard DFS/BFS greedy choices can hit dead ends (airports with no remaining outgoing edges before all tickets are consumed):
+  * Perform a modified Post-Order DFS starting at `"JFK"`.
+  * As you navigate, **remove the edge** from the graph/heap so it cannot be traversed twice.
+  * When a node has no remaining outgoing edges, append it to an execution route.
+  * Backtrack through the call stack, pushing nodes onto the output stack only after all their outgoing edges have been fully exhausted.
+- **Path Reversal Step** — Because nodes are recorded when their outgoing edges are completely depleted, nodes at dead ends are recorded first:
+  * The final itinerary is formed by reversing the post-order execution stack:
+    $$\text{itinerary} = \text{reverse}(\text{post\_order\_route})$$
+- **LC #2097 and LC #210 Connection** → Reconstruct Itinerary bridges greedy local choice selection with global graph coverage constraints. It specializes LC #2097 (Valid Arrangement of Pairs) by locking the origin node to `"JFK"` and imposing lexicographical tie-breakers, while contrasting with LC #210 (Course Schedule II) by demanding edge-exhaustion rather than node-dependency ordering.
+- **Hierholzer's Eulerian path resolution and post-order edge deletion generalize** → This template is the industry baseline blueprint for network routing packet serialization, circuit board trace optimization, automated DNA sequence assembly via De Bruijn graphs, and robotic floor-cleaning path generators. Master the cycle of: 1) Build an adjacency map using priority queues to enforce local sorting preferences, 2) Execute post-order DFS starting from the designated origin, 3) Pop and exhaust edges dynamically during traversal to prevent cycle lockouts, 4) Append nodes to the path list only upon reaching structural dead ends, 5) Reverse the collected list to recover the true directed Eulerian route.
+
+```cpp
+class Solution {
+public:
+    void dfs(string currCity, unordered_map<string, priority_queue<string, vector<string>, greater<string>>>& adj, vector<string>& res){ //thinking about doing some kind of recursive DFS here
+        auto& dest = adj[currCity];
+
+        while(!dest.empty()){
+            auto top = dest.top();
+            dest.pop();
+            dfs(top, adj, res); //we take the destination with the highest priority (lexicographically smallest) and recursively call dfs on it, this will allow us to explore all of the destinations from the current city before we add the current city to the result vector
+        }
+        res.push_back(currCity);
+    }
+    vector<string> findItinerary(vector<vector<string>>& tickets) {
+        vector<string> res;
+        unordered_map<string, priority_queue<string, vector<string>, greater<string>>> adj;
+        for(auto ticket : tickets){
+            adj[ticket[0]].push(ticket[1]); //we made an adj list that maps the departure city to a min heap of arrival cities, so we can always get the lexicographically smallest arrival city first
+        }
+        dfs("JFK", adj, res); //kick off recursive DFS by starting with JFK
+        reverse(res.begin(), res.end()); //the res vector will be in reverse order because we are pushing the cities onto the res vector after we have explored all of their neighbors, so we need to reverse the res vector to get the correct order of the itinerary
+        //think about the recursive stack, when we reach a city that has no more neighbors to explore, we push it onto the res vector, and then we backtrack to the previous city and explore its neighbors, and when we reach a city that has no more neighbors to explore, we push it onto the res vector, and so on, until we have explored all of the cities in the itinerary, so the res vector will be in reverse order of the itinerary, so we need to reverse it to get the correct order of the itinerary
+        return res;
+    }
+};
+```
+
+## Network Delay Time LC 743
+
+<!-- notecardId: 1784659443614 -->
+
+You are given a network of n nodes, labeled from 1 to n. You are also given times, a list of travel times as directed edges times[i] = (ui, vi, wi), where ui is the source node, vi is the target node, and wi is the time it takes for a signal to travel from source to target.
+
+We will send a signal from a given node k. Return the minimum time it takes for all the n nodes to receive the signal. If it is impossible for all the n nodes to receive the signal, return -1.
+
+ 
+
+Example 1:
+
+
+Input: times = [[2,1,1],[2,3,1],[3,4,1]], n = 4, k = 2
+Output: 2
+Example 2:
+
+Input: times = [[1,2,1]], n = 2, k = 1
+Output: 1
+Example 3:
+
+Input: times = [[1,2,1]], n = 2, k = 2
+Output: -1
+ 
+
+Constraints:
+
+1 <= k <= n <= 100
+1 <= times.length <= 6000
+times[i].length == 3
+1 <= ui, vi <= n
+ui != vi
+0 <= wi <= 100
+All the pairs (ui, vi) are unique. (i.e., no multiple edges.)
+
+%
+
+**Pattern:** Dijkstra's Algorithm, Shortest Path, Graph Traversal
+
+**Approach:** Use Dijkstra's algorithm to find the shortest path from the starting node `k` to all other nodes in the graph. Construct a directed graph using an adjacency list representation, where each node points to its neighbors along with the travel time. Use a priority queue (min-heap) to efficiently retrieve the next node with the smallest travel time. Keep track of the shortest travel times to each node and update them as shorter paths are found. Finally, return the maximum travel time among all nodes, or -1 if any node is unreachable.
+
+**Key Insight:** The key insight is that Dijkstra's algorithm efficiently finds the shortest path in a graph with non-negative edge weights. By using a priority queue, we can always expand the node with the currently known shortest travel time, ensuring that we explore the most promising paths first.
+
+**Gotchas:** Be careful with the case where some nodes are unreachable from the starting node `k`. You need to check if all nodes have been reached and return -1 if any node is still at its initial infinite distance. Also, ensure that you handle the case where the graph has multiple edges between the same pair of nodes by only considering the edge with the smallest weight. At the end, remember to traverse through the minTime vector and find the maximum time taken to reach any node. If any node is still at its initial infinite distance, return -1.
+
+**Complexity:** Time: O(E log V) where E is the number of edges and V is the number of vertices, since we are using a priority queue to process each edge. | Space: O(V + E) for storing the graph and the minTime vector.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Network Delay Time — LC #743 | Find minimum time for signal to reach all nodes from source $k$ → single-source shortest path finding the maximum of shortest paths across all nodes using Dijkstra's algorithm. | Target Problem |
+| Path with Maximum Probability — LC #1514 | Find path from start to end with highest success probability → max-heap Dijkstra variant multiplying edge probabilities rather than summing path weights. | Yes — priority queue Dijkstra twin |
+| Cheapest Flights Within K Stops — LC #787 | Find cheapest flight from src to dst with at most $k$ stops → bounded shortest path using Bellman-Ford / BFS with level tracking rather than pure Dijkstra. | Partial — constrained shortest path |
+| Swim in Rising Water — LC #778 | Find minimum time to reach bottom-right grid cell where cell values dictate waiting time → modified Dijkstra / Min-Heap tracking path maximum elevation. | Yes — grid-based Dijkstra |
+
+**How this pattern scales:**
+- **Single-Source Shortest Path Formulation ($O((E + V) \log V)$)** — Network Delay Time models a weighted directed graph with non-negative edge weights (travel times $w \ge 0$). Finding the minimum time for a signal to propagate to all nodes reduces to calculating the shortest path from source node $k$ to every reachable vertex.
+- **Priority Queue Min-Heap State Management** — Dijkstra's algorithm greedily expands the current shortest known distance:
+  * Maintain a min-heap storing tuples of `(current_distance, node)`.
+  * Track a `distances` hash map or array initialized to infinity ($\infty$), setting `distances[k] = 0`.
+  * Pop the element with the smallest cumulative distance. If the popped distance exceeds the recorded `distances[node]`, discard it immediately (stale node optimization).
+- **Edge Relaxation Mechanism** — For each neighbor of the current node:
+  * Calculate the candidate path length: `new_dist = current_distance + weight`.
+  * If `new_dist < distances[neighbor]`, update `distances[neighbor] = new_dist` and push `(new_dist, neighbor)` onto the min-heap.
+- **Global Signal Arrival Calculation** — The signal spreads concurrently along all paths:
+  * The network delay time required for all nodes to receive the signal is the **maximum shortest path distance** among all reachable nodes:
+    $$\text{total\_time} = \max_{v \in V} (\text{distances}[v])$$
+  * **Unreachable Node Guard:** If any node remains at $\infty$ after the heap is exhausted (or if the count of visited nodes is less than $N$), it is impossible for all nodes to receive the signal $\to$ return `-1`.
+- **LC #1514 and LC #787 Connection** → Network Delay Time serves as the foundational template for non-negative weighted graph traversals. It extends unweighted BFS by replacing the standard FIFO queue with a priority queue, while contrasting with LC #787 (Cheapest Flights Within K Stops) which enforces explicit edge-count constraints overriding pure greedy distance ordering.
+- **Weighted shortest path extraction and greedy state relaxation generalize** → This template is the industry baseline blueprint for IP packet routing (OSPF protocol), real-time navigation map engines (e.g., Google Maps/Waze ETA calculation), distributed service latency minimization, and game dev grid pathfinding. Master the cycle of: 1) Construct an adjacency list mapping nodes to weighted outgoing directed edges, 2) Initialize distance tracking with infinity and populate a min-heap with the origin tuple `(0, start)`, 3) Greedily pop minimum-weight states and skip stale path instances, 4) Relax adjacent edges by updating minimal cumulative costs, 5) Validate full graph coverage and aggregate the bottleneck maximum value across all target states.
+
+```cpp
+class Solution {
+public:
+    int networkDelayTime(vector<vector<int>>& times, int n, int k) {
+        vector<int> minTime(n + 1, INT_MAX); //store minTimes 
+        vector<vector<pair<int, int>>> adj(n + 1);
+        for(auto edge : times){ //map edge to {edge, weight}
+            adj[edge[0]].push_back({edge[1], edge[2]});
+        }
+
+        minTime[k] = 0;
+        priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;//store {currMinTime, node}
+
+        pq.push({0, k});
+
+        while(!pq.empty()){
+            int currMinDist = pq.top().first;
+            int currNode = pq.top().second;
+
+            pq.pop();
+
+            if(currMinDist > minTime[currNode]) continue; //if the current distance is greater than the minimum distance we have already found for this node, we can skip processing it, because we have already found a shorter path to this node
+
+            for(auto neighbor : adj[currNode]){
+                int currDist = neighbor.second + currMinDist; //neighbor.second is the weight of the edge from currNode to neighbor.first, and currMinDist is the minimum distance to reach currNode, so currDist is the total distance to reach neighbor.first through currNode
+
+                if(currDist < minTime[neighbor.first]){
+                    minTime[neighbor.first] = currDist;
+                    pq.push({currDist, neighbor.first});
+                }
+
+            }
+
+        }
+
+        int currMinTime = -1;
+        for(int i =1; i <= n; i++){
+            if(minTime[i] == INT_MAX) return -1;
+            currMinTime = max(currMinTime, minTime[i]);
+        }
+        return currMinTime;
+
+    }
+};
+```
+
+## Swim In Rising Water LC 778
+
+<!-- notecardId: 1784659704365 -->
+
+You are given an n x n integer matrix grid where each value grid[i][j] represents the elevation at that point (i, j).
+
+It starts raining, and water gradually rises over time. At time t, the water level is t, meaning any cell with elevation less than equal to t is submerged or reachable.
+
+You can swim from a square to another 4-directionally adjacent square if and only if the elevation of both squares individually are at most t. You can swim infinite distances in zero time. Of course, you must stay within the boundaries of the grid during your swim.
+
+Return the minimum time until you can reach the bottom right square (n - 1, n - 1) if you start at the top left square (0, 0).
+
+ 
+
+Example 1:
+
+
+Input: grid = [[0,2],[1,3]]
+Output: 3
+Explanation:
+At time 0, you are in grid location (0, 0).
+You cannot go anywhere else because 4-directionally adjacent neighbors have a higher elevation than t = 0.
+You cannot reach point (1, 1) until time 3.
+When the depth of water is 3, we can swim anywhere inside the grid.
+Example 2:
+
+
+Input: grid = [[0,1,2,3,4],[24,23,22,21,5],[12,13,14,15,16],[11,17,18,19,20],[10,9,8,7,6]]
+Output: 16
+Explanation: The final route is shown.
+We need to wait until time 16 so that (0, 0) and (4, 4) are connected.
+ 
+
+Constraints:
+
+n == grid.length
+n == grid[i].length
+1 <= n <= 50
+0 <= grid[i][j] < n2
+Each value grid[i][j] is unique.
+
+**Link**: [text](https://leetcode.com/problems/swim-in-rising-water/)
+
+%
+
+**Pattern:** Dijkstra's Algorithm, Min-Heap, Graph Traversal
+
+**Approach:** Use a modified Dijkstra's algorithm to find the minimum time required to reach the bottom right square. Construct a priority queue (min-heap) to explore the grid, where each entry in the queue contains the current time and the coordinates of the cell. Start from the top left square (0, 0) and push it into the priority queue with its elevation as the initial time. Use a visited set to keep track of cells that have already been processed. At each step, pop the cell with the smallest time from the queue, and for each of its 4-directionally adjacent neighbors, if it has not been visited, calculate the new time as the maximum of the current time and the neighbor's elevation. Push this neighbor into the priority queue. Continue this process until you reach the bottom right square (n - 1, n - 1).
+
+**Key Insight:** The key insight is that the time required to reach a cell is determined by the maximum elevation encountered along the path. By using a priority queue to always expand the cell with the smallest current time, we ensure that we are exploring the most promising paths first, similar to Dijkstra's algorithm.
+
+**Gotchas:** Be careful with the boundaries of the grid and ensure that you do not access out-of-bounds indices. Also, make sure to mark cells as visited after they are processed to avoid revisiting them. Since each cell has a unique elevation, you can use the elevation value as a unique identifier for the cell in the visited set.
+
+**Complexity:** Time: O(n^2 log n) where n is the size of the grid, since we are using a priority queue to process each cell and there are n^2 cells in total. | Space: O(n^2) for storing the visited set and the priority queue.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Path With Minimum Effort — LC #1631 | Find path minimizing maximum absolute height difference between adjacent cells → min-heap Dijkstra tracking path bottleneck effort value. | Yes — direct grid Dijkstra twin |
+| Path with Maximum Probability — LC #1514 | Find path with highest probability product on weighted graph → max-heap Dijkstra multiplying probabilities instead of tracking maximum elevation. | Yes — priority queue state optimization |
+| Trapping Rain Water II — LC #4086 | Calculate total trapped water on 3D elevation map → boundary-initialized min-heap Dijkstra expanding inwards to process terrain heights. | Yes — 2D grid min-heap traversal |
+| Cheapest Flights Within K Stops — LC #787 | Find min-cost path constrained by edge count $k$ → Bellman-Ford / BFS tracking distance per step limit rather than pure greedy bottleneck expansion. | Partial — step-bounded shortest path |
+
+**How this pattern scales:**
+- **Min-Max Bottleneck Path Formulation ($O(N^2 \log N)$)** — The time needed to reach any cell is determined by the maximum grid value encountered along that specific path. Finding the minimum time to reach $(N-1, N-1)$ translates to finding a path from $(0,0)$ that minimizes its **peak cell elevation**:
+  $$\text{cost}(P) = \max_{(r, c) \in P} (\text{grid}[r][c])$$
+- **Modified Dijkstra / Min-Heap Priority Queue** — Standard Dijkstra accumulates path sums ($\sum w$). Here, path cost updates using the maximum operator ($\max(\text{curr\_cost}, \text{neighbor\_val})$):
+  * Priority queue stores tuples of `(max_water_level, row, col)`.
+  * Start by pushing `(grid[0][0], 0, 0)` onto the min-heap.
+  * Maintain a 2D `visited` set/array to ensure each grid coordinate is processed at its optimal (lowest peak height) arrival time.
+- **Greedy Traversal & Early Termination** — Pop the cell with the lowest `max_water_level` from the heap:
+  * If `(row, col) == (N-1, N-1)`, return `max_water_level` immediately. Because the min-heap always expands the lowest candidate peak value, the first time the destination is popped guarantees the optimal solution.
+  * For all 4-directional neighbors, evaluate candidate bottleneck cost:
+    $$\text{next\_cost} = \max(\text{max\_water_level}, \text{grid}[\text{next\_r}][\text{next\_c}])$$
+  * Push `(next_cost, next_r, next_c)` onto the heap and mark as visited.
+- **Alternative Binary Search + BFS Strategy ($O(N^2 \log(\max(\text{grid})))$)** — Because water level is monotonic (if path exists at $T$, it exists for all $t > T$):
+  * Binary search for threshold $t \in [0, \max(\text{grid})]$.
+  * Validate reachability using standard BFS/DFS, treating cells with $\text{grid}[r][c] > t$ as blocked walls.
+- **LC #1631 and LC #1514 Connection** → Swim in Rising Water serves as the classic paradigm for minimax path problems on spatial grids. It shares identical structural logic with LC #1631 (Path With Minimum Effort) by substituting edge elevation deltas with absolute node heights, while extending general graph Dijkstra models (LC #1514) to 2D topological surfaces.
+- **Minimax state relaxation and bottleneck path optimization generalize** → This template is the industry baseline blueprint for network bandwidth bottleneck routing, terrain-aware autonomous vehicle navigation (clearance/height constraint pathfinding), pipeline flow capacity optimization, and hazard-evacuation risk modeling. Master the cycle of: 1) Model continuous grid/graph states using a min-heap prioritized by path bottleneck value, 2) Define path relaxation using maximum/minimum bounds rather than additive sums, 3) Process grid steps greedily to guarantee optimal threshold arrivals, 4) Employ early termination upon reaching target coordinates, 5) Consider monotonic Binary Search + BFS as an alternative framework when target state spaces are bounded.
+
+```cpp
+class Solution {
+public:
+    int swimInWater(vector<vector<int>>& grid) {
+        int dRow[4] = {-1, 1, 0, 0};
+        int dCol[4] = {0, 0, -1, 1};
+        vector<vector<int>> map(grid.size(), vector<int>(grid[0].size(), INT_MAX));
+        std::priority_queue<tuple<int, int, int>, vector<tuple<int, int, int>>, greater<tuple<int, int, int>>> pq;
+        map[0][0] = grid[0][0]; //the minimum time to reach the starting cell is the value of the starting cell itself, because we can only enter a cell when the water level is at least equal to the value of that cell, so we need to wait until the water level reaches that value before we can enter the cell
+        pq.push({map[0][0], 0, 0});
+        while(!pq.empty()){
+            auto [currTime, currRow, currCol] = pq.top();
+            pq.pop();
+            if(currRow == grid.size() - 1 && currCol == grid[0].size() - 1) return currTime;
+            if(currTime > map[currRow][currCol]) continue;
+
+            for(int i = 0; i < 4; i++){
+                int newRow = currRow + dRow[i];
+                int newCol = currCol + dCol[i];
+                int newTime = INT_MAX;
+
+                if(newRow >= 0 && newRow < grid.size() && newCol >= 0 && newCol < grid[0].size()){
+                    newTime = max(currTime, grid[newRow][newCol]); //we want to take the max of the current time and the new cell's time, because we want to find the minimum time to reach the bottom right corner, and we will update the map with the new time if it is less than the current time in the map
+                }
+
+                 if(newRow >= 0 && newRow < grid.size() && newCol >= 0 && newCol < grid[0].size() && newTime < map[newRow][newCol]){ //only push to pq if newTime is less than the current time in the map, because we want to find the minimum time to reach the bottom right corner
+                    map[newRow][newCol] = newTime;
+                    pq.push({newTime, newRow, newCol});
+                 }
+            }
+        }
+        return map[map.size() - 1][map[0].size() - 1];
+    }
+};
+```
+
+## Cheapest Flights Within K Stops LC 787
+
+<!-- notecardId: 1784659906014 -->
+
+There are n cities connected by some number of flights. You are given an array flights where flights[i] = [fromi, toi, pricei] indicates that there is a flight from city fromi to city toi with cost pricei.
+
+You are also given three integers src, dst, and k, return the cheapest price from src to dst with at most k stops. If there is no such route, return -1.
+
+ 
+
+Example 1:
+
+
+Input: n = 4, flights = [[0,1,100],[1,2,100],[2,0,100],[1,3,600],[2,3,200]], src = 0, dst = 3, k = 1
+Output: 700
+Explanation:
+The graph is shown above.
+The optimal path with at most 1 stop from city 0 to 3 is marked in red and has cost 100 + 600 = 700.
+Note that the path through cities [0,1,2,3] is cheaper but is invalid because it uses 2 stops.
+Example 2:
+
+
+Input: n = 3, flights = [[0,1,100],[1,2,100],[0,2,500]], src = 0, dst = 2, k = 1
+Output: 200
+Explanation:
+The graph is shown above.
+The optimal path with at most 1 stop from city 0 to 2 is marked in red and has cost 100 + 100 = 200.
+Example 3:
+
+
+Input: n = 3, flights = [[0,1,100],[1,2,100],[0,2,500]], src = 0, dst = 2, k = 0
+Output: 500
+Explanation:
+The graph is shown above.
+The optimal path with no stops from city 0 to 2 is marked in red and has cost 500.
+ 
+
+Constraints:
+
+2 <= n <= 100
+0 <= flights.length <= (n * (n - 1) / 2)
+flights[i].length == 3
+0 <= fromi, toi < n
+fromi != toi
+1 <= pricei <= 104
+There will not be any multiple flights between two cities.
+0 <= src, dst, k < n
+src != dst
+
+**Link**: [text](https://leetcode.com/problems/cheapest-flights-within-k-stops/)
+
+%
+
+**Pattern:** Dijkstra's Algorithm, Shortest Path, Graph Traversal, Bellman-Ford Algorithm
+
+**Approach:** Use a modified Dijkstra's algorithm or Bellman-Ford algorithm to find the cheapest price from `src` to `dst` with at most `k` stops. Construct a directed graph using an adjacency list representation, where each node points to its neighbors along with the flight cost. Use a priority queue (min-heap) to efficiently retrieve the next node with the smallest cumulative cost. Keep track of the number of stops taken to reach each node and ensure that you do not exceed `k` stops. If you reach the destination node within the allowed number of stops, return the cumulative cost; otherwise, return -1. In my approach, I used Bellman-Ford, as this is an example of a question where you have to find the shortest path with limited stops.
+
+**Key Insight:** The key insight is that the problem can be modeled as a shortest path problem with an additional constraint on the number of stops. By using a priority queue or iterating through the edges multiple times (as in Bellman-Ford), we can efficiently find the cheapest path while respecting the stop limit.
+
+**Gotchas:** Be careful with the case where there are multiple paths to the same node with different costs and stop counts. You need to ensure that you only consider paths that respect the stop limit. Also, make sure to handle the case where the destination node is unreachable within the allowed number of stops.
+
+**Complexity:** Time: O(E * K) where E is the number of edges and K is the maximum number of stops, since we may need to relax each edge up to K times. | Space: O(V + E) for storing the graph and the cost array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Network Delay Time — LC #743 | Find minimum time for signal to reach all nodes without path length constraints → standard single-source shortest path using unconstrained Dijkstra's algorithm. | Yes — pure shortest path base |
+| Path with Maximum Probability — LC #1514 | Find path with highest probability product → max-heap Dijkstra multiplying probabilities without maximum edge count limits. | Yes — priority queue distance relaxation |
+| Swim in Rising Water — LC #778 | Find minimum time to reach target where grid values dictate height limits → min-heap Dijkstra tracking path bottleneck elevation. | Yes — priority queue bottleneck optimization |
+| Maximum Vacation Days — LC #568 | Maximize vacation days taken across cities over $k$ weeks given travel constraints → 2D dynamic programming tracking max days for `[week][city]`. | Partial — step-bounded state transition DP |
+
+**How this pattern scales:**
+- **Step-Bounded Shortest Path Formulation ($O(K \cdot E)$)** — Standard Dijkstra evaluates nodes strictly by lowest path cost, which can explore paths with arbitrarily many edges. Adding a limit of **at most $k$ stops** (which equals at most $k+1$ flights/edges) invalidates greedy Dijkstra unless state is tracked as `(node, stops_used)`.
+- **Modified Bellman-Ford Strategy (Layer-by-Layer DP)** — Iteratively relax all edges using a previous snapshot array to enforce edge-count boundaries:
+  * Maintain a `prices` array initialized to infinity ($\infty$) with `prices[src] = 0`.
+  * Perform $k + 1$ iterations.
+  * At the start of each iteration, copy `prices` into a `temp` array.
+  * For every flight `u -> v` with cost `price`, update:
+    $$\text{temp}[v] = \min(\text{temp}[v], \text{prices}[u] + \text{price})$$
+  * Reassign `prices = temp` at the end of the round.
+  * **Critical:** Reading from the previous iteration's `prices` array prevents relaxing multiple edges within a single step.
+- **Alternative BFS Queue Strategy ($O(K \cdot E)$)** — Process nodes layer-by-layer up to level $k+1$:
+  * Queue stores `(node, cost, stops)`.
+  * Track a 1D or 2D distance array `min_cost[node]` to prune paths where a higher cost is reached at an equal or higher stop count.
+  * Stop expanding nodes once `stops > k`.
+- **Result Verification** — After $k + 1$ iterations/steps, if `prices[dst]` remains $\infty$, no path exists within the stop threshold $\to$ return `-1`. Otherwise, return `prices[dst]`.
+- **LC #743 and LC #1514 Connection** → Cheapest Flights Within K Stops bridges shortest path graph algorithms with step-constrained dynamic programming. It generalizes LC #743 (Network Delay Time) by enforcing a strict layer boundary ($k+1$ edges max), while demonstrating why pure Dijkstra fails when sub-optimal path costs are required to preserve step budgets.
+- **Step-bounded edge relaxation and state snapshotting generalize** → This template is the industry baseline blueprint for multi-hop network packet routing under TTL (Time-To-Live) constraints, financial arbitrage loops bounded by maximum transaction limits, logistics supply chain transfers with bounded transit hubs, and game-AI search depth limiters. Master the cycle of: 1) Model path steps as discrete DP iterations or BFS queue depth levels, 2) Snapshot the previous iteration's cost states to isolate single-step edge expansions, 3) Relax all directed edges against the snapshot, 4) Repeat for exactly $k+1$ bounds, 5) Validate reachability at the target node and return minimal cost.
+
+```cpp
+class Solution {
+public:
+    int findCheapestPrice(int n, vector<vector<int>>& flights, int src, int dst, int k) {
+        //good example of bellman ford, shortest path with limited stops
+
+        vector<int> prices(n, INT_MAX);
+        prices[src] = 0;
+
+
+        for(int i = 0; i <= k; i++) {//k stops = k + 1 flights
+            //keep track of distances, save a temp now and update later
+            vector<int> temp = prices;
+            for(auto flight : flights){
+                int start = flight[0];
+                int end = flight[1];
+                int price = flight[2];
+
+                if(prices[start] != INT_MAX && prices[start] + price < temp[end]){ //here, we have to check if start is reachable in the first place and if the new price is cheaper than the current price at end
+                    temp[end] = prices[start] + price;
+                }
+            }
+            prices = temp; //update the prices vector after each iteration, because we want to keep track of the minimum price to reach each city with at most k stops
+        }
+
+        if(prices[dst] == INT_MAX) return -1;
+
+        return prices[dst];
+    }
+};
+```
+
+## Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree LC 1489
+
+<!-- notecardId: 1784660106270 -->
+
+Given a weighted undirected connected graph with n vertices numbered from 0 to n - 1, and an array edges where edges[i] = [ai, bi, weighti] represents a bidirectional and weighted edge between nodes ai and bi. A minimum spanning tree (MST) is a subset of the graph's edges that connects all vertices without cycles and with the minimum possible total edge weight.
+
+Find all the critical and pseudo-critical edges in the given graph's minimum spanning tree (MST). An MST edge whose deletion from the graph would cause the MST weight to increase is called a critical edge. On the other hand, a pseudo-critical edge is that which can appear in some MSTs but not all.
+
+Note that you can return the indices of the edges in any order.
+
+ 
+
+Example 1:
+
+
+
+Input: n = 5, edges = [[0,1,1],[1,2,1],[2,3,2],[0,3,2],[0,4,3],[3,4,3],[1,4,6]]
+Output: [[0,1],[2,3,4,5]]
+Explanation: The figure above describes the graph.
+The following figure shows all the possible MSTs:
+
+Notice that the two edges 0 and 1 appear in all MSTs, therefore they are critical edges, so we return them in the first list of the output.
+The edges 2, 3, 4, and 5 are only part of some MSTs, therefore they are considered pseudo-critical edges. We add them to the second list of the output.
+Example 2:
+
+
+
+Input: n = 4, edges = [[0,1,1],[1,2,1],[2,3,1],[0,3,1]]
+Output: [[],[0,1,2,3]]
+Explanation: We can observe that since all 4 edges have equal weight, choosing any 3 edges from the given 4 will yield an MST. Therefore all 4 edges are pseudo-critical.
+ 
+
+Constraints:
+
+2 <= n <= 100
+1 <= edges.length <= min(200, n * (n - 1) / 2)
+edges[i].length == 3
+0 <= ai < bi < n
+1 <= weighti <= 1000
+All pairs (ai, bi) are distinct.
+
+**Link**: [text](https://leetcode.com/problems/find-critical-and-pseudo-critical-edges-in-minimum-spanning-tree/)
+
+%
+
+**Pattern:** Minimum Spanning Tree, Kruskal's Algorithm, Union-Find (Disjoint Set Union)
+
+**Approach:** Use Kruskal's algorithm to find the minimum spanning tree (MST) of the graph. First, sort the edges by weight and use a union-find data structure to keep track of connected components. For each edge, check if it is critical by temporarily removing it and calculating the MST weight without it. If the MST weight increases, the edge is critical. To check if an edge is pseudo-critical, include it in the MST calculation and see if it can still be part of an MST with the same total weight. Return two lists: one for critical edges and one for pseudo-critical edges.
+
+**Key Insight:** The key insight is that an edge is critical if its removal increases the total weight of the MST, and it is pseudo-critical if it can be included in some MSTs without increasing the total weight. By leveraging Kruskal's algorithm and union-find, we can efficiently determine the status of each edge.
+
+**Gotchas:** Be careful with the edge cases where multiple edges have the same weight. Ensure that you correctly handle the union-find operations to avoid cycles and maintain the correct connected components. Also, remember to check both conditions for critical and pseudo-critical edges separately.
+
+**Complexity:** Time: O(E log E + E * α(V)) where E is the number of edges, V is the number of vertices, and α is the inverse Ackermann function due to union-find operations. | Space: O(V + E) for storing the graph and union-find data structures.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Min Cost to Connect All Points — LC #1584 | Connect 2D grid coordinates into a single tree with minimal total Manhattan distance → direct Minimum Spanning Tree construction using Kruskal's or Prim's algorithm. | Yes — foundational MST base |
+| Optimize Water Distribution in a Village — LC #1168 | Connect homes via pipes or build wells at individual nodes → MST with a virtual super-source node unifying node costs with edge weights. | Partial — extended virtual-node MST |
+| Redundant Connection — LC #684 | Identify an edge in an unweighted graph that forms a cycle → Union-Find cycle detection without edge sorting or weight optimization. | Partial — isolated disjoint-set logic |
+| Critical Connections in a Network — LC #1192 | Find bridges in an unweighted graph whose deletion disconnects the graph → Tarjan's Strongly Connected Components / Bridge-finding algorithm using DFS discovery times. | Partial — graph bridge detection |
+
+**How this pattern scales:**
+- **Base MST Benchmark ($O(E \log E)$)** — Preserve original zero-indexed edge identities before sorting by weight. Compute the global minimal spanning tree weight ($\text{MST}_{\text{base}}$) using standard Kruskal's Algorithm with Union-Find (Disjoint Set Union with path compression).
+- **Force-and-Exclude Testing Paradigm ($O(E^2 \cdot \alpha(V))$)** — Classify every edge $e_i$ by measuring how its presence or absence alters the graph's spanning properties against $\text{MST}_{\text{base}}$:
+  1. **Critical Edge Test (Exclusion):** Run Kruskal's algorithm excluding $e_i$ entirely. If the resulting graph becomes disconnected (fewer than $N-1$ edges placed) or its weight exceeds $\text{MST}_{\text{base}}$, then $e_i$ is **Critical** (it is mandatory for every valid MST).
+  2. **Pseudo-Critical Edge Test (Forced Inclusion):** If $e_i$ is not critical, forcibly add $e_i$ to the Union-Find structure first, add its weight to the running total, and then run Kruskal's algorithm over the remaining edges. If the total weight matches $\text{MST}_{\text{base}}$, then $e_i$ is **Pseudo-Critical** (it belongs to at least one valid MST, but not all).
+- **Preserving Original Indices** — Sorting edges by weight destroys input indices. Attach original array indices as metadata `(u, v, weight, original_index)` prior to sorting.
+- **LC #1584 and LC #1192 Connection** → Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree bridges graph connectivity analysis with optimization theory. It extends LC #1584 (Min Cost to Connect All Points) by introducing edge-classification via repeated MST queries, while sharing conceptual similarities with bridge-finding problems like LC #1192 (Critical Connections in a Network).
+- **Forced/excluded state simulation with MST relaxation generalizes** → This template is the industry baseline blueprint for resilient physical network design (evaluating single-point-of-failure utility cables), redundant telecommunications path analysis, electrical grid load balancing, and competitive transportation routing optimization. Master the cycle of: 1) Compute baseline optimal connectivity bounds using Kruskal's algorithm, 2) Test edge criticality by excluding target constraints and verifying system degradation, 3) Test pseudo-criticality by forcing suboptimal target edge inclusion and checking if baseline equivalence holds, 4) Use Disjoint Set Union (DSU) to efficiently process component connectivity across modified edge sets.
+
+```cpp
+class UnionFind {
+private:
+    vector<int> parent;
+    vector<int> rank;
+public:
+    UnionFind(int n){
+        parent.resize(n);
+        rank.resize(n, 0);
+        std::iota(parent.begin(), parent.end(), 0);
+    }
+
+    int find(int i){
+        if(parent[i] == i) return i;
+        return parent[i] = find(parent[i]);
+    }
+
+    bool unite(int i, int j){
+        int rootI = find(i);
+        int rootJ = find(j);
+
+        if(rootI == rootJ) return false; //alr in same component
+
+
+        if(rank[rootI] < rank[rootJ]){
+            parent[rootI] = rootJ;
+        }
+        else if (rank[rootI] > rank[rootJ]){
+            parent[rootJ] = rootI;
+        }
+        else{
+            parent[rootJ] = rootI;
+            rank[rootI]++;
+        }
+        return true;
+    }
+};
+class Solution {
+public:
+    vector<vector<int>> findCriticalAndPseudoCriticalEdges(int n, vector<vector<int>>& edges) {
+        vector<vector<int>> newEdges = edges;
+        for(int i = 0; i < edges.size(); i++){
+            newEdges[i].push_back(i); //add the index of the edge to the edge list, so we can keep track of which edge is which
+        }
+
+        sort(newEdges.begin(), newEdges.end(), [](const vector<int>& a, const vector<int>& b) {
+            return a[2] < b[2]; //sort the edges by weight, so we can use Kruskal's algorithm to find the MST. Sorted from smallest to largest weight
+        });
+
+
+        UnionFind uf(n);
+        int mstWeight = 0;
+        int stdEdges = 0;
+        for(int i = 0; i < edges.size(); i++){
+            if(uf.unite(newEdges[i][0], newEdges[i][1])){
+                mstWeight += newEdges[i][2];
+                stdEdges++;
+            }
+        }
+
+        vector<vector<int>> res(2);
+        //in res, we store the critical edges in res[0] and the pseudo-critical edges in res[1]
+
+        //first, lets find the critical edges, which are the edges that if removed, will increase the weight of the MST
+
+        for(int i = 0; i < newEdges.size(); i++){
+            UnionFind uf2(n);
+            int ignoreWeight = 0;
+            int ignoreEdgesCt = 0;
+            for(int j = 0; j < newEdges.size(); j++){
+                if(newEdges[j][3] == newEdges[i][3]) continue;
+                if(uf2.unite(newEdges[j][0], newEdges[j][1])){
+                    ignoreWeight += newEdges[j][2];
+                    ignoreEdgesCt++;
+                }
+            }
+
+            if(ignoreEdgesCt < n - 1 || ignoreWeight > mstWeight){ //
+                res[0].push_back(newEdges[i][3]); //if the number of edges in the MST is less than n - 1, or the weight of the MST is greater than the original MST weight, then this edge is critical
+            }
+            else{
+                //now we gotta check if the edge is pseudo-critical, which means that if we include this edge in the MST, the weight of the MST will be the same as the original MST weight
+                UnionFind uf3(n);
+                int forceWeight = 0;
+                int forceEdges = 0;
+                uf3.unite(newEdges[i][0], newEdges[i][1]);
+                forceWeight += newEdges[i][2];
+                forceEdges++;
+                for(int j = 0; j < newEdges.size(); j++){
+                if(newEdges[j][3] == newEdges[i][3]) continue;
+                if(uf3.unite(newEdges[j][0], newEdges[j][1])){
+                    forceWeight += newEdges[j][2];
+                    forceEdges++;
+                }
+            }
+
+            if(forceEdges == n - 1 && forceWeight == mstWeight) res[1].push_back(newEdges[i][3]); //if the number of edges in the MST is equal to n - 1, and the weight of the MST is equal to the original MST weight, then this edge is pseudo-critical
+            }
+        }
+
+        return res;
+    }
+};
+```
+
+## Min Cost to Connect All Points LC 1584
+
+<!-- notecardId: 1784660250422 -->
+
+You are given an array points representing integer coordinates of some points on a 2D-plane, where points[i] = [xi, yi].
+
+The cost of connecting two points [xi, yi] and [xj, yj] is the manhattan distance between them: |xi - xj| + |yi - yj|, where |val| denotes the absolute value of val.
+
+Return the minimum cost to make all points connected. All points are connected if there is exactly one simple path between any two points.
+
+ 
+
+Example 1:
+
+
+Input: points = [[0,0],[2,2],[3,10],[5,2],[7,0]]
+Output: 20
+Explanation: 
+
+We can connect the points as shown above to get the minimum cost of 20.
+Notice that there is a unique path between every pair of points.
+Example 2:
+
+Input: points = [[3,12],[-2,5],[-4,1]]
+Output: 18
+ 
+
+Constraints:
+
+1 <= points.length <= 1000
+-106 <= xi, yi <= 106
+All pairs (xi, yi) are distinct.
+
+**Link**: [text](https://leetcode.com/problems/min-cost-to-connect-all-points/)
+
+%
+
+**Pattern:** Minimum Spanning Tree, Prim's Algorithm, Kruskal's Algorithm, Union-Find (Disjoint Set Union)
+
+**Approach:** Use Prim's algorithm or Kruskal's algorithm to find the minimum spanning tree (MST) of the points. For Prim's algorithm, start from an arbitrary point and use a priority queue (min-heap) to always expand the edge with the smallest cost to connect a new point. For Kruskal's algorithm, calculate the Manhattan distance between all pairs of points, sort the edges by weight, and use a union-find data structure to add edges to the MST while avoiding cycles. Return the total cost of the MST. In this question, it is more ideal to use optimized Prim's, because the number of edges is O(n^2) and we can avoid storing all edges explicitly.
+
+**Key Insight:** The key insight is that the problem can be modeled as a minimum spanning tree problem, where the cost of connecting points is defined by the Manhattan distance. By using Prim's or Kruskal's algorithm, we can efficiently find the minimum cost to connect all points.
+
+**Gotchas:** Be careful with the calculation of the Manhattan distance and ensure that you do not create cycles when adding edges to the MST. Also, consider the efficiency of your approach, as storing all edges explicitly can lead to high memory usage for large numbers of points.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Connecting Cities With Minimum Cost — LC #1135 | Connect $N$ cities given explicit weighted edges → direct Minimum Spanning Tree baseline on sparse edge list using Kruskal's or Prim's algorithm. | Yes — explicit edge list MST twin |
+| Optimize Water Distribution in a Village — LC #1168 | Connect homes via pipes or build wells at individual nodes → MST with a virtual super-source node converting node costs into weighted edges. | Yes — extended virtual-node MST |
+| Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree — LC #1489 | Identify edges that must or can belong to an MST → runs repeated Kruskal passes with edge-forcing and edge-exclusion tests against a baseline MST cost. | Yes — multi-pass MST classification |
+| Redundant Connection — LC #684 | Identify an edge in an undirected graph that forms a cycle → isolated Disjoint Set Union (DSU) cycle detection without edge weight sorting. | Partial — structural DSU component tracking |
+
+**How this pattern scales:**
+- **Implicit Graph Formulation ($O(N^2)$ Edges)** — Complete dense graphs do not provide explicit edge lists. Compute Manhattan distance between every pair of points $(x_1, y_1)$ and $(x_2, y_2)$ as edge weight:
+  $$d = |x_1 - x_2| + |y_1 - y_2|$$
+- **Algorithm Selection: Prim's vs. Kruskal's** —
+  * **Kruskal's Algorithm ($O(E \log E)$):** Generate all $O(N^2)$ edges, sort them by weight, and process using Disjoint Set Union (DSU). Higher memory overhead due to storing $O(N^2)$ edge objects.
+  * **Prim's Algorithm ($O(N^2)$ or $O(E \log V)$):** Grow the spanning tree greedily from an arbitrary starting node (e.g., node `0`). Maintain a min-heap or a 1D `min_dist` tracking array. For dense complete graphs ($E \approx V^2$), standard array-based Prim's runs in optimal $O(N^2)$ time and $O(N)$ space without heap overhead.
+- **Prim's Algorithm State Tracking (Array-Based $O(N^2)$)** —
+  1. Maintain boolean array `in_mst` of size $N$ and array `min_dist` initialized to $\infty$, with `min_dist[0] = 0`.
+  2. For $N$ iterations, pick the unvisited node $u$ with the smallest `min_dist[u]`.
+  3. Mark $u$ as `in_mst`, add `min_dist[u]` to total cost.
+  4. Update `min_dist[v]` for all unvisited $v$ using the Manhattan distance between $u$ and $v$.
+- **Disjoint Set Union (DSU) Cycle Prevention (Kruskal Variant)** — If using Kruskal's:
+  * Sort edges by weight ascending.
+  * Iterate through edges `(u, v, w)`. Use path-compressed DSU to check if `find(u) != find(v)`.
+  * If in different components, call `union(u, v)` and accumulate $w$. Stop once $N-1$ edges are added.
+- **LC #1135 and LC #1489 Connection** → Min Cost to Connect All Points represents the baseline geometric formulation of Minimum Spanning Trees on implicit coordinate grids. It serves as the core foundation for LC #1135 (Connecting Cities With Minimum Cost), while providing the baseline MST weight calculation required by higher-level edge classification problems like LC #1489.
+- **Implicit graph distance calculation and greedy component merging generalize** → This template is the industry baseline blueprint for physical chip layout wiring minimization, telecommunications tower coverage network design, clustering algorithms (single-linkage hierarchical clustering), and automated pipeline distribution routing. Master the cycle of: 1) Model coordinates as nodes and metric distances as implicit dynamic edges, 2) Choose Prim's algorithm for dense complete graphs to optimize memory or Kruskal's with DSU for sparse explicit edge sets, 3) Greedily attach the lowest-cost unvisited boundary edge, 4) Track visited components to prevent cyclic redundancies, 5) Aggregate $N-1$ minimal connecting edges across all nodes.
+
+```cpp
+class Solution {
+public:
+    int minCostConnectPoints(vector<vector<int>>& points) {
+        //We used an optimized version of Prim's algorithm to find the minimum spanning tree of the graph formed by the points, where the weight of the edge between two points is the Manhattan distance between them.
+        // We keep track of the points that are already in the minimum spanning tree and the minimum distance to connect each point to the tree. At each step, we add the point with the minimum distance to the tree and update the distances for the remaining points.
+        //We repeat this process until all points are included in the tree, and we return the total cost of connecting all points.
+        vector<bool> inMST(points.size(), false);
+        vector<int> minDist(points.size(), INT_MAX);
+        int totalCost = 0;
+        int edgesUsed = 0;
+        minDist[0] = 0;
+        while(edgesUsed < points.size()){
+            int currMinDist = INT_MAX;
+            int currNode = -1;
+            for(int i = 0; i < points.size(); i++){
+                if(!inMST[i] && minDist[i] < currMinDist){
+                    currMinDist = minDist[i];
+                    currNode = i;
+                }
+            }
+
+            //at the end of this loop, currMinDist will be the minimum distance to connect a new point to the MST, and currNode will be the index of that point
+
+            inMST[currNode] = true;
+            totalCost += currMinDist;
+            edgesUsed++;
+
+            //update the minDist array for the remaining points that are not in the MST
+            //at each iteration, minDist will get updated to reflect the minimum distance to connect each point to the current MST
+            for(int i = 0; i < points.size(); i++){
+                if(!inMST[i]){
+                    int dist = abs(points[currNode][0] - points[i][0]) + abs(points[currNode][1] - points[i][1]);
+                    minDist[i] = min(minDist[i], dist);
+                }
+            }
+        }
+
+        return totalCost;
+    }
+};
+```
+
+## Path With Minumum Effort LC 1631
+
+<!-- notecardId: 1784660871349 -->
+
+You are a hiker preparing for an upcoming hike. You are given heights, a 2D array of size rows x columns, where heights[row][col] represents the height of cell (row, col). You are situated in the top-left cell, (0, 0), and you hope to travel to the bottom-right cell, (rows-1, columns-1) (i.e., 0-indexed). You can move up, down, left, or right, and you wish to find a route that requires the minimum effort.
+
+A route's effort is the maximum absolute difference in heights between two consecutive cells of the route.
+
+Return the minimum effort required to travel from the top-left cell to the bottom-right cell.
+
+ 
+
+Example 1:
+
+
+
+Input: heights = [[1,2,2],[3,8,2],[5,3,5]]
+Output: 2
+Explanation: The route of [1,3,5,3,5] has a maximum absolute difference of 2 in consecutive cells.
+This is better than the route of [1,2,2,2,5], where the maximum absolute difference is 3.
+Example 2:
+
+
+
+Input: heights = [[1,2,3],[3,8,4],[5,3,5]]
+Output: 1
+Explanation: The route of [1,2,3,4,5] has a maximum absolute difference of 1 in consecutive cells, which is better than route [1,3,5,3,5].
+Example 3:
+
+
+Input: heights = [[1,2,1,1,1],[1,2,1,2,1],[1,2,1,2,1],[1,2,1,2,1],[1,1,1,2,1]]
+Output: 0
+Explanation: This route does not require any effort.
+ 
+
+Constraints:
+
+rows == heights.length
+columns == heights[i].length
+1 <= rows, columns <= 100
+1 <= heights[i][j] <= 106
+
+**Link**: [text](https://leetcode.com/problems/path-with-minimum-effort/)
+
+%
+
+**Pattern:** Minimum Spanning Tree, Dijkstra's Algorithm, Graph Traversal, Binary Search
+
+**Approach:** Use a modified Dijkstra's algorithm to find the path with the minimum effort. The effort of a path is defined as the maximum absolute difference in heights between two consecutive cells. Use a priority queue (min-heap) to always expand the cell with the smallest current effort. Keep track of the minimum effort required to reach each cell and update it as you explore neighboring cells. Return the minimum effort required to reach the bottom-right cell.
+
+**Key Insight:** The key insight is that the problem can be modeled as a shortest path problem where the cost of moving from one cell to another is defined by the maximum height difference along the path. By using a priority queue and keeping track of the minimum effort required to reach each cell, we can efficiently find the optimal path.
+
+**Gotchas:** Be careful with the definition of effort, as it is based on the maximum height difference along the path rather than the sum of differences. Ensure that you correctly update the minimum effort for each cell and avoid revisiting cells with higher effort values. Also, consider edge cases where the grid has only one cell or where all cells have the same height.
+
+**Complexity:** Time: O(E log V) where E is the number of edges (4 * rows * columns) and V is the number of vertices (rows * columns), due to the priority queue operations. | Space: O(V) for storing the minimum effort values and the priority queue.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Swim in Rising Water — LC #778 | Find minimum time to cross grid where cell values dictate water height → min-heap Dijkstra / Binary Search tracking absolute peak cell elevation rather than height differences between adjacent cells. | Yes — direct minimax grid twin |
+| Path with Maximum Probability — LC #1514 | Find path maximizing product of probabilities on weighted graph → max-heap Dijkstra multiplying probabilities instead of tracking maximum edge difference. | Yes — priority queue bottleneck optimization |
+| Network Delay Time — LC #743 | Find minimum signal propagation time across graph → standard single-source shortest path accumulating path weight sums ($\sum w$) rather than bottleneck path max limits. | Yes — pure Dijkstra base |
+| Cheapest Flights Within K Stops — LC #787 | Find min-cost path constrained by edge count $k$ → Bellman-Ford / BFS step-bounded layer tracking rather than pure greedy bottleneck expansion. | Partial — step-bounded shortest path |
+
+**How this pattern scales:**
+- **Min-Max Bottleneck Path Formulation ($O(R \cdot C \log(R \cdot C))$)** — The "effort" of a path is defined as the **maximum absolute difference** in height between two consecutive cells along the route:
+  $$\text{effort}(P) = \max_{(r_1, c_1), (r_2, c_2) \in P} |\text{heights}[r_1][c_1] - \text{heights}[r_2][c_2]|$$
+  The objective is to find a path from $(0,0)$ to $(R-1, C-1)$ that minimizes this maximum effort value.
+- **Modified Dijkstra / Priority Queue Implementation** — Standard Dijkstra accumulates path weight sums. Here, the state transition relaxes using the maximum boundary operator:
+  * Priority queue stores tuples of `(current_max_effort, row, col)`.
+  * Maintain a 2D `effort_map` initialized to infinity ($\infty$), setting `effort_map[0][0] = 0`.
+  * Pop the coordinate with the smallest candidate effort. If `popped_effort > effort_map[row][col]`, discard as a stale node state.
+  * **Early Termination:** The first time destination $(R-1, C-1)$ is popped from the min-heap, return its `current_max_effort` immediately.
+- **Edge Relaxation Mechanism** — For each of the 4 adjacent neighbors:
+  * Compute edge transition cost: $\text{edge\_weight} = |\text{heights}[r][c] - \text{heights}[\text{next\_r}][\text{next\_c}]|$.
+  * Evaluate candidate path effort:
+    $$\text{candidate\_effort} = \max(\text{current\_max\_effort}, \text{edge\_weight})$$
+  * If $\text{candidate\_effort} < \text{effort\_map}[\text{next\_r}][\text{next\_c}]$, update `effort_map` and push `(candidate_effort, next_r, next_c)` onto the min-heap.
+- **Alternative Binary Search + BFS/DFS Strategy ($O(R \cdot C \log(\max H))$)** — Because path reachability is monotonic relative to effort capacity threshold $k$:
+  * Binary search over threshold range $k \in [0, 10^6]$.
+  * Perform BFS/DFS to verify if a valid path exists from start to destination using only edge steps with $|\Delta h| \le k$.
+- **LC #778 and LC #743 Connection** → Path With Minimum Effort serves as the textbook template for min-max state optimization on continuous grid surfaces. It shares structural equivalence with LC #778 (Swim in Rising Water) by substituting absolute cell water levels with edge elevation deltas, while generalizing standard distance Dijkstra models (LC #743) from additive path metrics to minimax bottleneck constraints.
+- **Minimax edge relaxation and monotonic threshold verification generalize** → This template is the industry baseline blueprint for terrain-aware autonomous vehicle trajectory generation (minimizing maximum slope/vibration impact), network packet delay jitter optimization, power transmission line route selection across high-gradient topography, and structural stress-path load modeling. Master the cycle of: 1) Model continuous spatial grids as weighted transition graphs, 2) Define path relaxation using maximum bottleneck limits instead of additive distance sums, 3) Process states via min-heap priority queue to guarantee optimal path expansion, 4) Apply early termination upon reaching target destination coordinates, 5) Consider monotonic Binary Search + BFS/DFS as an alternative when edge weight bounds are small and fixed.
+
+```cpp
+class Solution {
+public:
+    int minimumEffortPath(vector<vector<int>>& heights) {
+        int dRow[4] = {-1, 1, 0, 0};
+        int dCol[4] = {0, 0, -1, 1};
+        vector<vector<int>> map(heights.size(), vector<int>(heights[0].size(), INT_MAX));
+        //in this map, we will store the minimum effort required to reach each cell in the heights matrix, and we will initialize it to INT_MAX, because we want to find the minimum effort path, and we will update it as we explore the matrix
+        map[0][0] = 0; //difference at starting distance is 0
+        //our priority queue has to store effort, row, col
+        std::priority_queue<tuple<int, int, int>, vector<tuple<int, int, int>>, greater<tuple<int, int, int>>> pq;
+        //a priority queue is needed in djikstra's algorithm, because we want to explore the cell with the minimum effort first, 
+        //and we will use a min heap to store the cells in the priority queue, and we will use a tuple to store the effort, row, and col of each cell, and we will use a greater comparator to make it a min heap
+        pq.push({0, 0, 0});
+        while(!pq.empty()){
+            auto [currEffort, currRow, currCol] = pq.top();
+            pq.pop();
+
+            if(currRow == heights.size() -1 && currCol == heights[0].size() - 1) return currEffort;
+            if(currEffort > map[currRow][currCol]) continue; //this path will not produce the minEffortPath
+
+            for(int i = 0; i < 4; i++){
+                int newRow = currRow + dRow[i];
+                int newCol = currCol + dCol[i];
+                int newCurrEffort = INT_MAX;
+                if(newRow >= 0 && newRow < heights.size() && newCol >= 0 && newCol < heights[0].size()){
+                    newCurrEffort = max(currEffort, abs(heights[currRow][currCol] - heights[newRow][newCol]));
+                } //we want to take the max of the current effort and the absolute difference between the current cell and the new cell, because we want to find the path with the minimum effort, and we will update the map with the new effort if it is less than the current effort in the map
+
+                if(newRow >= 0 && newRow < heights.size() && newCol >= 0 && newCol < heights[0].size() && newCurrEffort < map[newRow][newCol]){ //have to check if newCurrEffort is less than the current effort in the map, 
+                //because we want to find the minimum effort path, and if it is less, then we will update the map and push the new cell into the priority queue
+                    map[newRow][newCol] = newCurrEffort;
+                    pq.push({newCurrEffort, newRow, newCol});
+                }
+            }
+        }
+
+        return map[heights.size()- 1][heights[0].size() - 1];
+    }
+};
+```
+
+## Build A Matrix With Conditions LC 2392
+
+<!-- notecardId: 1784661051135 -->
+
+You are given a positive integer k. You are also given:
+
+a 2D integer array rowConditions of size n where rowConditions[i] = [abovei, belowi], and
+a 2D integer array colConditions of size m where colConditions[i] = [lefti, righti].
+The two arrays contain integers from 1 to k.
+
+You have to build a k x k matrix that contains each of the numbers from 1 to k exactly once. The remaining cells should have the value 0.
+
+The matrix should also satisfy the following conditions:
+
+The number abovei should appear in a row that is strictly above the row at which the number belowi appears for all i from 0 to n - 1.
+The number lefti should appear in a column that is strictly left of the column at which the number righti appears for all i from 0 to m - 1.
+Return any matrix that satisfies the conditions. If no answer exists, return an empty matrix.
+
+ 
+
+Example 1:
+
+
+Input: k = 3, rowConditions = [[1,2],[3,2]], colConditions = [[2,1],[3,2]]
+Output: [[3,0,0],[0,0,1],[0,2,0]]
+Explanation: The diagram above shows a valid example of a matrix that satisfies all the conditions.
+The row conditions are the following:
+- Number 1 is in row 1, and number 2 is in row 2, so 1 is above 2 in the matrix.
+- Number 3 is in row 0, and number 2 is in row 2, so 3 is above 2 in the matrix.
+The column conditions are the following:
+- Number 2 is in column 1, and number 1 is in column 2, so 2 is left of 1 in the matrix.
+- Number 3 is in column 0, and number 2 is in column 1, so 3 is left of 2 in the matrix.
+Note that there may be multiple correct answers.
+Example 2:
+
+Input: k = 3, rowConditions = [[1,2],[2,3],[3,1],[2,3]], colConditions = [[2,1]]
+Output: []
+Explanation: From the first two conditions, 3 has to be below 1 but the third conditions needs 3 to be above 1 to be satisfied.
+No matrix can satisfy all the conditions, so we return the empty matrix.
+ 
+
+Constraints:
+
+2 <= k <= 400
+1 <= rowConditions.length, colConditions.length <= 104
+rowConditions[i].length == colConditions[i].length == 2
+1 <= abovei, belowi, lefti, righti <= k
+abovei != belowi
+lefti != righti
+
+**Link**: [text](https://leetcode.com/problems/build-a-matrix-with-conditions/)
+
+%
+
+**Pattern:** Topological Sort, Graph Traversal, Directed Acyclic Graph (DAG)
+
+**Approach:** Model the row and column conditions as directed graphs, where each condition represents a directed edge from one number to another. Use topological sorting to determine a valid order of numbers for both rows and columns. If a cycle is detected in either graph, return an empty matrix. Otherwise, place the numbers in the matrix according to the topological order obtained from the row and column conditions.
+
+**Key Insight:** The key insight is that the problem can be represented as a directed graph, where the conditions define the edges. By performing topological sorting on both the row and column graphs, we can determine a valid arrangement of numbers in the matrix. If a cycle exists in either graph, it indicates that the conditions are contradictory, and no valid matrix can be formed.
+
+**Gotchas:** Be careful with the indexing of the numbers, as they are 1-based in the input but need to be placed in a 0-based matrix. Ensure that you handle cycles correctly when performing topological sorting, as they indicate that no valid arrangement is possible. Also, consider edge cases where there are multiple valid arrangements and ensure that your solution can return any one of them.
+
+**Complexity:** Time: O(k + n + m) where k is the number of unique numbers, n is the number of row conditions, and m is the number of column conditions, due to the graph construction and topological sorting. | Space: O(k + n + m) for storing the graphs and the resulting matrix.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Course Schedule II — LC #210 | Compute a single 1D topological ordering for a set of tasks → standard Kahn's Algorithm / DFS topological sort. | Yes — pure 1D topological sort base |
+| Alien Dictionary — LC #269 | Deduce character ordering from adjacent word constraints → topological sort on implicit directed graph extracted from text pairwise differences. | Yes — implicit graph topological sort |
+| Sequence Reconstruction — LC #444 | Verify if a unique topological ordering exists → topological sort enforcing that the BFS queue size never exceeds 1. | Yes — constrained 1D topological sort |
+| Sort Items by Groups Respecting Dependencies — LC #1204 | Sort items with item-level and group-level dependency constraints → dual-level topological sort (sort groups first, then items within groups). | Yes — multi-level topological ordering |
+
+**How this pattern scales:**
+- **Orthogonal Dimensional Decoupling ($O(k^2 + E_r + E_c)$)** — The problem requires placing integers $1 \dots k$ into a $k \times k$ matrix such that row constraints and column constraints are simultaneously satisfied. Key insight: Row placement and column placement are **completely independent 1D problems**:
+  * Row index ordering depends strictly on `rowConditions`.
+  * Column index ordering depends strictly on `colConditions`.
+- **Dual Independent Topological Sorts** — Execute two separate topological sorts (via Kahn's BFS or 3-State DFS):
+  1. Construct a directed graph $G_{\text{row}}$ where edge $u \to v$ indicates $u$ must appear in a row strictly above $v$. Compute topological order `row_order`.
+  2. Construct a directed graph $G_{\text{col}}$ where edge $u \to v$ indicates $u$ must appear in a column strictly left of $v$. Compute topological order `col_order`.
+- **Cycle Detection & Early Termination Guard** —
+  * If either $G_{\text{row}}$ or $G_{\text{col}}$ contains a directed cycle, no valid linear ordering exists for that dimension.
+  * Check if `len(row_order) < k` or `len(col_order) < k`. If true, immediately return an empty matrix `[]`.
+- **2D Matrix Synthesis via Index Hash Mapping** —
+  * Build lookup maps (or arrays) converting each node value to its 0-indexed position:
+    $$\text{row\_map}[\text{val}] = \text{row\_idx}, \quad \text{col\_map}[\text{val}] = \text{col\_idx}$$
+  * Initialize a $k \times k$ zero-matrix.
+  * For each value $\text{val} \in [1, k]$, place it at coordinate `matrix[row_map[val]][col_map[val]] = val`.
+- **LC #210 and LC #1204 Connection** → Build a Matrix With Conditions extends 1D topological sorting into 2D geometric grid coordinates. It uses LC #210 (Course Schedule II) as a sub-routine twice independently, while sharing multi-dimensional topological coordination mechanisms with LC #1204 (Sort Items by Groups Respecting Dependencies).
+- **Dimension decoupling and multi-graph topological synthesis generalize** → This template is the industry baseline blueprint for multi-axis constraint layout engines (e.g., CSS Grid / Flexbox auto-layout solvers), automated PCB component placement, multi-resource job scheduling across time and spatial workers, and 2D CAD blueprint dependency resolution. Master the cycle of: 1) Factor orthogonal system constraints into independent directed graphs, 2) Perform independent topological sorts on each dimension graph, 3) Validate cycle-free convergence across all dimensions, 4) Map 1D linear topological orders back to multi-dimensional coordinate spaces, 5) Intersect dimensional position maps to place entities.
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> buildMatrix(int k, vector<vector<int>>& rowConditions, vector<vector<int>>& colConditions) {
+        //we do topological sort on both rowConditions and colConditions, and then we place the numbers in the matrix according to their row and column positions
+        vector<vector<int>> rowAdj(k+1), colAdj(k+1);
+        vector<int> rowIndegree(k + 1, 0), colIndegree(k + 1, 0);
+        vector<vector<int>> res(k, vector<int>(k, 0));
+        for(auto condition : rowConditions){
+            rowAdj[condition[0]].push_back(condition[1]);
+            rowIndegree[condition[1]]++;
+        }
+        for(auto condition : colConditions){
+            colAdj[condition[0]].push_back(condition[1]);
+            colIndegree[condition[1]]++;
+        }
+
+        queue<int> rowQ, colQ;
+        vector<int> rowOrder, colOrder;
+        int rowCtr = 0;
+        int colCtr = 0;
+        for(int i = 1; i < rowIndegree.size(); i++){
+            if(rowIndegree[i] == 0) rowQ.push(i);
+        }
+        for(int i = 1; i < colIndegree.size(); i++){
+            if(colIndegree[i] == 0) colQ.push(i);
+        }
+        while(!rowQ.empty()){
+            auto front = rowQ.front();
+            rowQ.pop();
+            rowOrder.push_back(front);
+            rowCtr++;
+            for(int neighbor : rowAdj[front]){
+                rowIndegree[neighbor]--;
+                if(rowIndegree[neighbor] == 0) rowQ.push(neighbor);
+            }
+
+        }
+
+        while(!colQ.empty()){
+            auto front = colQ.front();
+            colQ.pop();
+            colOrder.push_back(front);
+            colCtr++;
+            for(int neighbor : colAdj[front]){
+                colIndegree[neighbor]--;
+                if(colIndegree[neighbor] == 0) colQ.push(neighbor);
+            }
+        }
+        if(rowCtr != k || colCtr != k) return {};
+        vector<int> colPos(k + 1, 0);
+        for(int i = 0; i < colOrder.size(); i++){
+            colPos[colOrder[i]] = i; //store the column position of each number in colPos, so we can place the numbers in the matrix according to their column positions
+            //example: if colOrder = [3, 1, 2], then colPos[3] = 0, colPos[1] = 1, colPos[2] = 2, so we can place the numbers in the matrix according to their column positions
+        }
+        for(int i = 0; i < rowOrder.size(); i++){
+            //roworder stores the numbers in the order they should be placed in the rows, so we can iterate through rowOrder and place the numbers in the matrix according to their column positions stored in colPos
+            int rowNum = rowOrder[i]; //get the number that should be placed in the current row, and then get its column position from colPos, and place it in the matrix
+            int colNum = colPos[rowNum]; //get the column position of the number that should be placed in the current row, and then place it in the matrix
+            res[i][colNum] = rowNum;
+        }
+        return res;
+    }
+};
+```
+
+## Greatest Common Divisor Traversal LC 2709
+
+<!-- notecardId: 1784661216224 -->
+
+You are given a 0-indexed integer array nums, and you are allowed to traverse between its indices. You can traverse between index i and index j, i != j, if and only if gcd(nums[i], nums[j]) > 1, where gcd is the greatest common divisor.
+
+Your task is to determine if for every pair of indices i and j in nums, where i < j, there exists a sequence of traversals that can take us from i to j.
+
+Return true if it is possible to traverse between all such pairs of indices, or false otherwise.
+
+ 
+
+Example 1:
+
+Input: nums = [2,3,6]
+Output: true
+Explanation: In this example, there are 3 possible pairs of indices: (0, 1), (0, 2), and (1, 2).
+To go from index 0 to index 1, we can use the sequence of traversals 0 -> 2 -> 1, where we move from index 0 to index 2 because gcd(nums[0], nums[2]) = gcd(2, 6) = 2 > 1, and then move from index 2 to index 1 because gcd(nums[2], nums[1]) = gcd(6, 3) = 3 > 1.
+To go from index 0 to index 2, we can just go directly because gcd(nums[0], nums[2]) = gcd(2, 6) = 2 > 1. Likewise, to go from index 1 to index 2, we can just go directly because gcd(nums[1], nums[2]) = gcd(3, 6) = 3 > 1.
+Example 2:
+
+Input: nums = [3,9,5]
+Output: false
+Explanation: No sequence of traversals can take us from index 0 to index 2 in this example. So, we return false.
+Example 3:
+
+Input: nums = [4,3,12,8]
+Output: true
+Explanation: There are 6 possible pairs of indices to traverse between: (0, 1), (0, 2), (0, 3), (1, 2), (1, 3), and (2, 3). A valid sequence of traversals exists for each pair, so we return true.
+ 
+
+Constraints:
+
+1 <= nums.length <= 105
+1 <= nums[i] <= 105
+
+**Link**: [text](https://leetcode.com/problems/greatest-common-divisor-traversal/)
+
+%
+
+**Pattern:** Graph Traversal, Union-Find (Disjoint Set Union), Number Theory (GCD)
+
+**Approach:** Model the problem as a graph where each index in the array is a node, and there is an edge between two nodes if the GCD of their corresponding values is greater than 1. Use a union-find (disjoint set union) data structure to group connected components based on the GCD condition. After processing all pairs, check if all indices belong to the same connected component.
+
+**Key Insight:** The key insight is that the GCD condition defines connectivity between indices. By using union-find, we can efficiently group indices that can reach each other through valid traversals. If all indices are in the same connected component, it means that every pair of indices can be connected through a sequence of traversals.
+
+**Gotchas:** Be careful with the GCD calculation, as it can be computationally expensive for large numbers. Use an efficient algorithm for GCD, such as the Euclidean algorithm. Also, ensure that you handle edge cases where the array has only one element or where all elements are coprime.
+
+**Complexity:** Time: O(n * log(max(nums))) for processing all pairs and performing union-find operations, where n is the length of the array and max(nums) is the maximum value in the array. | Space: O(n) for storing the union-find data structure.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Graph Valid Tree — LC #261 | Verify if an undirected graph forms a single connected component without cycles → standard Disjoint Set Union (DSU) or BFS checking for $N-1$ edges. | Yes — pure connectivity base |
+| Number of Provinces — LC #547 | Count total connected components given an explicit adjacency matrix → basic DSU or DFS/BFS traversal over direct node edges. | Yes — direct component tracking |
+| Accounts Merge — LC #721 | Merge accounts sharing common email addresses → DSU using indirect string keys as bridge nodes between distinct user profiles. | Yes — indirect node bridging via shared attributes |
+| Redundant Connection — LC #684 | Detect the cycle-forming edge in an undirected graph → direct DSU cycle detection on explicit node pairs. | Partial — structural DSU component tracking |
+
+**How this pattern scales:**
+- **The $O(N^2)$ Pairwise Graph Trap** — Checking $\gcd(\text{nums}[i], \text{nums}[j]) > 1$ directly between all pairs yields an $O(N^2 \log(\max V))$ adjacency graph. With $N = 10^5$, creating direct edges between numbers causes Time Limit Exceeded (TLE).
+- **Bipartite Bridge Abstraction via Prime Factors ($O(N \sqrt{V})$ or $O(N \log V)$)** — Instead of connecting array indices directly, treat **prime factors** as intermediate bridge nodes in a bipartite graph:
+  * For each number $\text{nums}[i]$, find all its unique prime factors.
+  * Map each prime factor $p$ to the first array index $i$ that contains it.
+  * When prime factor $p$ appears again at index $j$, call $\text{union}(i, j)$ in a Disjoint Set Union (DSU) structure to merge their components.
+  * This reduces total graph edges from $O(N^2)$ down to at most $O(N \log(\max V))$ total prime connections.
+- **Optimized Prime Factorization (Sieve of Eratosthenes)** — Fast trial division up to $\sqrt{\text{nums}[i]}$ takes $O(N \sqrt{V})$. To optimize further:
+  * Precompute Smallest Prime Factors (SPF) using the Sieve of Eratosthenes up to $\max(\text{nums})$.
+  * Factorize each number in $O(\log(\text{nums}[i]))$ time by repeatedly dividing by `spf[x]`.
+- **Edge Case Intercept: The Isolated `1` Value** —
+  * $\gcd(1, x) = 1$ for all $x$. A value of `1` shares no prime factors with any other number and cannot form traversable edges.
+  * If $\text{nums} = [1]$ (array size 1), return `true` (a single isolated node is trivially connected).
+  * If $N > 1$ and array contains at least one `1`, return `false` immediately (it is impossible to reach or leave `1`).
+- **Global Reachability Validation** — After processing all numbers and their prime factors through DSU:
+  * Count the total connected components or verify if `uf.find(0) == uf.find(i)` for all $i \in [1, N-1]$.
+  * If all array indices belong to a single unified component, return `true`; otherwise, return `false`.
+- **LC #721 and LC #547 Connection** → Greatest Common Divisor Traversal bridges mathematical number theory with graph component reduction. It generalizes LC #547 (Number of Provinces) by dynamically synthesizing graph edges from mathematical properties, while sharing the indirect attribute-bridging pattern used in LC #721 (Accounts Merge) where prime factors act as "emails" linking numeric "accounts."
+- **Attribute-based bipartite component reduction and factor bridging generalize** → This template is the industry baseline blueprint for multi-tenant database record deduplication, cluster discovery in sparse high-dimensional data, network security threat vector group grouping (linking isolated IPs via shared exploit signatures), and shared-resource concurrency dependency grouping. Master the cycle of: 1) Identify shared implicit attributes that act as edge bridges between entities, 2) Extract unique factors/attributes efficiently using domain decomposition (e.g., Sieve SPF), 3) Map attributes to index representatives to perform DSU union operations, 4) Intercept isolated non-connectable identity elements, 5) Validate full system connectivity by verifying unified root convergence across all entity indices.
+
+```cpp
+class UnionFind{
+    private:
+    vector<int> parent;
+    vector<int> rank;
+
+    public:
+
+    UnionFind(int n){
+        parent.resize(n);
+        rank.resize(n, 0);
+        std::iota(parent.begin(), parent.end(), 0);
+    }
+
+    int find(int i){
+        if(parent[i] == i) return i;
+        return parent[i] = find(parent[i]);
+    }
+
+    bool unite(int i, int j){
+        int rootI = find(i);
+        int rootJ = find(j);
+
+        if(rootI == rootJ) return false;
+        if(rank[rootI] < rank[rootJ]){
+            parent[rootI] = rootJ;
+        }
+        else if(rank[rootI] > rank[rootJ]){
+            parent[rootJ] = rootI;
+        }
+        else{
+            parent[rootJ] = rootI;
+            rank[rootI]++; //we increment the rank of the root of the tree that we are merging into, because it is now the root of a larger tree
+        }
+    return true;
+    }
+};
+class Solution {
+public:
+    bool canTraverseAllPairs(vector<int>& nums) {
+        UnionFind dsu(nums.size());
+        unordered_map<int, int> primeToIndex;
+        for(int i = 0; i < nums.size(); i++){
+            int num = nums[i]; //we will find the prime factors of num, and for each prime factor, we will check if
+            // it has been seen before. If it has, we will unite the current index with the index of the previous occurrence of that prime factor. This way, all numbers that share a common prime factor will be in the same connected component.
+            for(int j = 2; j * j <= num; j++){ //the reasonn we square j is because we only need to check for factors up to the square root of num,
+            // because if num has a factor larger than its square root, it must also have a factor smaller than its square root. This way, we can find all prime factors of num efficiently.
+                if(num % j == 0){
+                    if(primeToIndex.count(j)){
+                        dsu.unite(i, primeToIndex[j]); //if prime is already in the map, we unite the current index with the index of the previous occurrence of that prime factor
+                    }
+                    primeToIndex[j] = i;
+                    while(num % j == 0) num /= j; //we divide num by j until it is no longer divisible by j, so that we only consider each prime factor once. This is important because we only want to unite the current index with the index of the first occurrence of each prime factor, not with every occurrence of that prime factor.
+                }
+            }
+            if(num > 1){ //if num is still greater than 1, then it is a prime factor itself, and we need to check if it has been seen before
+                if(primeToIndex.count(num)){
+                    dsu.unite(i, primeToIndex[num]);
+                }
+                primeToIndex[num] = i;
+            }
+        }
+
+        int root = dsu.find(0); //we find the root of the first index, and we will check if all other indices have the same root. If they do, then all numbers are connected through their prime factors, and we can traverse all pairs.
+        for(int i = 1; i < nums.size(); i++){
+            if(dsu.find(i) != root) return false;
+        }
+        return true;
+    }
+};
+```
+
+## Reverse Integer LC 7
+
+<!-- notecardId: 1784661634628 -->
+
+Given a signed 32-bit integer x, return x with its digits reversed. If reversing x causes the value to go outside the signed 32-bit integer range [-231, 231 - 1], then return 0.
+
+Assume the environment does not allow you to store 64-bit integers (signed or unsigned).
+
+ 
+
+Example 1:
+
+Input: x = 123
+Output: 321
+Example 2:
+
+Input: x = -123
+Output: -321
+Example 3:
+
+Input: x = 120
+Output: 21
+ 
+
+Constraints:
+
+-231 <= x <= 231 - 1
+
+**Link**: [text](https://leetcode.com/problems/reverse-integer/)
+
+%
+
+**Pattern:** Math, String Manipulation, Edge Cases
+
+**Approach:** Convert the integer to a string, reverse the string, and convert it back to an integer. Handle the sign of the integer separately. Check for overflow by comparing the reversed integer with the 32-bit signed integer limits. If we cannot turn the int to a string, we can also reverse the integer mathematically by repeatedly taking the last digit and building the reversed number while checking for overflow.
+
+**Key Insight:** The key insight is that reversing the digits of an integer can be done either through string manipulation or mathematical operations. When using mathematical operations, we can extract the last digit using modulo and build the reversed number by multiplying the current reversed number by 10 and adding the extracted digit. We must also check for overflow conditions before adding the new digit.
+
+**Gotchas:** Be careful with negative numbers and leading zeros. Ensure that you handle the sign correctly and remove any leading zeros in the reversed integer. Also, be cautious about overflow when reversing the integer, as it can exceed the 32-bit signed integer range.
+
+**Complexity:** Time: O(log10(x)) for the mathematical approach, as we process each digit of the integer. | Space: O(1) for the mathematical approach, as we use a constant amount of space.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Reverse String — LC #344 | Reverse an array of characters in-place using dual pointers → simple 2-pointer swap loop without arithmetic overflow or numerical bounds. | Partial — structural reversal without arithmetic |
+| Palindrome Number — LC #9">LC #9 | Determine if an integer reads the same backward as forward → extract digits via modulo/division and compare directly against the original value. | Yes — digit extraction & reconstruction twin |
+| String to Integer (atoi) — LC #8 | Parse a string into a 32-bit signed integer handling whitespace, signs, and non-digit characters → arithmetic parsing with strict overflow clamping. | Yes — arithmetic bounds & clamping twin |
+| Multiply Strings — LC #43 | Multiply two non-negative numbers represented as strings → digit-by-digit array manipulation handling arbitrary precision without standard integer types. | Partial — base-10 digit array math |
+
+**How this pattern scales:**
+- **Mathematical Digit Extraction & Reconstruction ($O(\log_{10} N)$)** — Instead of converting the integer to a string (which incurs memory allocation overhead), extract digits from right to left using modulo and integer division operators:
+  * Extract tail digit: $\text{pop} = x \pmod{10}$
+  * Truncate integer: $x = \lfloor x / 10 \rfloor$ (or C-style truncation towards zero)
+  * Append to reversed accumulator: $\text{rev} = \text{rev} \cdot 10 + \text{pop}$
+- **32-bit Signed Integer Overflow Boundaries** — Standard 32-bit signed integers are bounded by:
+  $$\text{INT\_MIN} = -2^{31} = -2,147,483,648 \quad \text{and} \quad \text{INT\_MAX} = 2^{31} - 1 = 2,147,483,647$$
+  Multiplying `rev * 10` can overflow **before** adding `pop`. Therefore, bounds checks must be performed *prior* to executing the state transition.
+- **Pre-Addition Overflow Guard (32-bit Environment Constraint)** —
+  * **Upper Limit Check:** If $\text{rev} > \lfloor \text{INT\_MAX} / 10 \rfloor$ (i.e., $\text{rev} > 214,748,364$), performing $\text{rev} \cdot 10 + \text{pop}$ will overflow $\to$ return `0`.
+  * **Upper Edge Case:** If $\text{rev} == 214,748,364$ and $\text{pop} > 7$, it will overflow $\to$ return `0`.
+  * **Lower Limit Check:** If $\text{rev} < \lceil \text{INT\_MIN} / 10 \rceil$ (i.e., $\text{rev} < -214,748,364$), performing $\text{rev} \cdot 10 + \text{pop}$ will underflow $\to$ return `0`.
+  * **Lower Edge Case:** If $\text{rev} == -214,748,364$ and $\text{pop} < -8$, it will underflow $\to$ return `0`.
+- **Sign Preservation in Modulo Math** — In languages like C++, Java, and Python:
+  * Negative numbers produce negative modulo results (e.g., $-123 \pmod{10} = -3$ in C++/Java).
+  * In Python, default integer division and modulo wrap differently (`-123 % 10 = 7`); handle negative numbers by operating on absolute value or using explicit C-style truncation (`int(x / 10)`).
+- **LC #8 and LC #9 Connection** → Reverse Integer serves as the foundational arithmetic template for low-level numeric manipulation without standard string conversions. It shares digit extraction logic with LC #9 (Palindrome Number), while providing the pre-computation overflow check used in string parsing algorithms like LC #8 (String to Integer / atoi).
+- **Base-10 modulo arithmetic and pre-overflow boundary checks generalize** → This template is the industry baseline blueprint for low-level memory register parsing, hardware telemetry bitstream reconstruction, fixed-point financial arithmetic validators, and binary-coded decimal (BCD) serialization engines. Master the cycle of: 1) Pop rightmost digits using modulo arithmetic, 2) Validate running accumulators against divided boundary thresholds before multiplying by base 10, 3) Perform truncated integer division to advance state, 4) Intercept overflow/underflow state breaches early to short-circuit, 5) Return fully reconstructed numerical primitives safely.
+
+```cpp
+class Solution {
+public:
+    int reverse(int x) {
+        int num = 0;
+        while (x != 0){
+            int digit = x % 10;
+            if(num > INT_MAX / 10 || (num == INT_MAX && digit > 7)) return 0; //if num is greater than INT_MAX / 10, then multiplying by 10 will cause an overflow, if num is equal to INT_MAX / 10, then we need to check if the digit is greater than 7, because INT_MAX is 2147483647, so if the digit is greater than 7, then we will overflow
+            if (num < INT_MIN / 10 || (num == INT_MIN && digit < -8)) return 0; //if num is less than INT_MIN / 10, then multiplying by 10 will cause an underflow, if num is equal to INT_MIN / 10, then we need to check if the digit is less than -8, because INT_MIN is -2147483648, so if the digit is less than -8, then we will underflow
+            num = num * 10 + digit;
+            x /= 10;
+        }
+        return num;
+    }
+};
+```
+
+## Add Binary LC 67
+
+<!-- notecardId: 1784661883045 -->
+
+Given two binary strings a and b, return their sum as a binary string.
+
+ 
+
+Example 1:
+
+Input: a = "11", b = "1"
+Output: "100"
+Example 2:
+
+Input: a = "1010", b = "1011"
+Output: "10101"
+ 
+
+Constraints:
+
+1 <= a.length, b.length <= 104
+a and b consist only of '0' or '1' characters.
+Each string does not contain leading zeros except for the zero itself.
+
+**Link**: [text](https://leetcode.com/problems/add-binary/)
+
+%
+
+**Pattern:** String Manipulation, Math, Bitwise Operations
+
+**Approach:** Use two pointers to traverse the binary strings from the end to the beginning, adding corresponding bits along with any carry from the previous addition. Construct the result string in reverse order and then reverse it at the end. Handle cases where one string is longer than the other by continuing to add remaining bits and carry.
+
+**Key Insight:** The key insight is that binary addition follows the same rules as decimal addition, but with only two digits (0 and 1). When adding two bits, the sum can be 0, 1, or 2, where 2 results in a carry to the next higher bit. By iterating from the least significant bit to the most significant bit, we can efficiently compute the sum while managing the carry.
+
+**Gotchas:** Be careful with the carry when both bits are 1, as this will result in a carry of 1 to the next higher bit. Also, ensure that you handle cases where the strings are of different lengths and that you append any remaining carry after processing both strings.
+
+**Complexity:** Time: O(max(n, m)) where n and m are the lengths of the binary strings a and b, respectively, as we need to traverse both strings. | Space: O(max(n, m)) for storing the result string.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Add Two Numbers — LC #2 | Add two non-negative integers represented as linked lists in reverse order → digit-by-digit traversal using pointers rather than string indices. | Yes — direct pointer-based arithmetic twin |
+| Add Strings — LC #415 | Add two non-negative decimal numbers represented as strings → identical dual-pointer right-to-left scan operating in base 10 instead of base 2. | Yes — base-10 string arithmetic twin |
+| Multiply Strings — LC #43 | Multiply two non-negative numbers represented as strings → nested digit-by-digit multiplication accumulating positional cross-products in an array. | Yes — higher-order string arithmetic |
+| Plus One — LC #66 | Increment a large integer represented as an array of digits by one → simplified right-to-left single-pass addition with early carry propagation termination. | Yes — single-operand carry propagation |
+
+**How this pattern scales:**
+- **Dual-Pointer Simultaneous Right-to-Left Traversal ($O(\max(N, M))$)** — Traverse both binary strings starting from their least significant bits (rightmost indices `i = len(a) - 1` and `j = len(b) - 1`) moving toward the most significant bits (`0`):
+  * Maintain a single `carry` integer variable initialized to `0`.
+  * Continue iterating as long as `i >= 0`, `j >= 0`, or `carry > 0`.
+- **Bitwise Sum and Carry Derivation** — For each positional step, extract bit values (defaulting to `0` if an index goes out of bounds) and sum them with the incoming carry:
+  $$\text{total} = \text{bit\_a} + \text{bit\_b} + \text{carry}$$
+  * **Current Bit Output:** $\text{current\_bit} = \text{total} \pmod 2$
+  * **Next Carry Generation:** $\text{carry} = \lfloor \text{total} / 2 \rfloor$
+- **Base Generalization Property** — The modulo and division arithmetic works identically for any arbitrary number system base $B$:
+  $$\text{digit} = \text{total} \pmod B, \quad \text{carry} = \lfloor \text{total} / B \rfloor$$
+  (For base 2: $B=2$; for base 10 / LC #415: $B=10$).
+- **In-Place StringBuilder / Array Reversal** —
+  * Append extracted digits (`total % 2`) to a dynamically sized character buffer/array.
+  * Because bits are processed from least significant to most significant, the accumulated buffer holds the binary result in reverse order.
+  * Reverse the final character array/string before returning:
+    $$\text{result} = \text{reverse}(\text{buffer})$$
+- **LC #415 and LC #2 Connection** → Add Binary represents the core low-level baseline for elementary digit-by-digit addition without native integer casting. It shares an identical structural loop with LC #415 (Add Strings) by merely changing the radix constant from 2 to 10, while providing the core carry-propagation mechanism seen in pointer-based list arithmetic like LC #2 (Add Two Numbers).
+- **Dual-pointer right-to-left processing and carry-propagation arithmetic generalize** → This template is the industry baseline blueprint for arbitrary-precision arithmetic libraries (BigInt implementations), hardware ALU bitwise adder simulation, financial streaming fixed-point decimal aggregators, and cryptographic large-integer modular arithmetic engines. Master the cycle of: 1) Initialize dual pointers at the least significant positions along with a carry accumulator, 2) Extract positional values safely handling uneven input lengths, 3) Compute positional sum including carry and derive output bit via modulo $B$, 4) Update carry via integer division by base $B$, 5) Reverse accumulated buffer to output correct positional order.
+
+```cpp
+class Solution {
+public:
+    string addBinary(string a, string b) {
+        int AIdx = a.length() - 1;
+        int BIdx = b.length() - 1;
+        string res = "";
+        int carry = 0;
+        while(AIdx >= 0 || BIdx>=0 || carry > 0){
+            int sum = carry;
+            if(AIdx >= 0){
+                sum += (a[AIdx] - '0');
+                AIdx--;
+            }
+            if(BIdx >= 0){
+                sum += (b[BIdx] - '0');
+                BIdx--;
+            }
+
+            res.push_back((sum % 2) + '0');
+            carry = sum / 2; //if sum = 2, carry = 1, if not, 0
+        }
+
+        reverse(res.begin(), res.end());
+        return res;
+
+    }
+};
+```
+
+## Single Number LC 136
+
+<!-- notecardId: 1784661999520 -->
+
+Given a non-empty array of integers nums, every element appears twice except for one. Find that single one.
+
+You must implement a solution with a linear runtime complexity and use only constant extra space.
+
+ 
+
+Example 1:
+
+Input: nums = [2,2,1]
+
+Output: 1
+
+Example 2:
+
+Input: nums = [4,1,2,1,2]
+
+Output: 4
+
+Example 3:
+
+Input: nums = [1]
+
+Output: 1
+
+ 
+
+Constraints:
+
+1 <= nums.length <= 3 * 104
+-3 * 104 <= nums[i] <= 3 * 104
+Each element in the array appears twice except for one element which appears only once.
+
+**Link**: [text](https://leetcode.com/problems/single-number/)
+
+%
+
+**Pattern:** Bit Manipulation, XOR Operation
+
+**Approach:** Use the XOR operation to find the single number. The property of XOR is that it returns 0 when two identical numbers are XORed together, and it returns the number itself when XORed with 0. By XORing all the numbers in the array, the pairs will cancel each other out, leaving only the single number.
+
+**Key Insight:** The key insight is that the XOR operation has the following properties:
+1. Commutative: a ^ b = b ^ a
+2. Associative: (a ^ b) ^ c = a ^ (b ^ c)
+3. Identity: a ^ 0 = a
+4. Self-inverse: a ^ a = 0
+
+**Gotchas:** Be careful with the input constraints and ensure that the array is non-empty. The solution assumes that there is exactly one element that appears only once, so it will not work correctly if this condition is violated.
+
+**Complexity:** Time: O(n) where n is the length of the array, as we iterate through the array once. | Space: O(1) as we use a constant amount of space for the result.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Single Number II — LC #137 | Every element appears three times except for one → bitwise state machine tracking bit counts modulo 3 using two state variables. | Yes — higher-order bitwise frequency reduction |
+| Single Number III — LC #260 | Two unique elements appear once while all others appear twice → XOR reduction followed by isolate-rightmost-set-bit partitioning. | Yes — multi-target bitwise isolation twin |
+| Missing Number — LC #268 | Find the single missing number from a range of $0$ to $N$ → XOR array elements against complete index range $[0 \dots N]$ to cancel duplicates. | Yes — index-value cancellation twin |
+| Find the Duplicate Number — LC #287 | Array contains $N+1$ integers where one number repeats → Floyd's Cycle Detection (Tortoise and Hare) on implicit index-value pointer graph. | Partial — structural array traversal |
+
+**How this pattern scales:**
+- **Bitwise XOR Self-Inverse Cancellation Property ($O(N)$ Time, $O(1)$ Space)** — The exclusive-OR (XOR, operator $\oplus$) exhibits three fundamental algebraic properties:
+  1. **Commutative & Associative:** $A \oplus B \oplus C = A \oplus C \oplus B$ (order of elements does not matter).
+  2. **Identity:** $A \oplus 0 = A$ (XORing with zero preserves value).
+  3. **Self-Inverse:** $A \oplus A = 0$ (XORing any number with itself cancels out to zero).
+- **Linear Accumulation Reduction** — Initialize an accumulator `result = 0` and iterate through all numbers in the array, applying XOR sequentially:
+  $$\text{result} = \text{nums}[0] \oplus \text{nums}[1] \oplus \dots \oplus \text{nums}[n-1]$$
+  Because every element except the single number appears exactly twice, all paired elements cancel each other out ($x \oplus x = 0$), leaving strictly the unique single number ($0 \oplus \text{single} = \text{single}$).
+- **Generalizing to Modulo $K$ Bitwise Counters (LC #137 Extension)** —
+  * When elements appear $K$ times, a single XOR accumulator fails because $x \oplus x \oplus x = x$.
+  * Instead, maintain a bitwise counter tracking bit frequencies modulo $K$. For $K=3$, use two bitwise state integers (`ones`, `twos`) to track 0, 1, or 2 set bits per position, clearing states when they hit 3.
+- **Partitioning Dual Unique Targets (LC #260 Extension)** —
+  * When two unique numbers $X$ and $Y$ exist, XORing the array yields $P = X \oplus Y$.
+  * Isolate the lowest set bit of $P$: $\text{diff\_bit} = P \mathbin{\&} -P$.
+  * Divide the array elements into two groups based on whether $\text{diff\_bit}$ is set, reducing the problem back to two independent LC #136 Single Number queries.
+- **LC #268 and LC #260 Connection** → Single Number is the baseline classic for constant-space frequency analysis via bitwise reduction. It directly powers LC #268 (Missing Number) by XORing values against their zero-based array indices, while serving as the fundamental sub-routine inside LC #260 (Single Number III) after array partitioning.
+- **In-place bitwise cancellation and modular bit-state tracking generalize** → This template is the industry baseline blueprint for network packet parity checking (RAID-5 storage parity recovery), hardware telemetry data corruption detection, distributed log stream anomaly profiling, and zero-allocation stream deduplication algorithms. Master the cycle of: 1) Identify algebraic cancellation properties where identical elements nullify each other, 2) Reduce array streams sequentially into a single bitwise accumulator, 3) Utilize bitmasks to isolate differing bit positions when tracking multiple targets, 4) Scale state-tracking registers when handling frequencies modulo $K$, 5) Retain $O(1)$ auxiliary memory without external hash sets or frequency maps.
+
+```cpp
+class Solution {
+public:
+    int singleNumber(vector<int>& nums) {
+        //xor everything, result will be the one that appears once
+
+        int xorSum = 0;
+
+        for(int i = 0; i < nums.size(); i++){
+            xorSum ^= nums[i];
+        }
+
+        return xorSum;
+    }
+};
+```
+
+## Reverse Bits LC 190
+
+<!-- notecardId: 1784662137939 -->
+
+Reverse bits of a given 32 bits signed integer.
+
+ 
+
+Example 1:
+
+Input: n = 43261596
+
+Output: 964176192
+
+Explanation:
+
+Integer	Binary
+43261596	00000010100101000001111010011100
+964176192	00111001011110000010100101000000
+Example 2:
+
+Input: n = 2147483644
+
+Output: 1073741822
+
+Explanation:
+
+Integer	Binary
+2147483644	01111111111111111111111111111100
+1073741822	00111111111111111111111111111110
+ 
+
+Constraints:
+
+0 <= n <= 231 - 2
+n is even.
+ 
+
+Follow up: If this function is called many times, how would you optimize it?
+
+**Link**: [text](https://leetcode.com/problems/reverse-bits/)
+
+%
+
+**Pattern:** Bit Manipulation, Bitwise Operations, Binary Representation
+
+**Approach:** Use bitwise operations to reverse the bits of the integer. Iterate through each bit of the input integer, extract it using a bitwise AND operation, and then set it in the reversed position using a bitwise OR operation. Shift the bits accordingly to build the reversed integer.
+
+**Key Insight:** The key insight is that reversing the bits of an integer can be done by iterating through each bit position, extracting the bit at that position, and placing it in the corresponding reversed position. This can be efficiently achieved using bitwise operations without converting the integer to a binary string.
+
+**Gotchas:** Be careful with the order of operations when shifting bits and setting them in the reversed position. Ensure that you handle all 32 bits of the integer, even if the input integer has leading zeros in its binary representation.
+
+**Complexity:** Time: O(1) since the number of bits is fixed at 32, and we perform a constant number of operations. | Space: O(1) as we use a constant amount of space for the result.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Reverse Bits — LC #190 | Reverse the 32 bits of a unsigned integer → bitwise manipulation shifting bits into a reverse accumulator. | Target Base Problem |
+| Number of 1 Bits — LC #191 | Count set bits (Hamming weight) in an integer → Brian Kernighan's algorithm (`n & (n - 1)`) or bitwise right-shift masking. | Yes — direct bitwise manipulation twin |
+| Reverse Integer — LC #7 | Reverse digits of a signed 32-bit decimal integer → base-10 modulo arithmetic with explicit overflow boundary checks. | Partial — arithmetic base-10 analog |
+| Counting Bits — LC #338 | Count set bits for all numbers from $0$ to $N$ → 1D dynamic programming combining right-shift subproblems with least significant bit checks. | Yes — bitwise DP expansion |
+
+**How this pattern scales:**
+- **Bitwise Extraction and Reconstruction ($O(1)$ Time, $O(1)$ Space)** — Process all 32 bits sequentially from right to left (least significant bit to most significant bit):
+  * Extract rightmost bit of input $n$: $\text{bit} = n \mathbin{\&} 1$
+  * Shift accumulator left to make room: $\text{result} = (\text{result} \ll 1) \mathbin{|} \text{bit}$
+  * Logical right-shift input to expose the next bit: $n = n \gg 1$
+  * Repeat for exactly 32 iterations to guarantee full word alignment.
+- **Bit-Level Divide and Conquer / SWAR Approach ($O(1)$ Op Optimization)** — Instead of iterating 32 times, swap adjacent bit blocks in parallel using mask bitwise operations:
+  $$\text{Swap 16-bit halves} \to \text{Swap 8-bit bytes} \to \text{Swap 4-bit nibbles} \to \text{Swap 2-bit pairs} \to \text{Swap adjacent bits}$$
+  * Mask `0x0000FFFF` and `0xFFFF0000` to swap 16-bit halves.
+  * Mask `0x00FF00FF` and `0xFF00FF00` to swap 8-bit bytes.
+  * Mask `0x0F0F0F0F` and `0xF0F0F0F0` to swap nibbles, continuing down to single bits.
+  * Runs in fixed $O(1)$ arithmetic steps without loop branches.
+- **Memoization for Multi-Query Stream Optimization** — If function is called billions of times:
+  * Divide 32-bit integer into four 8-bit bytes.
+  * Cache reversed values for all $2^8 = 256$ possible byte values in an array lookup table.
+  * Reconstruct result by querying cache for each byte and combining via shifts:
+    $$\text{result} = (\text{cache}[b_0] \ll 24) \mathbin{|} (\text{cache}[b_1] \ll 16) \mathbin{|} (\text{cache}[b_2] \ll 8) \mathbin{|} \text{cache}[b_3]$$
+- **LC #191 and LC #338 Connection** → Reverse Bits represents the baseline paradigm for low-level register bit-reordering and mask manipulation. It shares bitwise extraction primitives with LC #191 (Number of 1 Bits), while laying the foundation for bitwise state transformations used in dynamic programming problems like LC #338 (Counting Bits).
+- **Bit-masking, bit-shifting accumulators, and SWAR parallel transformations generalize** → This template is the industry baseline blueprint for low-level driver memory mapping, hardware graphics texture endianness conversion, network protocol byte-order adjustments (big-endian vs. little-endian conversion), and fast Fourier transform (FFT) bit-reversal permutation algorithms. Master the cycle of: 1) Extract target bits using logical AND masking, 2) Advance accumulator state using logical left shifts, 3) Truncate inputs using right shifts, 4) Leverage bitmasking (SWAR) or lookup caching when optimizing high-frequency byte streams, 5) Maintain strict bit-width bounds (32 bits) across unsigned integer types.
+
+```cpp
+class Solution {
+public:
+    int reverseBits(int n) {
+        int res = 0;
+        for(int i = 0; i < 32; i++){
+            res <<= 1; //shift result by 1 to the left, making room for the next bit
+            res |= (n& 1); //get the rightmost bit of n and add it to the result
+            n>>= 1; //discard right bit on n, look at new one
+        }
+        return res;
+    }
+};
+```
+
+## Number of 1 Bits LC 191
+
+<!-- notecardId: 1784662258574 -->
+
+Given a positive integer n, write a function that returns the number of set bits in its binary representation (also known as the Hamming weight).
+
+ 
+
+Example 1:
+
+Input: n = 11
+
+Output: 3
+
+Explanation:
+
+The input binary string 1011 has a total of three set bits.
+
+Example 2:
+
+Input: n = 128
+
+Output: 1
+
+Explanation:
+
+The input binary string 10000000 has a total of one set bit.
+
+Example 3:
+
+Input: n = 2147483645
+
+Output: 30
+
+Explanation:
+
+The input binary string 1111111111111111111111111111101 has a total of thirty set bits.
+
+ 
+
+Constraints:
+
+1 <= n <= 231 - 1
+ 
+
+Follow up: If this function is called many times, how would you optimize it?
+
+**Link**: [text](https://leetcode.com/problems/number-of-1-bits/)
+
+%
+
+**Pattern:** Bit Manipulation, Bitwise Operations, Hamming Weight
+
+**Approach:** Use bitwise operations to count the number of set bits in the integer. Iterate through each bit of the input integer, using a bitwise AND operation to check if the least significant bit is set. If it is, increment a counter. Then, right-shift the integer to process the next bit. Repeat this process until all bits have been checked.
+
+**Key Insight:** The key insight is that the number of set bits in an integer can be efficiently counted using bitwise operations. By repeatedly checking the least significant bit and right-shifting the integer, we can determine how many bits are set to 1 without converting the integer to a binary string.
+
+**Gotchas:** Be careful with the input constraints and ensure that the integer is positive. The solution assumes that the input is a valid positive integer, so it will not work correctly for negative numbers or zero.
+
+**Complexity:** Time: O(1) since the number of bits is fixed at 32, and we perform a constant number of operations. | Space: O(1) as we use a constant amount of space for the counter.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Counting Bits — LC #338 | Calculate set bits for all numbers from $0$ to $N$ → 1D dynamic programming combining right-shift subproblems (`dp[i] = dp[i >> 1] + (i & 1)`). | Yes — bitwise count DP expansion |
+| Reverse Bits — LC #190 | Reverse the 32 bits of an unsigned 32-bit integer → bitwise manipulation shifting extracted bits into a reversed 32-bit accumulator. | Yes — direct bitwise manipulation twin |
+| Number of Even and Odd Bits — LC #2595 | Count set bits separately at even vs. odd index positions → bitwise bit-masking and positional loop tracking. | Yes — constrained bit-count twin |
+| Add Binary — LC #67 | Compute sum of two binary strings → dual-pointer bitwise addition with carry propagation without direct bit-count reduction. | Partial — low-level bitwise processing |
+
+**How this pattern scales:**
+- **Standard Shift & Mask Approach ($O(\text{number of bits})$)** — Examine all bits sequentially by repeatedly extracting the least significant bit (LSB) and shifting right:
+  * Extract bit: $\text{lsb} = n \mathbin{\&} 1$
+  * Increment counter if $\text{lsb} == 1$.
+  * Shift input right: $n = n \gg 1$
+  * For a 32-bit integer, this performs exactly 32 loop iterations regardless of bit population.
+- **Brian Kernighan's Algorithm ($O(\text{set bits})$ Optimization)** — Clear the rightmost set bit in a single $O(1)$ bitwise operation:
+  $$n = n \mathbin{\&} (n - 1)$$
+  * **Mechanism:** Subtracting `1` from $n$ flips all bits from the lowest set bit down to the LSB. Performing bitwise AND with original $n$ clears that lowest set bit to `0` while leaving higher bits untouched.
+  * **Efficiency:** Loop executes strictly $K$ times, where $K$ is the number of `1` bits (Hamming weight). If $n$ has only two set bits, the loop runs exactly twice instead of 32 times.
+- **SWAR / Parallel Bit Count ($O(1)$ Hardware Optimization)** — Divide-and-conquer mask addition in parallel:
+  * Combine adjacent 1-bit counts into 2-bit fields using mask `0x55555555`.
+  * Combine 2-bit fields into 4-bit nibbles using mask `0x33333333`.
+  * Continue mask shifts down to 8-bit, 16-bit, and 32-bit totals (`popcount`).
+- **LC #338 and LC #190 Connection** → Number of 1 Bits serves as the primary building block for bit population counting. It directly forms the inner sub-routine for multi-value bit arrays in LC #338 (Counting Bits), while sharing LSB mask extraction patterns with LC #190 (Reverse Bits).
+- **Bit clearing via `n & (n - 1)` and SWAR bit population counting generalize** → This template is the industry baseline blueprint for low-level memory allocation bitmaps, database indexing filters (Bloom filter bit-density tracking), cryptography Hamming distance calculations, and hardware register status flag validation. Master the cycle of: 1) Isolate and clear the least significant set bit using `n & (n - 1)` to eliminate zero-bit traversal overhead, 2) Use logical bit shifts for linear bitmask iteration when position matters, 3) Utilize parallel bitmasking (SWAR) or processor built-ins (`__builtin_popcount`) for high-throughput batch operations, 4) Maintain unsigned bitwise shift bounds across multi-language runtimes.
+
+```cpp
+class Solution {
+public:
+    int hammingWeight(int n) {
+        int count = 0;
+        while(n != 0){
+            n = n & (n-1); //this is the key, this operation removes the rightmost 1 bit from n, so we can count how many 1 bits are in n by counting how many times we can do this operation before n becomes 0
+            count++;
+        }
+
+        return count;
+    }
+};
+```
+
+## Bitwise AND of Numbers Range LC 201
+
+<!-- notecardId: 1784662438106 -->
+
+Given two integers left and right that represent the range [left, right], return the bitwise AND of all numbers in this range, inclusive.
+
+ 
+
+Example 1:
+
+Input: left = 5, right = 7
+Output: 4
+Example 2:
+
+Input: left = 0, right = 0
+Output: 0
+Example 3:
+
+Input: left = 1, right = 2147483647
+Output: 0
+ 
+
+Constraints:
+
+0 <= left <= right <= 231 - 1
+
+**Link**: [text](https://leetcode.com/problems/bitwise-and-of-numbers-range/)
+
+%
+
+**Pattern:** Bit Manipulation, Bitwise Operations, Range Analysis
+
+**Approach:** Use bitwise operations to find the common prefix of the binary representations of left and right. The idea is to shift both left and right to the right until they are equal, counting the number of shifts. The result will be left shifted back by the number of shifts, which gives the bitwise AND of all numbers in the range. Another way is to just keep ANDing right and right - 1 until right is less than or equal to left.
+
+**Key Insight:** The key insight is that the bitwise AND of a range of numbers will only retain the bits that are common in all numbers. As we move from left to right, any bit that changes from 1 to 0 will cause the AND result to have a 0 in that position. Therefore, we can find the common prefix of left and right by shifting both numbers to the right until they are equal.
+
+**Gotchas:** Be careful with the input constraints and ensure that left is less than or equal to right. The solution assumes that the range is valid, so it will not work correctly if this condition is violated.
+
+**Complexity:** Time: O(log(right)) since we are shifting the numbers until they are equal, which takes at most the number of bits in right. | Space: O(1) as we use a constant amount of space for the result.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Single Number — LC #136 | Find element appearing once among duplicates → XOR cancellation across all elements rather than bitwise AND range reduction. | Partial — bitwise state reduction |
+| Bitwise ORs of Subarrays — LC #898 | Find number of unique bitwise OR results of all contiguous subarrays → set-based DP tracking unique running bitwise OR values. | Partial — bitwise range operation |
+| Counting Bits — LC #338 | Count set bits for all numbers from $0$ to $N$ → LSB right-shift dynamic programming array construction. | Partial — low-level bitwise processing |
+| Reverse Bits — LC #190 | Reverse 32-bit representation of an unsigned integer → bitwise mask extraction and shifting accumulator. | Partial — bitwise manipulation twin |
+
+**How this pattern scales:**
+- **The Range Bitwise AND Zeroing Property ($O(\log (\text{right}))$)** — When performing bitwise AND across a continuous range of numbers $[left, right]$:
+  $$\text{result} = left \mathbin{\&} (left + 1) \mathbin{\&} \dots \mathbin{\&} right$$
+  Any bit position that flips between `0` and `1` at least once across the range will evaluate to `0` in the final AND sum.
+- **Common Binary Prefix Isolation** — The only bits that remain `1` after range-ANDing are the **matching high-order bits (most significant common prefix)** shared by both $left$ and $right$:
+  * All bits to the right of the common prefix will flip between `0` and `1` across the range $[left, right]$ and cancel out to `0`.
+  * Finding the bitwise AND of a range reduces strictly to identifying the longest common binary prefix of $left$ and $right$ and padding zeros to the right.
+- **Strategy 1: Synchronous Right-Shift Traversal ($O(\text{bits})$)** —
+  1. Initialize a shift counter `shift = 0`.
+  2. While $left < right$, right-shift both numbers: `left >>= 1`, `right >>= 1`, and increment `shift += 1`.
+  3. Once $left == right$ (common prefix isolated), left-shift back to original scale:
+     $$\text{return } left \ll \text{shift}$$
+- **Strategy 2: Brian Kernighan's Rightmost Bit Clearing ($O(\text{set bits})$)** —
+  * Instead of shifting bit-by-bit, repeatedly clear the lowest set bit of $right$ using `right = right & (right - 1)`.
+  * Stop as soon as $right \le left$.
+  * Return $right$ directly. This clears all non-matching tail bits in fewer steps than bit-shifting.
+- **LC #191 and LC #338 Connection** → Bitwise AND of Numbers Range bridges numeric bounds checking with bitmask prefix extraction. It leverages Brian Kernighan's lowest-set-bit clearing rule introduced in LC #191 (Number of 1 Bits), while showing how bitwise operations simplify across continuous state intervals without executing brute-force loops.
+- **Common binary prefix identification and range bit-flip cancellation generalize** → This template is the industry baseline blueprint for CIDR IP subnet mask extraction (finding the minimal routing prefix spanning an IP range), hardware memory-mapped register block validation, database range-query bitmask indexing, and binary range partition compression. Master the cycle of: 1) Identify bit-flip properties over continuous range boundaries, 2) Isolate the shared high-order common binary prefix between interval bounds, 3) Utilize right-shifts or `n & (n - 1)` bit clearing to truncate differing low-order bits, 4) Left-shift the isolated prefix back to reconstruct the masked integer state, 5) Avoid linear iteration over ranges by operating purely on binary bit boundaries.
+
+```cpp
+class Solution {
+public:
+    int rangeBitwiseAnd(int left, int right) {
+        while(left < right){
+            right = right & (right - 1); //this is the key, this operation removes the rightmost 1 bit from right, so we can find the common prefix of left and right by removing the rightmost 1 bits from right until it is less than or equal to left
+        }
+        return right;
+    }
+};
+```
+
+## Missing Number LC 268
+
+<!-- notecardId: 1784662598178 -->
+
+Given an array nums containing n distinct numbers in the range [0, n], return the only number in the range that is missing from the array.
+
+ 
+
+Example 1:
+
+Input: nums = [3,0,1]
+
+Output: 2
+
+Explanation:
+
+n = 3 since there are 3 numbers, so all numbers are in the range [0,3]. 2 is the missing number in the range since it does not appear in nums.
+
+Example 2:
+
+Input: nums = [0,1]
+
+Output: 2
+
+Explanation:
+
+n = 2 since there are 2 numbers, so all numbers are in the range [0,2]. 2 is the missing number in the range since it does not appear in nums.
+
+Example 3:
+
+Input: nums = [9,6,4,2,3,5,7,0,1]
+
+Output: 8
+
+Explanation:
+
+n = 9 since there are 9 numbers, so all numbers are in the range [0,9]. 8 is the missing number in the range since it does not appear in nums.
+
+ 
+ 
+ 
+
+ 
+
+ 
+
+Constraints:
+
+n == nums.length
+1 <= n <= 104
+0 <= nums[i] <= n
+All the numbers of nums are unique.
+ 
+
+Follow up: Could you implement a solution using only O(1) extra space complexity and O(n) runtime complexity?
+
+**Link**: [text](https://leetcode.com/problems/missing-number/)
+
+%
+
+**Pattern:** Bit Manipulation, XOR Operation, Arithmetic Series
+
+**Approach:** Use the XOR operation to find the missing number. The idea is to XOR all the numbers in the array with all the numbers in the range [0, n]. The numbers that appear in both the array and the range will cancel each other out, leaving only the missing number. We could just also calculate the expected Sum and subtract with the current Sum, and the difference will be the missing number.
+
+**Key Insight:** The key insight is that the XOR operation has the property that it cancels out identical numbers. By XORing all numbers in the array with all numbers in the range, the numbers that are present in both will cancel each other out, and the only number left will be the missing number. Alternatively, using the arithmetic series formula allows us to compute the expected sum of numbers from 0 to n and subtract the actual sum of the array to find the missing number.
+
+**Gotchas:** Be careful with the input constraints and ensure that the array contains distinct numbers in the specified range. The solution assumes that there is exactly one missing number, so it will not work correctly if this condition is violated.
+
+**Complexity:** Time: O(n) where n is the length of the array, as we iterate through the array once. | Space: O(1) as we use a constant amount of space for the result.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Single Number — LC #136 | Every element appears twice except for one → XOR reduction across array elements without incorporating index bounds. | Yes — direct bitwise cancellation twin |
+| Find the Duplicate Number — LC #287 | Array of size $N+1$ with numbers in $[1, N]$ containing a duplicate → Floyd's Cycle Detection (Tortoise and Hare) or binary search on value range. | Partial — structural array index positioning |
+| First Missing Positive — LC #41 | Find smallest missing positive integer in unsorted array → in-place cycle sort placing numbers at their target index `nums[i] - 1`. | Partial — index-as-hash-map positioning |
+| Find All Numbers Disappeared in an Array — LC #448 | Find all missing numbers in range $[1, N]$ → in-place negation using array values as indices to mark presence. | Yes — index-value array mapping |
+
+**How this pattern scales:**
+- **Index-Value Pairwise XOR Cancellation ($O(N)$ Time, $O(1)$ Space)** — Leverage the self-inverse property of XOR ($x \oplus x = 0$ and $x \oplus 0 = x$).
+  * The complete set of expected numbers is $[0, 1, 2, \dots, N]$.
+  * The actual set of given numbers contains $N$ elements from that range with one missing.
+  * Initialize `res = N`. Iterate through the array XORing both the index $i$ and value `nums[i]`:
+    $$\text{res} = \text{res} \oplus (i \oplus \text{nums}[i])$$
+  * All present numbers appear twice (once as an index, once as an array element) and cancel out to $0$, leaving only the missing number.
+- **Gauss' Summation Formula Alternative ($O(N)$ Time, $O(1)$ Space)** — Calculate expected mathematical sum minus actual array sum:
+  $$\text{expected\_sum} = \frac{N(N + 1)}{2}, \quad \text{missing} = \text{expected\_sum} - \sum_{i=0}^{N-1} \text{nums}[i]$$
+  * **Overflow Note:** In languages with fixed 32-bit integer limits (e.g., C++/Java), large $N$ can cause $N(N+1)/2$ to overflow; compute running differences (`res += i - nums[i]`) or use bitwise XOR to avoid overflow completely.
+- **In-Place Swap / Cycle Sort Approach ($O(N)$ Time, $O(1)$ Space)** — Re-position each number `nums[i]` to its matching index `nums[nums[i]]`:
+  * Place every element $x < N$ at index $x$.
+  * After sorting, the first index $i$ where `nums[i] != i` is the missing number (or $N$ if all indices match).
+- **LC #136 and LC #41 Connection** → Missing Number serves as the fundamental bridge between bitwise cancellation and index-mapping techniques. It shares XOR reduction with LC #136 (Single Number), while introducing index-as-value placement patterns extended by hard problems like LC #41 (First Missing Positive).
+- **Index-value XOR alignment and sum-difference reductions generalize** → This template is the industry baseline blueprint for stream integrity validation (detecting dropped sequence packets in networking), data reconciliation across twin databases, zero-allocation array anomaly detection, and sequence gap detection in time-series logs. Master the cycle of: 1) Align actual array elements against their canonical index boundaries, 2) Apply bitwise XOR across index-value pairs to eliminate duplicates safely without overflow, 3) Utilize Gauss sum deltas as a mathematical alternative when bounds permit, 4) Leverage cycle-sort swapping when array modification is allowed, 5) Maintain $O(1)$ auxiliary space without hash sets or boolean tracking arrays.
+
+```cpp
+class Solution {
+public:
+    int missingNumber(vector<int>& nums) {
+        int expSum = nums.size() * (nums.size() + 1) / 2; //expected sum of numbers from 0 to n
+        int currSum = accumulate(nums.begin(), nums.end(), 0); //current sum of numbers in the array;
+        return expSum - currSum;
+    }
+};
+```
+
+## Counting Bits LC 338
+
+<!-- notecardId: 1784662974346 -->
+
+Given an integer n, return an array ans of length n + 1 such that for each i (0 <= i <= n), ans[i] is the number of 1's in the binary representation of i.
+
+ 
+
+Example 1:
+
+Input: n = 2
+Output: [0,1,1]
+Explanation:
+0 --> 0
+1 --> 1
+2 --> 10
+Example 2:
+
+Input: n = 5
+Output: [0,1,1,2,1,2]
+Explanation:
+0 --> 0
+1 --> 1
+2 --> 10
+3 --> 11
+4 --> 100
+5 --> 101
+ 
+
+Constraints:
+
+0 <= n <= 105
+ 
+
+Follow up:
+
+It is very easy to come up with a solution with a runtime of O(n log n). Can you do it in linear time O(n) and possibly in a single pass?
+Can you do it without using any built-in function (i.e., like __builtin_popcount in C++)?
+
+**Link**: [text](https://leetcode.com/problems/counting-bits/)
+
+%
+
+**Pattern:** Bit Manipulation, Dynamic Programming, Hamming Weight
+
+**Approach:** Use dynamic programming to count the number of set bits for each number from 0 to n. The idea is to use the previously computed results to build the current result. For each number i, the number of set bits can be derived from the number of set bits in i/2 (i right-shifted by 1) plus the least significant bit (i & 1). This way, we can compute the result in linear time.
+
+**Key Insight:** The key insight is that the number of set bits in a number can be derived from the number of set bits in its half (i.e., the number obtained by right-shifting the number by one bit). Specifically, for any integer i, the number of set bits in i is equal to the number of set bits in i/2 plus 1 if i is odd (i.e., if the least significant bit is 1), or just the number of set bits in i/2 if i is even.
+
+**Gotchas:** Be careful with the input constraints and ensure that the integer n is non-negative. The solution assumes that n is within the specified range, so it will not work correctly if this condition is violated.
+
+**Complexity:** Time: O(n) where n is the input integer, as we compute the number of set bits for each integer from 0 to n. | Space: O(n) as we store the results in an array of size n + 1.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Number of 1 Bits — LC #191 | Count set bits for a single 32-bit integer → $O(1)$ loop using bit shifts or Brian Kernighan's `n & (n - 1)`. | Yes — base unit bit-count function |
+| Reverse Bits — LC #190 | Reverse the 32 bits of an unsigned integer → bitwise extraction and shift-reconstruction without cumulative counting. | Partial — bitwise state processing |
+| Number of Even and Odd Bits — LC #2595 | Count set bits separately at even and odd positions → bitwise mask checks on a single integer. | Yes — constrained bit-count twin |
+| Prime Number of Set Bits in Binary Representation — LC #762 | Count numbers in a range $[L, R]$ whose set-bit count is prime → combination of 1D bit-count DP with prime lookup. | Yes — direct bit-count DP extension |
+
+**How this pattern scales:**
+- **The $O(N \log N)$ to $O(N)$ Optimization** — Calculating the Hamming weight independently for every integer $i \in [0, N]$ using LC #191's algorithm takes $O(N \log N)$ time. By recognizing overlapping bit patterns, we can build a **1D Dynamic Programming** lookup array in optimal $O(N)$ time.
+- **Pattern 1: Right-Shift Subproblem (LSB Recurrence)** —
+  * Shifting an integer right by 1 bit (`i >> 1`) divides it by 2, dropping its least significant bit (LSB).
+  * The number of set bits in $i$ equals the set bits in `i >> 1` plus `1` if $i$ is odd (`i & 1`):
+    $$\text{dp}[i] = \text{dp}[i \gg 1] + (i \mathbin{\&} 1)$$
+  * **Example:** $6$ (`110_2`) shifted right is $3$ (`011_2`). $\text{dp}[6] = \text{dp}[3] + (6 \mathbin{\&} 1) = 2 + 0 = 2$.
+- **Pattern 2: Clear Rightmost Set Bit (Brian Kernighan Recurrence)** —
+  * The operation `i & (i - 1)` drops the lowest set bit of $i$, producing a strictly smaller number whose set-bit count is already computed.
+  * Adding 1 for the cleared bit yields:
+    $$\text{dp}[i] = \text{dp}[i \mathbin{\&} (i - 1)] + 1$$
+  * **Example:** $6$ (`110_2`) $\mathbin{\&}$ $5$ (`101_2`) $= 4$ (`100_2`). $\text{dp}[6] = \text{dp}[4] + 1 = 1 + 1 = 2$.
+- **Pattern 3: Most Significant Bit (MSB Offset Recurrence)** —
+  * Maintain the current highest power of 2 (`offset`).
+  * For any number $i$, its bit count equals $1$ (for the MSB) plus the count of the remaining lower bits:
+    $$\text{dp}[i] = 1 + \text{dp}[i - \text{offset}]$$
+- **LC #191 and LC #762 Connection** → Counting Bits represents the standard transition from single-value bitwise extraction to continuous sequence dynamic programming. It uses the unit bit-counting principles of LC #191 (Number of 1 Bits) as base-case transitions, while serving as the underlying pre-computation array for range problems like LC #762.
+- **Subproblem bit-decomposition and overlapping bitmask DP transitions generalize** → This template is the industry baseline blueprint for popcount table generation in graphics engines, SIMD parallel bitwise instruction design, hyper-log-log cardinality estimation filters, and fast Hamming distance matrix precomputations. Master the cycle of: 1) Identify overlapping binary representations between $i$ and scaled subproblems, 2) Express transitions using bit shifts (`i >> 1`) or bit clearing (`i & (i - 1)`), 3) Iterate sequentially from $0$ to $N$ filling the DP table in $O(1)$ time per entry, 4) Avoid re-executing bitwise loops on previously seen states, 5) Return contiguous bit-density arrays with zero auxiliary space overhead beyond the output buffer.
+
+```cpp
+class Solution {
+public:
+    vector<int> countBits(int n) {
+        vector<int> dp(n + 1, 0);
+        dp[0] = 0;
+
+        for(int i = 1; i <= n; i++){
+            dp[i] = dp[i & i - 1] + 1; //this is the key, this operation removes the rightmost 1 bit from i, so we can count how many 1 bits are in i by counting how many times we can do this operation before i becomes 0
+        }
+
+        return dp;
+    }
+};
+```
+
+## Sum of Two Integers LC 371
+
+<!-- notecardId: 1784663214224 -->
+
+Given two integers a and b, return the sum of the two integers without using the operators + and -.
+
+ 
+
+Example 1:
+
+Input: a = 1, b = 2
+Output: 3
+Example 2:
+
+Input: a = 2, b = 3
+Output: 5
+ 
+
+Constraints:
+
+-1000 <= a, b <= 1000
+
+**Link**: [text](https://leetcode.com/problems/sum-of-two-integers/)
+
+%
+
+**Pattern:** Bit Manipulation, Bitwise Operations, Binary Addition
+
+**Approach:** Use bitwise operations to perform binary addition. The idea is to use the XOR operation to calculate the sum of two bits without carrying, and the AND operation followed by a left shift to calculate the carry. Repeat this process until there is no carry left.
+
+**Key Insight:** The key insight is that the XOR operation can be used to add two bits without considering the carry, while the AND operation can be used to determine where a carry would occur. By repeatedly applying these operations, we can simulate the addition of two integers without using the `+` or `-` operators.
+
+**Gotchas:** Be careful with the input constraints and ensure that the integers are within the specified range. The solution assumes that the integers are valid, so it will not work correctly if this condition is violated. Additionally, be aware of potential infinite loops if the carry is not handled correctly.
+
+**Complexity:** Time: O(1) since the number of bits is fixed at 32, and we perform a constant number of operations. | Space: O(1) as we use a constant amount of space for the result.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Add Binary — LC #67 | Add two binary numbers represented as strings → right-to-left string/pointer traversal with explicit base-2 carry handling. | Yes — string-based bitwise addition twin |
+| Add Two Numbers — LC #2 | Add two numbers represented as linked lists → pointer-based node traversal propagating carry values across digit nodes. | Yes — linked-list carry propagation |
+| Divide Two Integers — LC #29 | Divide two integers without using multiplication, division, or modulo → bitwise left-shifting and subtraction using two's complement mechanics. | Yes — operator-restricted bitwise arithmetic |
+| Reverse Bits — LC #190 | Reverse the 32 bits of an unsigned integer → bitwise extraction and shifting without carry propagation arithmetic. | Partial — bitwise manipulation base |
+
+**How this pattern scales:**
+- **Bitwise Logic Gate Emulation ($O(\text{bits})$ Time, $O(1)$ Space)** — At the binary level, addition breaks down into two core operations that mirror half-adder logic gates:
+  1. **Sum Without Carry (XOR Gate):** $a \oplus b$ computes the sum of bits where $1 + 1 = 0$ (since $1 \oplus 1 = 0$), $1 + 0 = 1$, and $0 + 0 = 0$.
+  2. **Carry Generation (AND Gate + Left Shift):** $(a \mathbin{\&} b) \ll 1$ identifies positions where both bits are $1$ (generating a carry) and shifts that carry left by 1 bit to apply to the next higher significance position.
+- **Iterative Carry Propagation Loop** — Repeat until there are no remaining carries ($b == 0$):
+  $$\text{while } b \neq 0: \quad \text{carry} = (a \mathbin{\&} b) \ll 1, \quad a = a \oplus b, \quad b = \text{carry}$$
+  Return $a$ once $b$ reaches 0.
+- **Language-Specific Signed 32-bit Integer Handling** —
+  * **Java / C++ / C#:** Fixed 32-bit signed integers naturally wrap around on overflow using two's complement.
+  * **Python:** Integers have arbitrary precision (infinite bits). Negative numbers do not auto-truncate at 32 bits, causing infinite loops when left-shifting negative carries.
+  * **Python Fix:** Use a 32-bit bitmask (`0xFFFFFFFF`) to clamp values to 32 bits during loop execution, then convert back to a signed integer if the 31st bit (sign bit) is set:
+    ```python
+    mask = 0xFFFFFFFF
+    while (b & mask) != 0:
+        carry = ((a & b) << 1) & mask
+        a = (a ^ b) & mask
+        b = carry
+    return a if a <= 0x7FFFFFFF else ~(a ^ mask)
+    ```
+- **Subtraction & Negative Number Compatibility** — Two's complement representation encodes subtraction as addition of a negative number ($a - b = a + (-b)$). Because bitwise half-adder logic relies purely on two's complement arithmetic, the exact same algorithm seamlessly handles negative inputs and subtraction without modification.
+- **LC #67, LC #2, and LC #29 Connection** → Sum of Two Integers isolates the low-level bitwise mechanics of arithmetic addition. It demonstrates the pure boolean gate implementation underlying high-level string/pointer addition patterns seen in LC #67 (Add Binary) and LC #2 (Add Two Numbers), while laying the groundwork for bitwise arithmetic constraints in problems like LC #29 (Divide Two Integers).
+- **Bitwise half-adder logic and two's complement masking generalize** → This template is the industry baseline blueprint for low-level arithmetic logic unit (ALU) hardware simulation, custom software floating-point emulator design, secure cryptographic constant-time arithmetic implementations (mitigating timing side-channel attacks), and embedded micro-controller instruction pipeline development. Master the cycle of: 1) Isolate bitwise addition into XOR sum and AND-shift carry operations, 2) Iteratively absorb carries into the running sum until carries dissipate, 3) Enforce bit-width masking (e.g., 32-bit mask `0xFFFFFFFF`) in dynamically typed runtimes, 4) Handle two's complement signed transitions safely, 5) Perform arithmetic operations with zero built-in `+`/`-` operators.
+
+```cpp
+class Solution {
+public:
+    int getSum(int a, int b) {
+        while(b != 0){
+            int carry = a & b; //carry is the common set bits of a and b if 1 and 1, will carry to the next bit, 1 & 1 is 1
+            a = a ^ b; //sum of bits of a and b where at least one of the bits is not set, 1 ^ 1 is 0, 1 ^ 0 is 1, 0 ^ 1 is 1, 0 ^ 0 is 0
+            b = carry << 1; //carry is shifted by one so that adding it to a gives the required sum, we shift left because we want to add the carry to the next bit
+        }
+
+        return a;
+    }
+};
+```
+
+## Minimum Array End LC 3133
+
+<!-- notecardId: 1784663423196 -->
+
+You are given two integers n and x. You have to construct an array of positive integers nums of size n where for every 0 <= i < n - 1, nums[i + 1] is greater than nums[i], and the result of the bitwise AND operation between all elements of nums is x.
+
+Return the minimum possible value of nums[n - 1].
+
+ 
+
+Example 1:
+
+Input: n = 3, x = 4
+
+Output: 6
+
+Explanation:
+
+nums can be [4,5,6] and its last element is 6.
+
+Example 2:
+
+Input: n = 2, x = 7
+
+Output: 15
+
+Explanation:
+
+nums can be [7,15] and its last element is 15.
+
+ 
+
+Constraints:
+
+1 <= n, x <= 108
+
+**Link**: [text](https://leetcode.com/problems/minimum-array-end/)
+
+%
+
+**Pattern:** Bit Manipulation, Bitwise Operations, Array Construction
+
+**Approach:** Use bitwise operations to construct the array. The idea is to start with the value x and then find the next n - 1 numbers that are greater than x and have a bitwise AND with x equal to x. The minimum possible value of nums[n - 1] can be found by adding the smallest possible increments to x while ensuring that the bitwise AND condition is satisfied.
+
+**Key Insight:** The key insight is that the bitwise AND of a set of numbers will only retain the bits that are set in all numbers. Therefore, to construct an array where the bitwise AND of all elements is x, we need to ensure that each subsequent number has all the bits set in x and can have additional bits set. The minimum possible value of nums[n - 1] can be found by adding the smallest possible increments to x while ensuring that the bitwise AND condition is satisfied.
+
+**Gotchas:** Be careful with the input constraints and ensure that n and x are positive integers. The solution assumes that the input is valid, so it will not work correctly if this condition is violated.
+
+**Complexity:** Time: O(1) since we can calculate the minimum possible value of nums[n - 1] directly using bitwise operations. | Space: O(1) as we use a constant amount of space for the result.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Bitwise AND of Numbers Range — LC #201 | Compute the cumulative bitwise AND across a continuous interval $[left, right]$ → common binary prefix extraction via bit shifts or `n & (n - 1)`. | Yes — bitwise AND range constraint base |
+| Minimum Cost to Make Array Equalindromic — LC #2967 | Find optimal array transformations under numeric constraints → median target alignment with palindrome verification. | Partial — constraint-guided array construction |
+| Count Pairs That Form a Complete Day II — LC #3185 | Find valid array pairs matching modulo constraints → frequency hash map counting without bitmask packing. | Partial — array constraint satisfaction |
+| Maximum OR — LC #2680 | Maximize bitwise OR by multiplying one element by $2^k$ → prefix/suffix OR arrays combined with bitwise left-shifts. | Yes — bitmask optimization twin |
+
+**How this pattern scales:**
+- **Invariance Constraint of Bitwise AND ($O(1)$ or $O(\log N)$ Time, $O(1)$ Space)** — For the bitwise AND of all array elements to equal $x$, every element in $\text{nums}$ **must** have a `1` at every bit position where $x$ has a `1`.
+  * The smallest possible starting element $\text{nums}[0]$ is $x$ itself.
+  * To construct $n$ strictly increasing elements while preserving $x$'s set bits, we need to perform $n - 1$ increments.
+- **Bit-Interleaving / Bit-Packing Strategy** — Instead of literally adding $1$ and OR-ing with $x$ in a loop $n-1$ times ($O(N)$ TLE for $N = 10^8$), we directly embed the binary representation of $(n - 1)$ into the **unset zero-bit positions** of $x$:
+  1. Set $n = n - 1$ (since $\text{nums}[0] = x$ accounts for the first element).
+  2. Initialize $\text{ans} = x$.
+  3. Iterate through bit positions $i = 0, 1, 2, \dots$:
+     * If the $i$-th bit of $x$ is `0`, take the least significant bit of $n$ (`n & 1`), shift it to position $i$, and OR it into $\text{ans}$.
+     * Shift $n$ right by 1 bit (`n >>= 1`).
+  4. Continue until all bits of $n$ have been embedded into $\text{ans}$.
+- **Mathematical Bitwise Bit-Deposit (PEXT / PDEP Analog)** —
+  * The fixed `1` bits of $x$ act as an immovable mask.
+  * The variable value $(n - 1)$ provides the sequence order $0, 1, \dots, n-1$.
+  * Mapping $(n - 1)$ onto the `0`-bits of $x$ generates the $n$-th smallest integer that satisfies the $x$ bitwise AND invariant in optimal $O(\log(n + x))$ or fixed $O(64)$ time.
+- **64-Bit Integer Type Handling** —
+  * Constraints $N, X \le 10^8$ mean the output $\text{nums}[n-1]$ can exceed 32-bit signed integer limits ($2^{31} - 1$).
+  * Algorithms must use 64-bit integer primitives (`long long` in C++, `long` in Java/C#, `BigInt` or native integers in Python) to prevent silent arithmetic overflow during bit-shifting.
+- **LC #201 Connection** → Minimum Array End generalizes the bitwise AND range constraint introduced in LC #201 (Bitwise AND of Numbers Range). While LC #201 finds the common prefix across a contiguous range, LC #3133 constructs the tightest non-contiguous range that preserves a target bitmask $x$ via direct bit-interleaving.
+- **Bitmask invariant preservation and sparse bit-packing generalize** → This template is the industry baseline blueprint for low-level memory allocation alignment, custom hardware register bit-field multiplexing, dynamic subnet IP block generation with fixed routing masks, and compact bit-packed index encoding in high-throughput database engines. Master the cycle of: 1) Identify immovable bitwise invariants imposed by logical operators, 2) Translate ordinal count increments ($n - 1$) into sparse binary payloads, 3) Interleave payload bits strictly into variable zero-bit positions of the invariant mask, 4) Execute transformations in $O(\log N)$ bit-shifts to bypass sequential linear loops, 5) Maintain 64-bit bounds to prevent bitwise overflow across register boundaries.
+
+```cpp
+class Solution {
+public:
+    long long minEnd(int n, int x) {
+       long long res = x;
+       long long remaining = n -1;
+       for(int i = 0; i < 64; i++){
+        if((res & (1LL << i)) == 0){
+            res |= (remaining & 1) << i; //if the ith bit of res is 0, 
+            //we can set it to 1 if the ith bit of remaining is 1, this will minimize res while still using up all the remaining bits
+            remaining >>= 1;
+        }
+        if(remaining == 0) break;
+       }
+       return res;
+    }
+};
+```
+
