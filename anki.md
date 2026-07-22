@@ -7425,7 +7425,7 @@ It is guaranteed that the list represents a number that does not have leading ze
 
 **Link**: [text](https://leetcode.com/problems/add-two-numbers/)
 
-&
+%
 
 **Pattern:** Linked List Addition with Carry
 
@@ -23760,3 +23760,3587 @@ public:
 };
 ```
 
+## Longest Palindromic Substring LC 5
+
+<!-- notecardId: 1784678506982 -->
+
+Given a string s, return the longest palindromic substring in s.
+
+ 
+
+Example 1:
+
+Input: s = "babad"
+Output: "bab"
+Explanation: "aba" is also a valid answer.
+Example 2:
+
+Input: s = "cbbd"
+Output: "bb"
+ 
+
+Constraints:
+
+1 <= s.length <= 1000
+s consist of only digits and English letters.
+
+**Link**: [text](https://leetcode.com/problems/longest-palindromic-substring/)
+
+%
+
+**Pattern:** String Expansion, Centered Palindrome Detection, Two-Pointer Technique
+
+**Approach:** For each character in the string, treat it as the center of a potential palindrome. Expand outwards while the characters on both sides are equal. Keep track of the longest palindrome found during this process. Since palindromes can be of odd or even length, check for both cases by considering single characters and pairs of characters as centers.
+
+**Key Insight:** The key insight is that a palindrome mirrors around its center. By expanding from each character (and each pair of characters for even-length palindromes), we can efficiently find the longest palindromic substring without needing to check every possible substring.
+
+**Gotchas:** Be careful with the boundaries of the string when expanding. Ensure that you do not go out of bounds when checking characters on either side of the center. Also, remember to check both odd and even length palindromes separately.
+
+**Complexity:** Time: O(n^2) where n is the length of the string, as we potentially expand around each character. | Space: O(1) since we are only using a few variables to track indices and lengths.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Palindromic Substrings — LC #647 | Count total number of palindromic substrings → expand around center technique counting all valid expansions rather than tracking maximum length. | Yes — expand around center twin |
+| Longest Palindromic Subsequence — LC #516 | Find longest non-contiguous palindromic subsequence → 2D dynamic programming ($O(N^2)$ space/time) operating on string pairs or reverse string alignment. | Partial — dynamic programming sequence search |
+| Shortest Palindrome — LC #214 | Convert string to palindrome by adding characters in front → KMP pre-processing table ($O(N)$) or rolling hash matching on reverse prefix. | Partial — string prefix palindrome alignment |
+| Valid Palindrome — LC #125 | Check if alphanumeric characters form a palindrome → two-pointer contraction from outer bounds inward ($O(N)$ time). | Partial — two-pointer palindrome verification |
+
+**How this pattern scales:**
+- **Expand Around Center Paradigm ($O(N^2)$ Time, $O(1)$ Auxiliary Space)** — Every palindrome is symmetric around its center:
+  * A string of length $N$ has $2N - 1$ potential centers:
+    1. $N$ odd-length centers: centered on a single character at index $i$ (e.g., `"aba"` centered at `'b'`).
+    2. $N - 1$ even-length centers: centered between adjacent characters at indices $i$ and $i+1$ (e.g., `"abba"` centered between `'b'` and `'b'`).
+- **Two-Pointer Expansion Algorithm Steps** —
+  1. Define a helper function `expand(left, right)` that expands outward as long as `s[left] == s[right]` and bounds are valid (`left >= 0` and `right < len(s)`).
+  2. Loop $i$ from $0$ to $N - 1$:
+     * Check odd-length center: `len1 = expand(i, i)`.
+     * Check even-length center: `len2 = expand(i, i + 1)`.
+     * Take the maximum length: $\text{max\_len} = \max(\text{len1}, \text{len2})$.
+     * If $\text{max\_len} > \text{current\_max}$, update the starting and ending indices of the best substring found so far.
+  3. Extract and return `s[start : end + 1]`.
+- **Manacher's Algorithm ($O(N)$ Optimal Time Alternative)** —
+  * Replaces $O(N^2)$ expansion by using previously computed palindrome radii stored in an auxiliary array to skip redundant comparisons.
+  * Essential when string length constraints exceed $N > 10^4$, though Expand Around Center is preferred in interviews due to implementation simplicity and $O(1)$ space usage.
+- **LC #647 and LC #516 Connection** → Longest Palindromic Substring is the core foundational problem for sub-string symmetry expansion. It shares the exact same center-expansion loop structure with LC #647 (Palindromic Substrings), while contrasting with sub-sequence DP problems like LC #516 (Longest Palindromic Subsequence) where continuity constraints are relaxed.
+- **Center-based expansion, odd/even length dual tracking, and maximum window boundaries generalize** → This template is the industry baseline blueprint for genomic DNA palindrome sequence detection (restriction enzyme recognition sites), text processing and search engine query normalization, string alignment algorithms, and pattern matching in data compression streams. Master the cycle of: 1) Iterate through all $2N - 1$ possible centers, 2) Expand two pointers outward while mirror characters match, 3) Track maximum length and start index without storing $O(N^2)$ DP tables, 4) Handle odd and even center parity independently, 5) Achieve $O(1)$ space complexity.
+
+```cpp
+class Solution {
+public:
+    string longestPalindrome(string s) {
+        string currMax = "";
+        int currMaxLength = 0;
+        int l = 0;
+        int r = 0;
+        for(int i = 0; i < s.length(); i++){ 
+                l = i; //for odd length palindromes, we can start with the center at i and expand outwards
+                r = i;
+                while(l >= 0 && r < s.length() && s[l] == s[r]){
+                    if((r - l + 1) > currMaxLength){
+                        currMaxLength = r - l + 1;
+                        currMax = s.substr(l, currMaxLength);
+                    }
+                    l--;
+                    r++;
+                }
+
+                l = i; //for even length palindromes, we can start with the center at i and i + 1 and expand outwards
+                r = i + 1;
+                while(l >= 0 && r < s.length() && s[l] == s[r]){
+                    if((r - l + 1) > currMaxLength){
+                        currMaxLength = r - l + 1;
+                        currMax = s.substr(l, currMaxLength);
+                    }
+                    l--;
+                    r++;
+                }
+        }
+        return currMax;
+    }
+};
+```
+
+## Climbing Stairs LC 70
+
+<!-- notecardId: 1784679376551 -->
+
+You are climbing a staircase. It takes n steps to reach the top.
+
+Each time you can either climb 1 or 2 steps. In how many distinct ways can you climb to the top?
+
+ 
+
+Example 1:
+
+Input: n = 2
+Output: 2
+Explanation: There are two ways to climb to the top.
+1. 1 step + 1 step
+2. 2 steps
+Example 2:
+
+Input: n = 3
+Output: 3
+Explanation: There are three ways to climb to the top.
+1. 1 step + 1 step + 1 step
+2. 1 step + 2 steps
+3. 2 steps + 1 step
+ 
+
+Constraints:
+
+1 <= n <= 45
+
+**Link**: [text](https://leetcode.com/problems/climbing-stairs/)
+
+%
+
+**Pattern:** Dynamic Programming, Fibonacci Sequence, State Transition
+
+**Approach:** The problem can be solved using dynamic programming. The number of distinct ways to reach step `n` can be expressed as the sum of the ways to reach step `n-1` and step `n-2`, since you can arrive at step `n` by taking a single step from `n-1` or a double step from `n-2`. This leads to the recurrence relation: `dp[n] = dp[n-1] + dp[n-2]`, with base cases `dp[1] = 1` and `dp[2] = 2`.
+
+**Key Insight:** The key insight is recognizing that the problem is equivalent to computing the Fibonacci sequence, where each number represents the total ways to reach that step. This allows for an efficient iterative solution without the need for recursion or additional space for storing all previous results.
+
+**Gotchas:** Be cautious with the base cases. Ensure that you handle the cases for `n = 1` and `n = 2` correctly, as they are the foundation for building up to larger values of `n`. Also, consider using an iterative approach to avoid stack overflow issues with recursion for larger values of `n`.
+
+**Complexity:** Time: O(n) for the iterative computation of the number of ways to climb to the top. | Space: O(1) since we only need to keep track of the last two computed values at any time.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Min Cost Climbing Stairs — LC #746 | Minimize total cost to reach the top → state transition includes additive step cost ($\min(dp[i-1] + cost[i-1], dp[i-2] + cost[i-2])$). | Yes — cost-weighted Fibonacci DP twin |
+| House Robber — LC #198 | Maximize sum of non-adjacent numbers → state transition selects between robbing current house or skipping ($\max(dp[i-1], dp[i-2] + nums[i])$). | Yes — 1D non-adjacent state DP |
+| Fibonacci Number — LC #509 | Compute $F(N)$ directly → identical recurrence relation ($F(N) = F(N-1) + F(N-2)$) with adjusted base conditions. | Yes — mathematical recurrence twin |
+| Coin Change — LC #322 | Count minimum coins to reach target sum $S$ → unbounded knapsack state transition ($\min_{c \in coins}(dp[i - c] + 1)$). | Partial — generalized dynamic programming |
+
+**How this pattern scales:**
+- **State Transition & Recurrence Relation ($O(N)$ Time, $O(1)$ Auxiliary Space)** — To reach step $n$, you can only take a 1-step jump from step $n-1$ or a 2-step jump from step $n-2$:
+  $$dp[n] = dp[n-1] + dp[n-2]$$
+  * **Base Cases:** $dp[1] = 1$ (1 way: $[1]$), $dp[2] = 2$ (2 ways: $[1,1], [2]$).
+- **Space Optimization (Two Variables)** — Instead of maintaining an entire $O(N)$ lookup table, store only the previous two states:
+  1. Initialize `prev2 = 1` ($n=1$) and `prev1 = 2` ($n=2$).
+  2. For $i$ from $3$ to $N$:
+     * `curr = prev1 + prev2`
+     * `prev2 = prev1`
+     * `prev1 = curr`
+  3. Return `prev1`.
+- **Matrix Exponentiation for $O(\log N)$ Optimal Time** —
+  * Represent state transitions using linear algebra:
+    $$\begin{bmatrix} dp[n] \\ dp[n-1] \end{bmatrix} = \begin{bmatrix} 1 & 1 \\ 1 & 0 \end{bmatrix}^{n-2} \begin{bmatrix} dp[2] \\ dp[1] \end{bmatrix}$$
+  * Using Binary Exponentiation (LC #50), computing the $(n-2)$-th matrix power runs in $O(\log N)$ time.
+- **LC #746 and LC #198 Connection** → Climbing Stairs is the canonical introductory problem for 1D Dynamic Programming. It establishes state transition logic over step decisions, directly underpinning cost-weighted selection problems like LC #746 (Min Cost Climbing Stairs) and non-adjacent optimization models like LC #198 (House Robber).
+- **Overlapping subproblems, state space compression to $O(1)$ variables, and additive DP transitions generalize** → This template is the industry baseline blueprint for path-counting grid traversals, financial compound step projections, queue buffer capacity permutations, and dynamic programming state transitions. Master the cycle of: 1) Identify recurrence dependencies between preceding choices, 2) Formulate the recurrence relation ($dp[i] = f(dp[i-1], dp[i-2])$), 3) Initialize base cases, 4) Compress state space down to $O(1)$ scalar variables, 5) Compute final result in $O(N)$ linear time.
+
+```cpp
+class Solution {
+private:
+    vector<int> memo;
+public:
+    int climbStairs(int n) {
+        if(n == 1) return 1; //base case, there is only one way to climb one step,
+        // which is to take one step
+        int dp[n + 1]; //initialize memo table
+        dp[0] = 0; //base case
+        dp[1] = 1; //base case, there is only one way to climb one step, which is to take one step
+        dp[2] = 2; //base case, there are two ways to climb two steps, which is to take two steps at once, or to take one step twice
+        for(int i = 3; i <= n; i++){
+            dp[i] = dp[i-1] + dp[i - 2]; //the number of ways to climb to the ith step is the sum of the number of ways to 
+            //climb to the (i-1)th step and the number of ways to climb to the (i-2)th step,
+        }
+        return dp[n];
+        
+
+        //fibonacci method, this is also O(n) time but this is O(1) space
+        /*
+                if (n == 1) {
+            return 1;
+        }
+        int first = 1;
+        int second = 2;
+        for (int i = 3; i <= n; i++) {
+            int third = first + second;
+            first = second;
+            second = third;
+        }
+        return second;
+    }
+        */
+    }
+};
+```
+
+## Decode Ways LC 91
+
+<!-- notecardId: 1784679549597 -->
+
+You have intercepted a secret message encoded as a string of numbers. The message is decoded via the following mapping:
+
+"1" -> 'A'
+
+"2" -> 'B'
+
+...
+
+"25" -> 'Y'
+
+"26" -> 'Z'
+
+However, while decoding the message, you realize that there are many different ways you can decode the message because some codes are contained in other codes ("2" and "5" vs "25").
+
+For example, "11106" can be decoded into:
+
+"AAJF" with the grouping (1, 1, 10, 6)
+"KJF" with the grouping (11, 10, 6)
+The grouping (1, 11, 06) is invalid because "06" is not a valid code (only "6" is valid).
+Note: there may be strings that are impossible to decode.
+
+Given a string s containing only digits, return the number of ways to decode it. If the entire string cannot be decoded in any valid way, return 0.
+
+The test cases are generated so that the answer fits in a 32-bit integer.
+
+ 
+
+Example 1:
+
+Input: s = "12"
+
+Output: 2
+
+Explanation:
+
+"12" could be decoded as "AB" (1 2) or "L" (12).
+
+Example 2:
+
+Input: s = "226"
+
+Output: 3
+
+Explanation:
+
+"226" could be decoded as "BZ" (2 26), "VF" (22 6), or "BBF" (2 2 6).
+
+Example 3:
+
+Input: s = "06"
+
+Output: 0
+
+Explanation:
+
+"06" cannot be mapped to "F" because of the leading zero ("6" is different from "06"). In this case, the string is not a valid encoding, so return 0.
+
+ 
+
+Constraints:
+
+1 <= s.length <= 100
+s contains only digits and may contain leading zero(s).
+
+**Link**: [text](https://leetcode.com/problems/decode-ways/)
+
+%
+
+**Pattern:** Dynamic Programming, State Transition, String Parsing
+
+**Approach:** Use dynamic programming to count the number of ways to decode the string. Create an array `dp` where `dp[i]` represents the number of ways to decode the substring `s[0..i-1]`. The state transition is based on whether the current digit can be decoded on its own or as part of a two-digit number with the previous digit. Specifically, if `s[i-1]` is not '0', then `dp[i] += dp[i-1]`. If the two-digit number formed by `s[i-2]` and `s[i-1]` is between 10 and 26, then `dp[i] += dp[i-2]`.
+
+**Key Insight:** The key insight is that each digit can either stand alone as a valid character or combine with the previous digit to form a valid character. By iterating through the string and applying these rules, we can build up the total number of decoding ways incrementally.
+
+**Gotchas:** Be careful with leading zeros and invalid two-digit combinations. A '0' cannot be decoded on its own, and any two-digit number that starts with '0' is invalid. Ensure that you handle these cases correctly in your state transitions.
+
+**Complexity:** Time: O(n) where n is the length of the string, as we iterate through the string once. | Space: O(n) for the `dp` array, though this can be optimized to O(1) by only keeping track of the last two states.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Decode Ways II — LC #639 | String contains wildcard character `'*'` matching digits $1\dots9$ → state transition with coefficient multipliers ($9\times, 6\times, 15\times$) for 1-digit and 2-digit wildcard variations. | Yes — 1D DP counting twin with complex transitions |
+| Climbing Stairs — LC #70 | Count ways to reach top using 1 or 2 steps → identical recurrence structure ($dp[i] = dp[i-1] + dp[i-2]$) without conditional value validation constraints. | Yes — foundational 1D state transition base |
+| Restoration of The Array — LC #1417 / #1416 | Restore array of integers from string given max value $k$ → $O(\log_{10} k)$ variable lookback window DP instead of fixed 2-digit limit. | Partial — string partitioning DP |
+| Word Break — LC #139 | Determine if string can be segmented into dictionary words → 1D boolean DP array checking string prefixes against dictionary hash set. | Partial — string segmentation state DP |
+
+**How this pattern scales:**
+- **Constrained 1D Dynamic Programming ($O(N)$ Time, $O(1)$ Auxiliary Space)** — Let $dp[i]$ represent the number of valid decodings for the prefix substring $s[0 \dots i-1]$ of length $i$:
+  * **Single-Digit Transition:** If $s[i-1] \neq \text{'0'}$, digit $s[i-1]$ decodes to a valid character ($1\dots9$):
+    $$dp[i] += dp[i-1]$$
+  * **Two-Digit Transition:** If substring $s[i-2 \dots i-1]$ forms a number between $10$ and $26$, it decodes to a valid character ($10\dots26$):
+    $$dp[i] += dp[i-2]$$
+- **Handling Invalid Zero States ('0')** —
+  * Leading zeros (e.g., `"06"`) cannot form valid decodings. If $s[0] == \text{'0'}$, return $0$ immediately.
+  * Inaccessible zeros (e.g., `"30"` or `"00"`) produce $dp[i] = 0$, terminating valid decoding branches naturally.
+- **Space Optimization (Two Variables)** —
+  * Since $dp[i]$ only depends on $dp[i-1]$ and $dp[i-2]$, compress the array to scalar variables `prev2` ($dp[i-2]$) and `prev1` ($dp[i-1]$):
+    1. Initialize `prev2 = 1` ($dp[0]$ empty prefix base case) and `prev1 = 1` ($dp[1]$ assuming $s[0] \neq \text{'0'}$).
+    2. Loop $i$ from $2$ to $N$:
+       * Compute `curr = 0`.
+       * If $s[i-1] \neq \text{'0'}$: `curr += prev1`.
+       * If $10 \le \text{int}(s[i-2 \dots i-1]) \le 26$: `curr += prev2`.
+       * Update `prev2 = prev1` and `prev1 = curr`.
+    3. Return `prev1`.
+- **LC #70 and LC #639 Connection** → Decode Ways elevates the Fibonacci state transition from LC #70 (Climbing Stairs) by adding character-validation constraints on 1-step and 2-step transitions. It directly underpins complex wildcard decoding problems like LC #639 (Decode Ways II).
+- **Conditional lookback transitions, invalid state zero-pruning, and 1D space compression generalize** → This template is the industry baseline blueprint for string parsing, telecommunication packet decoding protocols, multi-byte character sequence validation (e.g., UTF-8 decoders), and state machine sequence counting. Master the cycle of: 1) Define state $dp[i]$ for prefix substrings, 2) Validate 1-digit and 2-digit lookback constraints, 3) Accumulate valid transition paths while filtering invalid zero states, 4) Compress $O(N)$ memory down to $O(1)$ variables, 5) Compute result in single-pass $O(N)$ linear time.
+
+```cpp
+class Solution {
+public:
+    int numDecodings(string s) {
+        vector<int> dp(s.length() + 1, 0);
+
+        if(s[0] == '0') return 0; //if the first character is 0, there are no ways to decode it
+        dp[0] = 1; //empty string base case
+        dp[1] = 1; //first number base case
+        for(int i = 2; i <= s.length(); i++){
+           if(s[i-1] != '0'){
+            dp[i] += dp[i-1]; //if the current character is not 0, we can decode it as a letter, so we add the number of ways to decode the string up to i-1
+           }
+           int twoDigit = stoi(s.substr(i - 2, 2));
+           if(twoDigit >= 10 && twoDigit <= 26){
+            dp[i] += dp[i-2]; //if the two digit number is between 10 and 26, we can decode it as a letter, 
+            //so we add the number of ways to decode the string up to i-2, we use i - 2 because we are looking at the two digit number that ends 
+            //at index i-1, so we need to look at the number of ways to decode the string up to i-2
+           }
+        }
+        return dp[s.length()];
+    }
+};
+```
+
+## Word Break LC 139
+
+<!-- notecardId: 1784679973289 -->
+
+Given a string s and a dictionary of strings wordDict, return true if s can be segmented into a space-separated sequence of one or more dictionary words.
+
+Note that the same word in the dictionary may be reused multiple times in the segmentation.
+
+ 
+
+Example 1:
+
+Input: s = "leetcode", wordDict = ["leet","code"]
+Output: true
+Explanation: Return true because "leetcode" can be segmented as "leet code".
+Example 2:
+
+Input: s = "applepenapple", wordDict = ["apple","pen"]
+Output: true
+Explanation: Return true because "applepenapple" can be segmented as "apple pen apple".
+Note that you are allowed to reuse a dictionary word.
+Example 3:
+
+Input: s = "catsandog", wordDict = ["cats","dog","sand","and","cat"]
+Output: false
+ 
+
+Constraints:
+
+1 <= s.length <= 300
+1 <= wordDict.length <= 1000
+1 <= wordDict[i].length <= 20
+s and wordDict[i] consist of only lowercase English letters.
+All the strings of wordDict are unique.
+
+**Link**: [text](https://leetcode.com/problems/word-break/)
+
+%
+
+**Pattern:** Dynamic Programming, String Segmentation, Hash Set Lookup
+
+**Approach:** Use dynamic programming to determine if the string can be segmented into words from the dictionary. Create a boolean array `dp` where `dp[i]` indicates whether the substring `s[0..i-1]` can be segmented. For each index `i`, check all possible previous indices `j` such that `s[j..i-1]` is in the dictionary and `dp[j]` is true. If such a `j` exists, set `dp[i]` to true.
+
+**Key Insight:** The key insight is that the problem can be broken down into smaller subproblems. If a substring can be segmented, then any extension of that substring can also be checked for segmentation by looking at the last word added. Using a hash set for the dictionary allows for O(1) average time complexity when checking if a substring is in the dictionary.
+
+**Gotchas:** Be careful with the indices when checking substrings. Ensure that you are correctly slicing the string and checking the right ranges. Also, consider the case where the string cannot be segmented at all, which should return false.
+
+**Complexity:** Time: O(n^2 * m) where n is the length of the string and m is the average length of words in the dictionary, due to checking all substrings. | Space: O(n) for the `dp` array and O(k) for the hash set where k is the number of words in the dictionary.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Word Break II — LC #140 | Return all actual reconstructed sentences instead of boolean validation → Backtracking with Memoization / DFS returning path lists. | Yes — explicit path construction twin |
+| Concatenated Words — LC #472 | Find all words constructed entirely by shorter words in the same array → Trie / HashSet DP sorting words by length. | Yes — multi-word self-referential segmentation |
+| Extra Characters in a String — LC #2701 / #2707 | Minimize leftover characters after segmenting using dictionary → 1D DP tracking minimum unparsed character cost. | Yes — cost-minimizing segmentation DP |
+| Decode Ways — LC #91 | Count number of valid numeric decoding paths → 1D counting DP with fixed 1-digit and 2-digit lookback windows. | Partial — string partitioning DP |
+
+**How this pattern scales:**
+- **1D Boolean State Transition ($O(N^2 \cdot K)$ or $O(N \cdot L^2)$ Time, $O(N + M)$ Space)** — Let $dp[i]$ be a boolean representing whether prefix substring $s[0 \dots i-1]$ of length $i$ can be segmented into dictionary words:
+  * **Base Case:** $dp[0] = \text{True}$ (an empty string is trivially valid).
+  * **State Transition:** For each position $i$ from $1$ to $N$, $dp[i]$ is $\text{True}$ if there exists a split point $j < i$ such that:
+    $$dp[j] == \text{True} \quad \text{and} \quad s[j \dots i-1] \in \text{wordDict}$$
+  * **Complexity Factors:** $N$ is string length, $M$ is dictionary size, $L$ is max word length in dictionary, $K$ is string slice/hash cost.
+- **Lookup & Inner Loop Optimization** —
+  * Convert `wordDict` into a `HashSet` for $O(1)$ average string membership checks.
+  * Limit the inner loop search window using the maximum length of dictionary words $L = \max_{w \in \text{wordDict}}(\text{len}(w))$:
+    $$\text{Loop } j \text{ from } \max(0, i - L) \text{ to } i - 1$$
+    This reduces the inner loop complexity from $O(N)$ to $O(L)$, yielding $O(N \cdot L^2)$ runtime.
+- **Trie + DP Optimization Alternative** —
+  * Insert all dictionary words into a Trie (Prefix Tree).
+  * Outer loop $i$ iterates through starting positions where $dp[i] == \text{True}$.
+  * Traverse down the Trie matching characters $s[i \dots j-1]$. Whenever a Trie node marks `is_word == True`, set $dp[j] = \text{True}$.
+- **LC #91 and LC #140 Connection** → Word Break generalizes the fixed lookback window from LC #91 (Decode Ways) to variable-length lookback windows bounded by dictionary terms. It serves as the boolean validation foundation before moving to exhaustive path enumeration in LC #140 (Word Break II).
+- **Boolean prefix state propagation, variable-length lookback windows, and Trie/HashSet acceleration generalize** → This template is the industry baseline blueprint for natural language processing word segmentation (e.g., tokenizing compound words or unspaced scripts like Chinese/Japanese), URL path parsing, compiler lexical analysis, and code formatting tools. Master the cycle of: 1) Define $dp[i]$ as boolean validity of prefix substring of length $i$, 2) Store dictionary tokens in a Hash Set or Trie, 3) Prune inner lookback searches using max word length $L$, 4) Propagate $dp[i] = \text{True}$ whenever a valid prefix split matches a dictionary token, 5) Return $dp[N]$ in linear/polynomial time.
+
+```cpp
+class Solution {
+public:
+    bool wordBreak(string s, vector<string>& wordDict) {
+        vector<bool> dp(s.length() + 1, false);
+        unordered_set<string> dict;
+        for(string s : wordDict){
+            dict.insert(s);
+        }
+
+        dp[0] = true;
+        for(int i = 1; i <= s.length(); i++){
+            for(int j = 0; j <= i; j++){
+
+                //think of the stuff before dp[j] as the prefix, and the stuff after dp[j] as the suffix, 
+                //so we are checking if the prefix can be broken into words in the dictionary, and if the suffix is in the dictionary, then we can break the string at index i
+
+                if(dp[j]){ //have to check this first, because if dp[j] is false, 
+                //then we cannot break the string at index j, so we cannot check if the substring from j to i is in the dictionary,
+                // because if we cannot break the string at index j, then we cannot break the string at index i, because we cannot break the string at index j,
+                // so we cannot check if the substring from j to i is in the dictionary, because if we cannot break the string at index j, then we cannot break the string at index i, 
+                //because we cannot break the string at index j, so we cannot check if the substring from j to i is in the dictionary
+                if(dict.find(s.substr(j, i - j)) != dict.end()){
+                    dp[i] = true;
+                }
+                }
+            }
+        }
+        return dp[s.length()];
+    }
+};
+```
+
+## Maximum Product Subarray LC 152
+
+<!-- notecardId: 1784681897477 -->
+
+Given an integer array nums, find a subarray that has the largest product, and return the product.
+
+The test cases are generated so that the answer will fit in a 32-bit integer.
+
+Note that the product of an array with a single element is the value of that element.
+
+ 
+
+Example 1:
+
+Input: nums = [2,3,-2,4]
+Output: 6
+Explanation: [2,3] has the largest product 6.
+Example 2:
+
+Input: nums = [-2,0,-1]
+Output: 0
+Explanation: The result cannot be 2, because [-2,-1] is not a subarray.
+ 
+
+Constraints:
+
+1 <= nums.length <= 2 * 104
+-10 <= nums[i] <= 10
+The product of any subarray of nums is guaranteed to fit in a 32-bit integer.
+
+**Link**: [text](https://leetcode.com/problems/maximum-product-subarray/)
+
+%
+
+**Pattern:** Dynamic Programming, Kadane's Algorithm Variant, State Tracking
+
+**Approach:** Use dynamic programming to track the maximum and minimum products ending at each index. The maximum product can be obtained by either multiplying the current number with the previous maximum product or starting a new subarray with the current number. The minimum product is also tracked because multiplying two negative numbers can yield a positive product. At each step, update the global maximum product found so far.
+
+**Key Insight:** The key insight is that the maximum product subarray can be influenced by negative numbers. A negative number can turn a small minimum product into a large maximum product if multiplied together. Therefore, it is essential to keep track of both the maximum and minimum products at each step.
+
+**Gotchas:** Be cautious with zeros in the array, as they reset the product. When encountering a zero, the maximum and minimum products should be reset to 1 (or the current number) to start a new subarray. Also, ensure that you handle single-element arrays correctly.
+
+**Complexity:** Time: O(n) where n is the length of the array, as we iterate through the array once. | Space: O(1) since we only need to keep track of a few variables for the maximum and minimum products.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Maximum Subarray — LC #53 | Find maximum sum contiguous subarray → Kadane's algorithm tracking max ending at current index without sign-flip swapping. | Yes — foundational 1D DP subarray twin |
+| Subarray Product Less Than K — LC #713 | Count contiguous subarrays with product strictly less than $k$ → Sliding Window with positive integer constraints. | Partial — contiguous product subarray evaluation |
+| Maximum Product of Three Numbers — LC #628 | Find maximum product of 3 numbers from array → greedy selection of top 3 max or 2 min (negative) $\times$ 1 max. | Partial — negative value multiplication greedy logic |
+| Bitwise ORs of Subarrays — LC #898 | Find unique bitwise OR results of all contiguous subarrays → set-based DP updating running bitwise states. | Partial — contiguous subarray state propagation |
+
+**How this pattern scales:**
+- **Dual-State Dynamic Programming ($O(N)$ Time, $O(1)$ Auxiliary Space)** — Unlike sum-based Kadane's algorithm (LC #53) where negative numbers only decrease the total sum, multiplication by a negative number flips signs:
+  * A negative number multiplied by a **large positive product** becomes a **small negative product**.
+  * A negative number multiplied by a **small negative product** becomes a **large positive product**.
+- **Tracking Dual Extremes (`cur_max` & `cur_min`)** — Maintain both the current maximum product `cur_max` and current minimum product `cur_min` ending at index $i$:
+  1. Initialize `max_so_far = nums[0]`, `cur_max = 1`, and `cur_min = 1`.
+  2. For each number $x \in \text{nums}$:
+     * If $x < 0$, swap `cur_max` and `cur_min` (multiplication by negative reverses inequality).
+     * Update `cur_max = max(x, cur_max * x)`.
+     * Update `cur_min = min(x, cur_min * x)`.
+     * Update `max_so_far = max(max_so_far, cur_max)`.
+  3. Return `max_so_far`.
+- **Handling Zero States ('0')** —
+  * Multiplying by zero resets both `cur_max` and `cur_min` to $0$.
+  * The transition `max(x, cur_max * x)` automatically resets the candidate subarray search to start fresh at the next element after $0$.
+- **Prefix & Suffix Product Pass Alternative ($O(N)$ Time, $O(1)$ Space)** —
+  * Calculate running prefix product left-to-right and suffix product right-to-left, resetting products to $1$ whenever encountering a zero.
+  * The global maximum product will always equal the maximum single prefix or suffix value encountered.
+- **LC #53 and LC #628 Connection** → Maximum Product Subarray directly extends Kadane's algorithm from LC #53 (Maximum Subarray) by adding a dual-state tracker (`cur_min`) to handle sign inversions, incorporating the negative multiplication property seen in LC #628 (Maximum Product of Three Numbers).
+- **Dual max/min state tracking, sign-flip state swapping, and contiguous array DP generalize** → This template is the industry baseline blueprint for financial volatility tracking (maximizing logarithmic returns across positive/negative market swings), signal processing gain control, gain/loss ratio optimizations in trading algorithms, and state-machine path evaluations. Master the cycle of: 1) Track both maximum and minimum running bounds, 2) Swap running bounds when processing negative transition factors, 3) Handle zero transitions as local boundary resets, 4) Accumulate global optimal state after each element, 5) Maintain $O(1)$ auxiliary memory complexity.
+
+```cpp
+class Solution {
+public:
+    int maxProduct(vector<int>& nums) {
+        if(nums.size() == 0) return 0;
+
+        int result = nums[0];
+        int minSoFar = nums[0];
+        int maxSoFar = nums[0];
+
+
+        for(int i = 1; i < nums.size(); i++){
+            int tempmaxSoFar = max(nums[i], max(maxSoFar * nums[i] , minSoFar * nums[i])); //find the max of the current number, the max product so far times the current number, and the min product so far times the current number. It is possible that the current number itself is the max product, or that the max product so far times 
+            //the current number is the max product, or that the min product so far times the current number is the max product. We have to keep track of both the min and max products because if we multiply a negative number by a negative number, we can get a positive number that is larger than the max product so far.
+            minSoFar = min(nums[i], min(maxSoFar * nums[i] , minSoFar * nums[i])); // find the min of the current number, the max product so far times the current number, and the min product so far times the current number. It is possible that the current number itself is the min product, or that the max product so far times. It is possible the minNumber times a negative number is the min product, or that the min product so far times the current number is the min product. 
+            //We have to keep track of both the min and max products because if we multiply a negative number by a negative number, we can get a positive number that is larger than the max product so far.
+            maxSoFar = tempmaxSoFar;
+            result = max(result, maxSoFar);
+        }
+        return result;
+    }
+};
+```
+
+## House Robber LC 198
+
+<!-- notecardId: 1784682009827 -->
+
+You are a professional robber planning to rob houses along a street. Each house has a certain amount of money stashed, the only constraint stopping you from robbing each of them is that adjacent houses have security systems connected and it will automatically contact the police if two adjacent houses were broken into on the same night.
+
+Given an integer array nums representing the amount of money of each house, return the maximum amount of money you can rob tonight without alerting the police.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,3,1]
+Output: 4
+Explanation: Rob house 1 (money = 1) and then rob house 3 (money = 3).
+Total amount you can rob = 1 + 3 = 4.
+Example 2:
+
+Input: nums = [2,7,9,3,1]
+Output: 12
+Explanation: Rob house 1 (money = 2), rob house 3 (money = 9) and rob house 5 (money = 1).
+Total amount you can rob = 2 + 9 + 1 = 12.
+ 
+
+Constraints:
+
+1 <= nums.length <= 100
+0 <= nums[i] <= 400
+
+**Link**: [text](https://leetcode.com/problems/house-robber/)
+
+%
+
+**Pattern:** Dynamic Programming, State Transition, Non-Adjacent Selection
+
+**Approach:** Use dynamic programming to determine the maximum amount of money that can be robbed without alerting the police. Create an array `dp` where `dp[i]` represents the maximum amount of money that can be robbed from the first `i` houses. The state transition is based on whether to rob the current house or skip it. If you rob the current house, you cannot rob the previous one, so you add the current house's money to `dp[i-2]`. If you skip the current house, you take the maximum from `dp[i-1]`. The recurrence relation is: `dp[i] = max(dp[i-1], dp[i-2] + nums[i])`.
+
+**Key Insight:** The key insight is that for each house, you have two choices: rob it or skip it. By considering both options and keeping track of the maximum amount that can be robbed up to that point, you can build up the solution iteratively.
+
+**Gotchas:** Be careful with the base cases, especially when the number of houses is less than 2. Ensure that you handle the cases for `nums.length == 1` and `nums.length == 2` correctly, as they are the foundation for building up to larger values of `n`. Also, consider using an iterative approach to avoid stack overflow issues with recursion for larger values of `n`.
+
+**Complexity:** Time: O(n) where n is the number of houses, as we iterate through the array once. | Space: O(1) since we only need to keep track of the last two computed values at any time.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| House Robber II — LC #213 | Houses are arranged in a circle (first and last are adjacent) → run 1D DP twice: once on `nums[0..N-2]` and once on `nums[1..N-1]`. | Yes — circular constraint twin |
+| House Robber III — LC #337 | Houses are arranged as a binary tree → Tree DP returning a 2-element tuple `(rob_root, skip_root)` for each subtree node. | Yes — tree-structured non-adjacent state DP |
+| Climbing Stairs — LC #70 | Count ways to reach top using 1 or 2 steps → basic state transition ($dp[i] = dp[i-1] + dp[i-2]$) without value-maximization selection. | Yes — foundational 1D state transition base |
+| Min Cost Climbing Stairs — LC #746 | Minimize cost to reach top of staircase → additive step selection DP ($\min(dp[i-1] + cost[i-1], dp[i-2] + cost[i-2])$). | Yes — cost-weighted selection DP |
+
+**How this pattern scales:**
+- **Non-Adjacent Decision Dynamic Programming ($O(N)$ Time, $O(1)$ Auxiliary Space)** — For each house $i$ with value $v$, you have two mutually exclusive choices:
+  1. **Rob house $i$:** You cannot rob house $i-1$, so your maximum yield is $v + dp[i-2]$.
+  2. **Skip house $i$:** Your maximum yield is the best outcome up to house $i-1$, which is $dp[i-1]$.
+  * **State Transition Equation:**
+    $$dp[i] = \max(dp[i-1], dp[i-2] + v)$$
+- **Space Optimization (Two Variables)** — Since $dp[i]$ only depends on the previous two outcomes ($dp[i-1]$ and $dp[i-2]$), compress the array down to scalar variables `prev2` and `prev1`:
+  1. Initialize `prev2 = 0` ($dp[i-2]$) and `prev1 = 0` ($dp[i-1]$).
+  2. For each value $v \in \text{nums}$:
+     * Compute `curr = max(prev1, prev2 + v)`.
+     * Update `prev2 = prev1`.
+     * Update `prev1 = curr`.
+  3. Return `prev1`.
+- **Handling Small Array Edge Cases** —
+  * An empty array returns `0`.
+  * Single-element array `[x]` returns `x` directly.
+- **LC #70 and LC #213 Connection** → House Robber is the canonical archetype for non-adjacent selection in 1D dynamic programming. It builds on the 2-step lookback logic of LC #70 (Climbing Stairs) by introducing value maximization, serving as the core sub-routine required to solve circular array topologies in LC #213 (House Robber II) and tree structures in LC #337 (House Robber III).
+- **Non-adjacent choice state transitions, 1D memory compression to $O(1)$ variables, and sub-problem windowing generalize** → This template is the industry baseline blueprint for resource scheduling with cooldown periods (e.g., job scheduling without adjacent CPU cycle conflicts), wireless signal power allocation without adjacent channel interference, portfolio asset selection under isolation constraints, and dynamic buffer management. Master the cycle of: 1) Formulate non-adjacent decision choices, 2) Define recurrence relation $\max(\text{skip}, \text{take} + \text{lookback})$, 3) Initialize zero/base bounds, 4) Compress state space down to $O(1)$ scalar variables, 5) Compute global optimal yield in single-pass linear time.
+
+```cpp
+class Solution {
+public:
+    int rob(vector<int>& nums) {
+        if(nums.size() == 0) return 0;
+        if(nums.size() == 1) return nums[0];
+        int prevMaxProfit = nums[0]; //max amount of profit we can make up to the previous house, 
+        //this is the max profit we can make if we rob the previous house, we need to keep track of this because we 
+        //cannot rob two adjacent houses, so if we rob the current house, we cannot rob the previous house, and we need to know the max profit we can make if we rob the previous house, 
+        //so we can add that to the current house's value to get the max profit we can make if we rob the current house
+        int TwoPrevMax = 0; //max profit from the house two down, this is needed because if we want to rob the current house, we take the max profit from two houses down
+
+        for(int i = 1; i < nums.size(); i++){ //go down till the end of houses
+            int robCurr = TwoPrevMax + nums[i]; //if robbing curr, have to take the max from two houses down and add the curr val
+            int skipCurr = prevMaxProfit; //the previous house max is he same as this house max, because if we skip the current house,
+            // then the max profit we can make is the same as the max profit we can make if we rob the previous house,
+            // because we cannot rob two adjacent houses, so if we skip the current house, then we cannot rob the previous house,
+            // and we need to know the max profit we can make if we rob the previous house, so we can add that to the current house's 
+            //value to get the max profit we can make if we rob the current house
+            int currMax = max(robCurr, skipCurr); //max amount of profit we can have at the house i
+
+            //now have to move up by 1
+            TwoPrevMax = prevMaxProfit; //two houses down becomes the previous house max, because we are moving up by one house, so the previous house max becomes the two houses down max
+            prevMaxProfit = currMax; //the previous house max becomes the current house max, move up by one house
+        }
+
+    return prevMaxProfit; //return the max profit we can make if we rob the last house, 
+    //because we have gone through all the houses and calculated the max profit we can make if we rob each house, 
+    //and the last house's max profit is the max profit we can make if we rob the last house
+    }
+};
+```
+
+## House Robber II LC 213
+
+<!-- notecardId: 1784682196395 -->
+
+You are a professional robber planning to rob houses along a street. Each house has a certain amount of money stashed. All houses at this place are arranged in a circle. That means the first house is the neighbor of the last one. Meanwhile, adjacent houses have a security system connected, and it will automatically contact the police if two adjacent houses were broken into on the same night.
+
+Given an integer array nums representing the amount of money of each house, return the maximum amount of money you can rob tonight without alerting the police.
+
+ 
+
+Example 1:
+
+Input: nums = [2,3,2]
+Output: 3
+Explanation: You cannot rob house 1 (money = 2) and then rob house 3 (money = 2), because they are adjacent houses.
+Example 2:
+
+Input: nums = [1,2,3,1]
+Output: 4
+Explanation: Rob house 1 (money = 1) and then rob house 3 (money = 3).
+Total amount you can rob = 1 + 3 = 4.
+Example 3:
+
+Input: nums = [1,2,3]
+Output: 3
+ 
+
+Constraints:
+
+1 <= nums.length <= 100
+0 <= nums[i] <= 1000
+
+**Link**: [text](https://leetcode.com/problems/house-robber-ii/)
+
+%
+
+**Pattern:** Dynamic Programming, State Transition, Circular Array Handling
+
+**Approach:** Use dynamic programming to determine the maximum amount of money that can be robbed without alerting the police, considering the circular arrangement of houses. Since the first and last houses are adjacent, we cannot rob both. Therefore, we can break the problem into two separate cases: one where we consider robbing from the first house to the second-to-last house, and another where we consider robbing from the second house to the last house. We then take the maximum of these two cases.
+
+**Key Insight:** The key insight is that the circular arrangement introduces a constraint that prevents robbing both the first and last houses. By splitting the problem into two linear subproblems, we can apply the same dynamic programming approach used in the linear House Robber problem (LC #198) to each case separately.
+
+**Gotchas:** Be careful with edge cases, especially when the number of houses is less than 3. If there is only one house, return its value. If there are two houses, return the maximum of the two. Ensure that you handle these cases correctly before applying the dynamic programming approach.
+
+**Complexity:** Time: O(n) where n is the number of houses, as we iterate through the array twice (once for each case). | Space: O(1) since we only need to keep track of a few variables for the maximum amounts in each case.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| House Robber — LC #198 | Houses are in a straight line → basic 1D DP choosing between robbing house $i$ or skipping ($dp[i] = \max(dp[i-1], dp[i-2] + nums[i])$). | Yes — foundational linear DP twin |
+| House Robber III — LC #337 | Houses are arranged as a binary tree → Tree DP returning a 2-element tuple `(rob_root, skip_root)` for each node. | Yes — tree-structured non-adjacent state DP |
+| Paint House — LC #256 | Paint houses such that adjacent houses have different colors → 2D state DP tracking minimum costs per color choice. | Partial — non-adjacent constraint DP |
+| Circular Array Loop — LC #457 | Detect cyclic loops in an array → fast/slow pointer cycle detection with direction constraints. | Partial — circular array topology traversal |
+
+**How this pattern scales:**
+- **Circular Topology Reduction to Linear DP ($O(N)$ Time, $O(1)$ Auxiliary Space)** — Because the first house (`nums[0]`) and last house (`nums[N-1]`) are adjacent in a circular array, they cannot both be robbed:
+  * **Choice 1:** Include the first house $\implies$ excludes the last house. Solve linear House Robber on `nums[0 ... N-2]`.
+  * **Choice 2:** Exclude the first house $\implies$ allows the last house. Solve linear House Robber on `nums[1 ... N-1]`.
+  * **Global Optimal Solution:**
+    $$\text{result} = \max(\text{rob\_linear}(nums[0 \dots N-2]), \; \text{rob\_linear}(nums[1 \dots N-1]))$$
+- **Linear Sub-Routine (`rob_linear`) Implementation** —
+  1. Helper function takes a subarray `slice`:
+     * Initialize `prev2 = 0` and `prev1 = 0`.
+     * For each value $v \in \text{slice}$:
+       * `curr = max(prev1, prev2 + v)`
+       * `prev2 = prev1`
+       * `prev1 = curr`
+     * Return `prev1`.
+- **Handling Edge Cases** —
+  * Single-element array `nums = [x]`: $N = 1$, return $x$ immediately (the sub-slices `nums[0..-2]` and `nums[1..-1]` are empty).
+  * Two-element array `nums = [a, b]`: return $\max(a, b)$.
+- **LC #198 and LC #337 Connection** → House Robber II is the canonical example of breaking circular boundary constraints by splitting an array into two linear sub-problems. It relies entirely on the linear core sub-routine from LC #198 (House Robber) to solve each slice, serving as an intermediate step before adapting non-adjacent choices to tree structures in LC #337 (House Robber III).
+- **Circular array topology decomposition, linear DP reuse, and boundary-mutually-exclusive sub-problems generalize** → This template is the industry baseline blueprint for ring-buffer scheduling without adjacent task conflicts, circular pipeline resource optimization, rotational symmetric geometric partitioning, and periodic time-series decision models. Master the cycle of: 1) Identify circular boundary conflicts between head and tail elements, 2) Split the circular domain into mutually exclusive linear slices (`0..N-2` and `1..N-1`), 3) Execute $O(1)$ space linear DP on both slices, 4) Handle single-element edge cases explicitly, 5) Return the maximum result across all valid slices in linear time.
+
+```cpp
+class Solution {
+private:
+    int robCalc(vector<int>& nums, int start, int end){
+        int prev = 0;
+        int prevPrev = 0;
+        if(nums.size() == 0) return 0;
+        if(nums.size() == 1) return nums[0];
+
+        for(int i = start; i < end; i++){
+            int robCurr = prevPrev + nums[i];
+            int skipCurr = prev;
+            int maxProf = max(robCurr, skipCurr);
+            prevPrev = prev;
+            prev = maxProf; 
+        }
+        return prev;
+    }
+public:
+    int rob(vector<int>& nums) {
+        return max(robCalc(nums, 1, nums.size()), robCalc(nums,0, nums.size() - 1));
+        //the only real trick for this question is consider two cases
+        //1. include the first element and dont include the last element
+        //2. dont include the first element and include the last element
+    }
+};
+```
+
+## Perfect Squares LC 279
+
+<!-- notecardId: 1784682635514 -->
+
+Given an integer n, return the least number of perfect square numbers that sum to n.
+
+A perfect square is an integer that is the square of an integer; in other words, it is the product of some integer with itself. For example, 1, 4, 9, and 16 are perfect squares while 3 and 11 are not.
+
+ 
+
+Example 1:
+
+Input: n = 12
+Output: 3
+Explanation: 12 = 4 + 4 + 4.
+Example 2:
+
+Input: n = 13
+Output: 2
+Explanation: 13 = 4 + 9.
+ 
+
+Constraints:
+
+1 <= n <= 104
+
+**Link**: [text](https://leetcode.com/problems/perfect-squares/)
+
+%
+
+**Pattern:** Dynamic Programming, Coin Change Variant, Minimum Count
+
+**Approach:** Use dynamic programming to find the least number of perfect square numbers that sum to `n`. Create an array `dp` where `dp[i]` represents the minimum number of perfect squares that sum to `i`. Initialize `dp[0] = 0` (base case). For each number from 1 to `n`, iterate through all perfect squares less than or equal to that number and update `dp[i]` with the minimum value found by considering each perfect square.
+
+**Key Insight:** The key insight is that the problem can be viewed as a variation of the coin change problem, where the "coins" are perfect squares. By iteratively building up the solution for each integer up to `n`, we can ensure that we find the minimum count of perfect squares needed.
+
+**Gotchas:** Be careful with the range of perfect squares to consider for each `i`. Ensure that you only consider perfect squares that are less than or equal to `i`. Also, initialize `dp[i]` to a large value (like `INT_MAX`) before checking for minimums to avoid incorrect results.
+
+**Complexity:** Time: O(n * sqrt(n)) where n is the target number, as we iterate through each number up to `n` and for each number, we check all perfect squares less than or equal to that number. | Space: O(n) for the `dp` array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Coin Change — LC #322 | Compute fewest coins to make up an amount → identical unbounded knapsack DP, but using a arbitrary coin array instead of fixed perfect squares ($1, 4, 9 \dots$). | Yes — unbounded knapsack BFS/DP twin |
+| Integer Break — LC #343 | Break integer into sum of $k$ positive integers to maximize product → 1D DP or greedy math ($3^{\lfloor N/3 \rfloor}$) maximizing product instead of minimizing term count. | Partial — integer decomposition DP |
+| Combination Sum IV — LC #377 | Count total number of combinations that sum to target → 1D DP accumulating total ways instead of minimizing term count. | Partial — target decomposition state DP |
+| Valid Perfect Square — LC #367 | Determine if a number is a perfect square → Binary search or Newton's method ($O(\log N)$) verifying $x^2 == N$. | Partial — perfect square mathematical check |
+
+**How this pattern scales:**
+- **Unbounded Knapsack 1D Dynamic Programming ($O(N \sqrt{N})$ Time, $O(N)$ Auxiliary Space)** — Let $dp[i]$ represent the minimum number of perfect square numbers that sum to $i$:
+  * **Base Case:** $dp[0] = 0$ (0 terms required to sum to 0).
+  * **State Transition:** For each integer $i$ from $1$ to $N$, subtract every candidate perfect square $j^2 \le i$:
+    $$dp[i] = 1 + \min_{1 \le j \le \lfloor\sqrt{i}\rfloor} dp[i - j^2]$$
+  * Initialize the array $dp$ of size $N + 1$ filled with infinity ($\infty$), except $dp[0] = 0$.
+- **Breadth-First Search (BFS) Alternative ($O(N \sqrt{N})$ Time, $O(N)$ Space)** —
+  * Treat numbers $0 \dots N$ as graph nodes, where an edge exists from $u$ to $v$ if $v - u$ is a perfect square ($j^2$).
+  * Finding the shortest path from $N$ to $0$ via level-order BFS guarantees finding the minimum number of squares faster in practice (early exit as soon as level $0$ is reached).
+- **Mathematical Lagrange's Four-Square Theorem ($O(\sqrt{N})$ Optimal Time)** —
+  * **Theorem:** Every natural number can be represented as the sum of at most four integer squares.
+  * Result is always **1, 2, 3, or 4**:
+    1. **1:** $N$ is already a perfect square ($\lfloor\sqrt{N}\rfloor^2 == N$).
+    2. **4:** Legendre's Three-Square Theorem dictates $N$ is of the form $4^a(8b + 7)$.
+    3. **2:** Check if $N = a^2 + b^2$ by looping $a$ from $1$ to $\sqrt{N}$.
+    4. **3:** If none of the above match, the answer is guaranteed to be 3.
+- **LC #322 and LC #343 Connection** → Perfect Squares is a structured variant of LC #322 (Coin Change) where the available "coin denominations" are dynamically generated as perfect square integers ($\le N$). It establishes the minimum-step integer decomposition framework that generalizes to target-combination problems like LC #377 (Combination Sum IV).
+- **Unbounded knapsack state transitions, level-order shortest path BFS, and mathematical number-theory bounds generalize** → This template is the industry baseline blueprint for minimum denomination change solvers, resource unit allocation optimization, workload scheduling across fixed capacity blocks, and integer partition theory. Master the cycle of: 1) Identify candidate decomposition steps ($j^2 \le i$), 2) Formulate min-step state transition $dp[i] = 1 + \min(dp[i - j^2])$, 3) Initialize DP table with upper bounds, 4) Leverage BFS for shortest path early-exits when applicable, 5) Compute global optimal decomposition in polynomial/mathematical time.
+
+```cpp
+class Solution {
+public:
+    int numSquares(int n) {
+        vector<int> dp(n + 1, 9999);
+        dp[0] = 0;
+        for(int i = 1; i <= n; i++){
+            for(int j = 0; j <= n; j++){
+                if(i - (j*j) >= 0) dp[i] = min(dp[i], dp[i - (j*j)] + 1);
+            }
+        }
+        return dp[n];
+    }
+};
+```
+
+## Longest Increasing Subsequence LC 300
+
+<!-- notecardId: 1784682773752 -->
+
+Given an integer array nums, return the length of the longest strictly increasing subsequence.
+
+ 
+
+Example 1:
+
+Input: nums = [10,9,2,5,3,7,101,18]
+Output: 4
+Explanation: The longest increasing subsequence is [2,3,7,101], therefore the length is 4.
+Example 2:
+
+Input: nums = [0,1,0,3,2,3]
+Output: 4
+Example 3:
+
+Input: nums = [7,7,7,7,7,7,7]
+Output: 1
+ 
+
+Constraints:
+
+1 <= nums.length <= 2500
+-104 <= nums[i] <= 104
+ 
+
+Follow up: Can you come up with an algorithm that runs in O(n log(n)) time complexity?
+
+**Link**: [text](https://leetcode.com/problems/longest-increasing-subsequence/)
+
+%
+
+**Pattern:** Dynamic Programming, Patience Sorting, Binary Search Optimization
+
+**Approach:** Use dynamic programming to find the length of the longest increasing subsequence (LIS). Create an array `dp` where `dp[i]` represents the length of the longest increasing subsequence that ends with `nums[i]`. Initialize all values in `dp` to 1, since the minimum length of LIS ending at any element is 1 (the element itself). For each element `nums[i]`, iterate through all previous elements `nums[j]` (where `j < i`) and update `dp[i]` if `nums[i] > nums[j]`, meaning that `nums[i]` can extend the increasing subsequence ending at `nums[j]`. The final answer will be the maximum value in the `dp` array.
+
+**Key Insight:** The key insight is that the longest increasing subsequence can be built incrementally by considering each element and determining if it can extend any of the previously found increasing subsequences. By keeping track of the lengths of these subsequences, we can efficiently compute the overall maximum length.
+
+**Gotchas:** Be careful with the nested loops, as they can lead to a time complexity of O(n^2). For larger input sizes, consider using a more efficient approach that utilizes binary search to maintain a list of the smallest possible tail values for increasing subsequences of different lengths. This can reduce the time complexity to O(n log n).
+
+**Complexity:** Time: O(n^2) for the basic dynamic programming approach, where n is the length of the array. | Space: O(n) for the `dp` array. The optimized approach using binary search has a time complexity of O(n log n) and space complexity of O(n).
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Number of Longest Increasing Subsequence — LC #673 | Count total number of LIS paths → maintain two DP arrays (`length[i]` and `count[i]`) tracking both LIS length and combination frequency. | Yes — LIS tracking variant |
+| Russian Doll Envelopes — LC #354 | Find max envelopes that fit inside each other (2D tuples $[w, h]$) → sort width ascending and height descending, reducing problem to 1D LIS on heights. | Yes — 2D reduction to LIS twin |
+| Longest String Chain — LC #1048 | Find longest chain of words where each word extends the previous by 1 letter → sort words by length + HashMap DP measuring predecessor chain lengths. | Partial — structural LIS adaptation |
+| Maximum Length of Pair Chain — LC #464 / #646 | Find longest chain of non-overlapping intervals $[a, b]$ where $c > b$ → sort intervals by end time + Greedy interval scheduling ($O(N \log N)$) or DP. | Partial — interval LIS variant |
+
+**How this pattern scales:**
+- **Patience Sorting + Binary Search ($O(N \log N)$ Optimal Time, $O(N)$ Space)** — Replace the basic $O(N^2)$ dynamic programming approach with a greedy tail array combined with binary search (`bisect_left`):
+  * Maintain a dynamic list `tails` where `tails[i]` stores the **smallest tail element** among all increasing subsequences of length $i + 1$ found so far.
+  * For each number $x \in \text{nums}$:
+    1. Binary search for the index $i$ of the first element in `tails` such that $\text{tails}[i] \ge x$.
+    2. If $i == \text{len}(\text{tails})$, append $x$ to `tails` (extended LIS length by 1).
+    3. Otherwise, overwrite $\text{tails}[i] = x$ (maintained same sequence length with a smaller tail value, opening room for future elements).
+  * The final length of `tails` equals the length of the LIS.
+- **Classic 1D Dynamic Programming ($O(N^2)$ Time, $O(N)$ Space)** —
+  * Let $dp[i]$ be the length of the longest increasing subsequence ending at index $i$:
+    $$dp[i] = 1 + \max_{\{j < i \mid \text{nums}[j] < \text{nums}[i]\}} dp[j]$$
+  * Initialize all $dp[i] = 1$. Return $\max(dp)$.
+- **Strictly Increasing vs. Non-Decreasing Adjustment** —
+  * For **strictly increasing** ($a < b$), use `bisect_left` (lower bound lookup).
+  * For **non-decreasing** ($a \le b$, e.g., LC #300 variant / Non-overlapping Intervals), use `bisect_right` (upper bound lookup).
+- **LC #673 and LC #354 Connection** → Longest Increasing Subsequence is the foundational anchor for non-contiguous sequence optimization. The Patience Sorting binary search technique ($O(N \log N)$) directly enables solving multi-dimensional sorting problems like LC #354 (Russian Doll Envelopes) and serves as the core length metric for counting variations like LC #673 (Number of Longest Increasing Subsequence).
+- **Patience sorting greedy array updates, binary search lower-bound lookups (`bisect_left`), and sequence length tracking generalize** → This template is the industry baseline blueprint for version control file diffing algorithms (e.g., Myers diff / longest common subsequence subroutines), task priority queue execution ordering, genomic sequence alignment algorithms, and time-series trend extraction. Master the cycle of: 1) Maintain an ordered `tails` array tracking minimal tail elements, 2) Binary search ($O(\log N)$) insertion positions for incoming elements, 3) Greedily replace or append to keep tails as small as possible, 4) Derive total LIS length from `tails` size, 5) Achieve $O(N \log N)$ optimal execution time.
+
+```cpp
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        vector<int> dp(nums.size(), 1);
+        for(int i = 1; i < dp.size(); i++){
+            for(int j = 0; j < i; j++){
+                if(nums[j] < nums[i]){
+                    dp[i] = max(dp[i], dp[j] + 1);
+                }
+            }
+        }
+        int max = 0;
+        for(int i = 0; i < dp.size(); i++){
+            max = std::max(max, dp[i]);
+        }
+        return max;
+    }
+};
+```
+
+## Coin Change LC 322
+
+<!-- notecardId: 1784683154174 -->
+
+You are given an integer array coins representing coins of different denominations and an integer amount representing a total amount of money.
+
+Return the fewest number of coins that you need to make up that amount. If that amount of money cannot be made up by any combination of the coins, return -1.
+
+You may assume that you have an infinite number of each kind of coin.
+
+ 
+
+Example 1:
+
+Input: coins = [1,2,5], amount = 11
+Output: 3
+Explanation: 11 = 5 + 5 + 1
+Example 2:
+
+Input: coins = [2], amount = 3
+Output: -1
+Example 3:
+
+Input: coins = [1], amount = 0
+Output: 0
+ 
+
+Constraints:
+
+1 <= coins.length <= 12
+1 <= coins[i] <= 231 - 1
+0 <= amount <= 104
+
+**Link**: [text](https://leetcode.com/problems/coin-change/)
+
+%
+
+**Pattern:** Dynamic Programming, Unbounded Knapsack, Minimum Count
+
+**Approach:** Use dynamic programming to find the fewest number of coins needed to make up the given amount. Create an array `dp` where `dp[i]` represents the minimum number of coins needed to make up the amount `i`. Initialize `dp[0] = 0` (base case) and all other values in `dp` to a large value (like `amount + 1`). For each coin in the `coins` array, iterate through all amounts from the coin's value up to the target amount, updating `dp[i]` with the minimum value found by considering using that coin.
+
+**Key Insight:** The key insight is that the problem can be viewed as an unbounded knapsack problem, where each coin can be used an unlimited number of times. By iteratively building up the solution for each amount up to the target, we can ensure that we find the minimum number of coins needed.
+
+**Gotchas:** Be careful with the initialization of the `dp` array. Setting all values to a large number (like `amount + 1`) ensures that we can correctly identify when an amount cannot be formed. Also, ensure that you handle the case where the amount is zero, which should return zero coins needed.
+
+**Complexity:** Time: O(n * m) where n is the target amount and m is the number of coin denominations, as we iterate through each coin and for each coin, we iterate through all amounts up to the target. | Space: O(n) for the `dp` array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Coin Change II — LC #518 | Count the total number of unique combinations that make up the amount → 1D/2D unbounded knapsack accumulating combination counts instead of taking minimum item counts. | Yes — unbounded knapsack combination twin |
+| Perfect Squares — LC #279 | Find fewest perfect square numbers ($1, 4, 9 \dots$) that sum to $N$ → unbounded knapsack DP with dynamically generated square denominations instead of a fixed input array. | Yes — unbounded knapsack min-item twin |
+| Combination Sum IV — LC #377 | Count permutations that sum to target amount → 1D DP where outer loop iterates through amount target (order matters) rather than coins. | Partial — target decomposition state DP |
+| Minimum Cost For Tickets — LC #983 | Find minimum cost to cover travel days using 1-day, 7-day, or 30-day passes → 1D time-based DP selecting pass denomination choices. | Partial — cost-minimizing choice DP |
+
+**How this pattern scales:**
+- **Unbounded Knapsack 1D Dynamic Programming ($O(S \cdot N)$ Time, $O(S)$ Auxiliary Space)** — Let $dp[i]$ represent the minimum number of coins needed to make up target amount $i$ (where $S$ is target amount, $N$ is number of coin denominations):
+  * **Base Case:** $dp[0] = 0$ (0 coins needed to make amount 0). Initialize all other $dp[i] = \infty$.
+  * **State Transition Equation:** For each target amount $i$ from $1$ to $S$, try every coin denomination $c \in \text{coins}$ where $c \le i$:
+    $$dp[i] = \min(dp[i], \; dp[i - c] + 1)$$
+- **Coin Order vs. Amount Outer Loop Strategy** —
+  * **Minimizing Coin Count (LC #322):** Loop direction does not alter the minimum count. Iterating $i$ from $1 \dots S$ internally over coins $c$ correctly evaluates optimal subproblems.
+  * **Counting Combinations (LC #518):** Outer loop **must** iterate over `coins`, inner loop over `amount` to prevent counting different orderings/permutations of the same coin set.
+  * **Counting Permutations (LC #377):** Outer loop **must** iterate over `amount`, inner loop over `coins`.
+- **Breadth-First Search (BFS) Alternative ($O(S \cdot N)$ Time, $O(S)$ Space)** —
+  * Treat amounts $0 \dots S$ as nodes in a graph with directed edges connecting $u \to u + c$ for each coin $c$.
+  * Level-order traversal starting from root amount $0$ guarantees finding the shortest path to target amount $S$, enabling early termination as soon as $S$ is reached.
+- **Unreachable Amount Handling** —
+  * If $dp[S]$ remains equal to initial state ($\infty$), return `-1` to signal no valid coin combination exists.
+- **LC #279 and LC #518 Connection** → Coin Change is the definitive foundational problem for unbounded knapsack optimizations. It establishes the $dp[i - c] + 1$ state transition, directly underpinning item-generation variants like LC #279 (Perfect Squares) and combination-counting models like LC #518 (Coin Change II).
+- **Unbounded item selection, 1D target DP array updates, and BFS shortest-path graph equivalences generalize** → This template is the industry baseline blueprint for currency exchange and cash-dispenser algorithms, network packet payload segmentation into MTU sizes, resource allocation optimization under uniform choice costs, and inventory replenishment batching. Master the cycle of: 1) Initialize DP table of size $S+1$ filled with infinity and base case $dp[0] = 0$, 2) Iterate through all sub-amounts $1 \dots S$, 3) Evaluate transition choice $dp[i - c] + 1$ for valid coin face values, 4) Handle invalid impossible targets by checking $\infty$ sentinel values, 5) Compute global minimum items in $O(S \cdot N)$ time.
+
+```cpp
+class Solution {
+public:
+    int coinChange(vector<int>& coins, int amount) {
+        vector<int> dp(amount + 1, amount + 1);
+
+        dp[0] = 0;
+        for(int i = 1; i < dp.size(); i++){
+            for(int coin : coins){
+                if (i - coin >= 0){
+                    dp[i] = min(dp[i], dp[i-coin] + 1);
+                }
+            }
+        }
+        if(dp[amount] == amount + 1) return -1;
+        return dp[amount];
+    }
+};
+```
+
+## Integer Break LC 343
+
+<!-- notecardId: 1784683283323 -->
+
+Given an integer n, break it into the sum of k positive integers, where k >= 2, and maximize the product of those integers.
+
+Return the maximum product you can get.
+
+ 
+
+Example 1:
+
+Input: n = 2
+Output: 1
+Explanation: 2 = 1 + 1, 1 × 1 = 1.
+Example 2:
+
+Input: n = 10
+Output: 36
+Explanation: 10 = 3 + 3 + 4, 3 × 3 × 4 = 36.
+ 
+
+Constraints:
+
+2 <= n <= 58
+
+**Link**: [text](https://leetcode.com/problems/integer-break/)
+
+%
+
+**Pattern:** Dynamic Programming, Greedy Math, Integer Decomposition
+
+**Approach:** Use dynamic programming to find the maximum product obtainable by breaking the integer `n` into at least two positive integers. Create an array `dp` where `dp[i]` represents the maximum product obtainable for integer `i`. Initialize `dp[0] = 0`, `dp[1] = 0`, and `dp[2] = 1`. For each integer `i` from 3 to `n`, iterate through all possible first splits `j` (where `1 <= j < i`) and calculate the maximum product by considering both splitting further (`j * dp[i - j]`) and not splitting further (`j * (i - j)`). Update `dp[i]` with the maximum value found.
+
+**Key Insight:** The key insight is that the maximum product can be obtained by breaking the integer into parts of 2s and 3s, as these yield higher products than larger integers. Specifically, breaking into 3s is generally optimal, with some exceptions for small values of `n`.
+
+**Gotchas:** Be careful with the base cases and ensure that you handle small values of `n` correctly. For example, `n = 2` should return `1`, and `n = 3` should return `2`. Also, consider the mathematical insight that for larger values of `n`, breaking into 3s is optimal, and if a remainder of 1 is left, it is better to use a 4 instead of a 3 and a 1. The confusing thing is that say (i-j) is the remainder. We need to account for if the remainder is broken up and and if it isn't. This is because if the remainder is 1, then we should not break it up and instead use a 4 (3+1) to maximize the product. If the remainder is 2 or 3, we can break it up as is.
+
+**Complexity:** Time: O(n^2) for the dynamic programming approach, where n is the integer to be broken. | Space: O(n) for the `dp` array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Perfect Squares — LC #279 | Find minimum number of square numbers that sum to $N$ → 1D unbounded knapsack DP minimizing term count instead of maximizing multiplicative product. | Yes — integer additive decomposition twin |
+| Coin Change — LC #322 | Compute minimum coins to reach amount $S$ → 1D DP minimizing total items selected under unbounded choice constraints. | Partial — target breakdown state DP |
+| Combination Sum IV — LC #377 | Count combinations that sum to target amount → 1D DP accumulating total permutation paths rather than evaluating product bounds. | Partial — integer partition state DP |
+| Maximize Integer Product — Custom / LC #343 | Break integer $N$ into at least two positive integers to maximize product → 1D DP ($O(N^2)$) or optimal mathematical breakdown into 3s ($O(\log N)$ or $O(1)$). | Target Base Problem |
+
+**How this pattern scales:**
+- **Mathematical Optimization / Greedy Pattern ($O(\log N)$ or $O(1)$ Time, $O(1)$ Space)** —
+  * **Core Lemma:** To maximize the product of integers summing to $N$, factors should be as close to $e \approx 2.718$ as possible, meaning factors of $3$ are mathematically optimal, followed by $2$.
+  * **Rules for $N \ge 4$:**
+    1. Continually break off factors of $3$ as long as the remaining number is not equal to $4$.
+    2. If remainder is $4$, keep it as $2 \times 2$ (since $2 \times 2 = 4 > 3 \times 1$).
+    3. If remainder is $2$, multiply by $2$.
+  * **Base Cases ($N < 4$):**
+    * $N = 2 \implies 1 \times 1 = 1$
+    * $N = 3 \implies 1 \times 2 = 2$
+  * **Mathematical Closed Form Formula:**
+    * If $N \pmod 3 == 0 \implies 3^{N/3}$
+    * If $N \pmod 3 == 1 \implies 3^{(N/3) - 1} \times 4$
+    * If $N \pmod 3 == 2 \implies 3^{N/3} \times 2$
+- **1D Dynamic Programming Alternative ($O(N^2)$ Time, $O(N)$ Space)** —
+  * Let $dp[i]$ represent the maximum product obtained by breaking integer $i$ into at least two parts:
+  * **State Transition Equation:** For each $i$ from $3$ to $N$, iterate $j$ from $1$ to $i-1$:
+    $$dp[i] = \max_{1 \le j < i} \left( \max(j, dp[j]) \times \max(i - j, dp[i - j]) \right)$$
+  * Simplified formulation using single split point $j$:
+    $$dp[i] = \max_{1 \le j < i} \left( j \times \max(i - j, dp[i - j]) \right)$$
+- **LC #279 and LC #322 Connection** → Integer Break adapts the integer partition paradigm from LC #279 (Perfect Squares) and LC #322 (Coin Change). Instead of evaluating minimum term additions or item counts, it maximizes multiplicative product bounds over additive integer splits.
+- **Additive breakdown maximization, greedy factor-3 selection, and integer partition DP generalize** → This template is the industry baseline blueprint for cable/pipe cutting profit maximization algorithms, allocation of bounded budget resources across multiplicative yield channels, memory layout segment partitioning, and combinatorial arithmetic bounds. Master the cycle of: 1) Identify integer breakdown requirements into at least two factors, 2) Apply greedy factor-3 division rules ($3^{k}$) for $O(1)$ / $O(\log N)$ execution, 3) Fall back to 1D DP $dp[i] = \max(j \times \max(i-j, dp[i-j]))$ when arbitrary constraints apply, 4) Handle base bounds $N < 4$ explicitly, 5) Achieve optimal constant or linear time results.
+
+```cpp
+class Solution {
+public:
+    int integerBreak(int n) {
+        vector<int> dp(n + 1, 0);
+        dp[1] = 1;
+        for(int i = 2; i <= n; i++){
+            for(int j = 1; j <= i; j++){
+                if(i - j >= 0) dp[i] = max(dp[i], max(j *dp[i -j], j * (i-j)));
+                //this is the logic, we are trying to break the number i into two parts, j and i-j, and we are trying to find the maximum product of these two parts. 
+                //We are also trying to find the maximum product of j and the maximum product of i-j, which is dp[i-j]. We are also trying to find the maximum product of j and i-j,
+                // which is j * (i-j). We are taking the maximum of these two products and storing it in dp[i].
+                //logically, j * (i - j) would be the max if we dont break up the remainder, and j * dp[i - j] would be the max if we break up the remainder. 
+                //So we are taking the max of these two products and storing it in dp[i].
+            }
+        }
+        return dp[n];
+    }
+};    
+```
+
+## Combination Sum IV LC 377
+
+<!-- notecardId: 1784683643307 -->
+
+Given an array of distinct integers nums and a target integer target, return the number of possible combinations that add up to target.
+
+The test cases are generated so that the answer can fit in a 32-bit integer.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,3], target = 4
+Output: 7
+Explanation:
+The possible combination ways are:
+(1, 1, 1, 1)
+(1, 1, 2)
+(1, 2, 1)
+(1, 3)
+(2, 1, 1)
+(2, 2)
+(3, 1)
+Note that different sequences are counted as different combinations.
+Example 2:
+
+Input: nums = [9], target = 3
+Output: 0
+ 
+
+Constraints:
+
+1 <= nums.length <= 200
+1 <= nums[i] <= 1000
+All the elements of nums are unique.
+1 <= target <= 1000
+ 
+
+Follow up: What if negative numbers are allowed in the given array? How does it change the problem? What limitation we need to add to the question to allow negative numbers?
+
+**Link**: [text](https://leetcode.com/problems/combination-sum-iv/)
+
+%
+
+**Pattern:** Dynamic Programming, Unbounded Knapsack, Counting Combinations
+
+**Approach:** Use dynamic programming to count the number of combinations that sum to the target. Create an array `dp` where `dp[i]` represents the number of combinations that sum to `i`. Initialize `dp[0] = 1` (base case, one way to make zero). For each amount from `1` to `target`, iterate through all numbers in `nums` and update `dp[i]` by adding `dp[i - num]` for each `num` in `nums` that is less than or equal to `i`.
+
+**Key Insight:** The key insight is that the order of numbers matters in this problem, meaning that different sequences of the same numbers are considered distinct combinations. This is different from problems where only unique sets are counted. By iteratively building up the number of combinations for each amount, we can ensure that we account for all possible sequences.
+
+**Gotchas:** Be careful with the order of loops. Since the order of numbers matters, the outer loop should iterate through the target amounts, and the inner loop should iterate through the numbers in `nums`. This ensures that all sequences are counted correctly. Also, ensure that you handle cases where `nums` contains numbers larger than the target. If asked about negatives, the key point to mention is that the problem will change by allowing infinite combinations unless a constraint is added (like limiting the number of elements in the combination or restricting the total sum).
+
+**Complexity:** Time: O(n * m) where n is the target amount and m is the number of distinct integers in `nums`, as we iterate through each amount and for each amount, we check all numbers in `nums`. | Space: O(n) for the `dp` array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Coin Change II — LC #518 | Count unique combinations (order does not matter) → outer loop iterates through coins, inner loop through target amount. | Yes — combination vs permutation DP twin |
+| Coin Change — LC #322 | Find minimum number of coins to reach target amount → state transition takes minimum item counts ($\min(dp[i - c] + 1)$). | Yes — target decomposition min-item twin |
+| Combination Sum — LC #39 | Return all actual unique combination paths → Backtracking / DFS path search instead of path counting DP. | Partial — explicit path enumeration |
+| Climbing Stairs — LC #70 | Count ways to reach step $N$ using steps $[1, 2]$ → identical permutation DP logic with fixed candidate steps $1$ and $2$. | Yes — foundational step-counting base |
+
+**How this pattern scales:**
+- **1D Target Permutation Dynamic Programming ($O(\text{target} \cdot N)$ Time, $O(\text{target})$ Auxiliary Space)** — Let $dp[i]$ represent the number of valid ordered combinations (permutations) that sum up to target $i$:
+  * **Base Case:** $dp[0] = 1$ (there is exactly 1 way to reach target 0: using no numbers).
+  * **State Transition Equation:** For each target amount $i$ from $1$ to $\text{target}$, iterate through every candidate number $x \in \text{nums}$:
+    $$\text{If } i \ge x \implies dp[i] += dp[i - x]$$
+- **Permutations vs. Combinations Loop Ordering** —
+  * **Permutations (LC #377 — Order Matters):** Outer loop iterates over `amount` ($1 \dots \text{target}$), inner loop iterates over `nums`.
+    * *Why:* Position $i$ can end with any valid number $x$, effectively counting sequences like $(1, 3)$ and $(3, 1)$ as distinct outcomes.
+  * **Combinations (LC #518 — Order Does NOT Matter):** Outer loop iterates over `nums`, inner loop iterates over `amount`.
+    * *Why:* Forces numbers to be considered in a fixed order, preventing duplicate permutations of the same multiset.
+- **Handling Integer Overflow Constraints (Language Specific)** —
+  * Intermediate values in $dp[i]$ can exceed 32-bit signed integers ($2^{31} - 1$) even if the final result fits inside integer bounds.
+  * Use 64-bit unsigned integers (`unsigned long long` in C++) or cap values during state accumulation to prevent arithmetic overflow.
+- **LC #70 and LC #518 Connection** → Combination Sum IV generalizes the step-counting principle of LC #70 (Climbing Stairs) to arbitrary step sizes given by an array `nums`. It sits directly adjacent to LC #518 (Coin Change II), serving as the classic interview test for demonstrating loop-order control over **permutations** vs. **combinations**.
+- **1D target DP state propagation, loop-order permutation targeting, and integer partition counting generalize** → This template is the industry baseline blueprint for path-counting in directed acyclic graphs (DAGs), packet layout ordering in networking protocols, user action sequence forecasting, and risk-probability combination models. Master the cycle of: 1) Define $dp[i]$ as total valid sequence paths reaching sum $i$, 2) Initialize base case $dp[0] = 1$, 3) Outer-loop over target $i$ and inner-loop over candidates $x$ to enforce permutation counting, 4) Accumulate $dp[i] += dp[i - x]$ for valid choices, 5) Compute final path permutations in $O(\text{target} \cdot N)$ time.
+
+```cpp
+class Solution {
+public:
+    int combinationSum4(vector<int>& nums, int target) {
+       vector<unsigned int> dp(target + 1, 0); //need to store as unsigned int, because the number of combinations can be very large, and we don't want to overflow the int type.
+       //bound is target + 1, because we want to store the amount of combinaitons you can get up until target
+        dp[0] = 1; //base case, empty function
+
+        for(int i = 1; i <= target; i++){
+            for(int num : nums){
+                if(i >= num) dp[i] += dp[i-num]; //when you pick a number i, you now have to look for all the number of combinatins that can be made with the remaining target, which is i - num. 
+                //So we add the number of combinations that can be made with the remaining target to the current number of combinations for the current target.
+                //these number of combinatiions is what is stored within the memo table.
+            }
+        }
+        return dp[target];
+    }
+};
+```
+
+## Partition Equal Subset Sum LC 416
+
+<!-- notecardId: 1784683856371 -->
+
+Given an integer array nums, return true if you can partition the array into two subsets such that the sum of the elements in both subsets is equal or false otherwise.
+
+ 
+
+Example 1:
+
+Input: nums = [1,5,11,5]
+Output: true
+Explanation: The array can be partitioned as [1, 5, 5] and [11].
+Example 2:
+
+Input: nums = [1,2,3,5]
+Output: false
+Explanation: The array cannot be partitioned into equal sum subsets.
+ 
+
+Constraints:
+
+1 <= nums.length <= 200
+1 <= nums[i] <= 100
+
+**Link**: [text](https://leetcode.com/problems/partition-equal-subset-sum/)
+
+%
+
+**Pattern:** Dynamic Programming, 0/1 Knapsack, Subset Sum
+
+**Approach:** Use dynamic programming to determine if the array can be partitioned into two subsets with equal sum. First, calculate the total sum of the array. If the total sum is odd, return false since it cannot be split evenly. If even, set the target sum to half of the total sum. Create a boolean array `dp` where `dp[i]` indicates whether a subset with sum `i` can be formed from the elements of the array. Initialize `dp[0] = true` (base case). For each number in the array, iterate backwards through the `dp` array from `target` down to the number, updating `dp[i]` to true if `dp[i - num]` is true.
+
+**Key Insight:** The key insight is that this problem can be reduced to a 0/1 knapsack problem, where we are trying to determine if there exists a subset of the given numbers that sums up to half of the total sum. By iteratively building up the possible sums using the elements of the array, we can efficiently check if the target sum can be achieved.
+
+**Gotchas:** Be careful with the initialization of the `dp` array and the direction of iteration. Iterating backwards is crucial to avoid using the same element multiple times in the same iteration. Also, ensure that you handle cases where the total sum is odd, as this immediately disqualifies the possibility of partitioning into equal subsets.
+
+**Complexity:** Time: O(n * target) where n is the number of elements in the array and target is half of the total sum. | Space: O(target) for the `dp` array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Target Sum — LC #494 | Assign `+` or `-` to reach target $S$ → mathematically converts to 0/1 Knapsack subset sum target $\text{target} = (\text{sum} + S) / 2$. | Yes — 0/1 Knapsack subset sum twin |
+| Partition Array Into Two Arrays to Minimize Sum Difference — LC #2035 | Partition $2N$ integers into two subsets of equal size $N$ to minimize sum difference → Meet-in-the-Middle + Binary Search ($O(2^N \cdot N)$) instead of DP due to negative values and large constraints. | Partial — subset partition optimization |
+| Subset Sum — Classic / LC #416 | Determine if any subset sums to target $T$ → pure 0/1 Knapsack boolean reachability DP. | Target Base Problem |
+| Matchsticks to Square — LC #473 | Partition array into 4 equal sum subsets → 0/1 Knapsack extended to 4-way partitioning via Backtracking with Bitmask DP. | Partial — multi-subset partitioning |
+
+**How this pattern scales:**
+- **0/1 Knapsack Boolean Dynamic Programming ($O(N \cdot T)$ Time, $O(T)$ Auxiliary Space)** — Let total sum be $S = \sum \text{nums}$.
+  * **Pruning / Odd Sum Guard:** If $S \pmod 2 \neq 0$, an equal integer partition is impossible $\implies$ return `False` immediately.
+  * **Target Reduction:** The problem reduces to finding whether any subset sums to target $T = S / 2$.
+  * Let $dp[w]$ be a boolean array representing whether sub-target sum $w$ can be formed:
+    1. Initialize boolean array $dp$ of size $T + 1$ with `False`, setting $dp[0] = \text{True}$.
+    2. For each number $num \in \text{nums}$:
+       * **Reverse Inner Loop (Prevents Reuse):** Iterate $w$ backwards from $T$ down to $num$:
+         $$dp[w] = dp[w] \quad \text{OR} \quad dp[w - num]$$
+       * *Why backwards:* Processing $w$ right-to-left ensures each $num$ is used at most **once** (0/1 constraint). Forward iteration would convert the problem into Unbounded Knapsack (allowing infinite copies of $num$).
+    3. Return $dp[T]$.
+
+- **Bitset Optimization ($O(N \cdot T / 64)$ Time, $O(T / 64)$ Auxiliary Space)** —
+  * Represent state reachability using a bitset integer where the $k$-th bit is $1$ if subset sum $k$ is reachable.
+  * Initialize `bits = 1` (bit 0 is active).
+  * For each $num \in \text{nums}$:
+    $$\text{bits} = \text{bits} \quad \mid \quad (\text{bits} \ll num)$$
+  * Return `(bits >> target) & 1 == 1`.
+  * *Why bitsets win:* Bitwise OR and bit-shift operations execute in hardware-accelerated 64-bit word chunks, speeding up runtime by ~64x.
+
+- **LC #494 and LC #473 Connection** → Partition Equal Subset Sum is the canonical gateway problem for 0/1 Knapsack DP. It reduces mathematical equality constraints down to target reachability ($S / 2$), directly providing the underlying reduction model used in LC #494 (Target Sum) and extending to $K$-way subset partitioning in LC #473 (Matchsticks to Square).
+
+- **Total sum target halving, 0/1 knapsack reverse-loop propagation, and bitset shift updates generalize** → This template is the industry baseline blueprint for load balancing across twin server clusters, dual-channel memory allocation, fair payload splitting in logistics, and financial portfolio asset division. Master the cycle of: 1) Verify total sum parity $S \pmod 2 == 0$, 2) Derive half-sum target $T = S / 2$, 3) Allocate boolean DP array of size $T + 1$ with $dp[0] = \text{True}$, 4) Loop backwards $w \text{ from } T \text{ down to } num$ to enforce single-use 0/1 item constraints, 5) Evaluate target reachability in $O(N \cdot T)$ time or via $O(N \cdot T / 64)$ bitset operations.
+
+```cpp
+class Solution {
+public:
+    bool canPartition(vector<int>& nums) {
+        int totalSum = accumulate(nums.begin(), nums.end(), 0);
+        if (totalSum % 2 != 0) return false;
+        int target = totalSum / 2;
+        //if target can be formed for one subset, then the other subset will also have the same sum, because totalSum = 2 * target
+        vector<bool> dp(target + 1, false);
+        dp[0] = true; // base case, sum 0 can always be formed
+
+        for(int num : nums){
+            for(int i = target; i >= num; i--){ //traverse backwards to avoid using the same number multiple times
+                if(dp[i-num]) dp[i] = true; //if we can form the sum i-num, then we can form the sum i by adding num to it
+            }
+        }
+return dp[target];
+    }
+};
+```
+
+## Min Cost Climbing Stairs LC 746
+
+<!-- notecardId: 1784683963216 -->
+
+You are given an integer array cost where cost[i] is the cost of ith step on a staircase. Once you pay the cost, you can either climb one or two steps.
+
+You can either start from the step with index 0, or the step with index 1.
+
+Return the minimum cost to reach the top of the floor.
+
+ 
+
+Example 1:
+
+Input: cost = [10,15,20]
+Output: 15
+Explanation: You will start at index 1.
+- Pay 15 and climb two steps to reach the top.
+The total cost is 15.
+Example 2:
+
+Input: cost = [1,100,1,1,1,100,1,1,100,1]
+Output: 6
+Explanation: You will start at index 0.
+- Pay 1 and climb two steps to reach index 2.
+- Pay 1 and climb two steps to reach index 4.
+- Pay 1 and climb two steps to reach index 6.
+- Pay 1 and climb one step to reach index 7.
+- Pay 1 and climb two steps to reach index 9.
+- Pay 1 and climb one step to reach the top.
+The total cost is 6.
+ 
+
+Constraints:
+
+2 <= cost.length <= 1000
+0 <= cost[i] <= 999
+
+**Link**: [text](https://leetcode.com/problems/min-cost-climbing-stairs/)
+
+%
+
+**Pattern:** Dynamic Programming, Fibonacci Sequence, Minimum Cost Path
+
+**Approach:** Use dynamic programming to find the minimum cost to reach the top of the stairs. Create an array `dp` where `dp[i]` represents the minimum cost to reach step `i`. Initialize `dp[0] = cost[0]` and `dp[1] = cost[1]`. For each step from `2` to `n`, calculate the minimum cost to reach that step by taking the minimum of the cost to reach the previous step plus the cost of that step, or the cost to reach two steps back plus the cost of that step. Finally, return the minimum of the last two steps since you can end on either of them.
+
+**Key Insight:** The key insight is that the problem can be modeled as a dynamic programming problem similar to the Fibonacci sequence, where the cost to reach each step depends on the costs of the previous two steps. By iteratively building up the minimum costs, we can efficiently determine the least expensive path to the top.
+
+**Gotchas:** Be careful with the initialization of the `dp` array and ensure that you handle the case where the cost array has only two elements. Also, remember that you can start from either step 0 or step 1, so you need to consider both options when calculating the final minimum cost.
+
+**Complexity:** Time: O(n) where n is the number of steps, as we iterate through the cost array once. | Space: O(n) for the `dp` array, but can be optimized to O(1) by only keeping track of the last two costs.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Climbing Stairs — LC #70 | Count total unique ways to reach top using 1 or 2 steps → basic state transition ($dp[i] = dp[i-1] + dp[i-2]$) without cost minimization. | Yes — foundational 1D state transition base |
+| House Robber — LC #198 | Maximize total value by picking non-adjacent houses → choice maximization transition ($\max(dp[i-1], dp[i-2] + nums[i])$). | Yes — 1D non-adjacent selection DP |
+| Coin Change — LC #322 | Minimize total coin count to reach target sum $S$ → unbounded knapsack state transition ($\min_{c \in coins}(dp[i - c] + 1)$). | Partial — minimum-step state DP |
+| Minimum Path Sum — LC #64 | Minimize sum along top-left to bottom-right path in a 2D grid → 2D grid cost minimization dynamic programming. | Partial — multidimensional cost-path DP |
+
+**How this pattern scales:**
+- **Cost-Weighted Dynamic Programming ($O(N)$ Time, $O(1)$ Auxiliary Space)** — Let $dp[i]$ represent the minimum cost required to reach step $i$:
+  * You can reach step $i$ either from step $i-1$ (paying `cost[i-1]`) or from step $i-2$ (paying `cost[i-2]`):
+    $$dp[i] = \min(dp[i-1] + \text{cost}[i-1], \; dp[i-2] + \text{cost}[i-2])$$
+  * **Base Conditions:** You can start at index $0$ or index $1$ without paying initial jump fees:
+    $$dp[0] = 0, \quad dp[1] = 0$$
+- **Space Optimization (Two Variables)** —
+  * Since $dp[i]$ only depends on $dp[i-1]$ and $dp[i-2]$, compress memory down to scalar variables `prev2` ($dp[i-2]$) and `prev1` ($dp[i-1]$):
+    1. Initialize `prev2 = 0` and `prev1 = 0`.
+    2. Loop $i$ from $2$ to $N$ (where $N = \text{len}(\text{cost})$):
+       * `curr = min(prev1 + cost[i-1], prev2 + cost[i-2])`
+       * `prev2 = prev1`
+       * `prev1 = curr`
+    3. Return `prev1`.
+- **Top-Down Recursion with Memoization Alternative ($O(N)$ Time, $O(N)$ Space)** —
+  * Define `min_cost(i)` as minimum cost to reach step $i$.
+  * Recursive state: `min_cost(i) = min(min_cost(i-1) + cost[i-1], min_cost(i-2) + cost[i-2])`.
+  * Memoize values in a hash map or array to avoid redundant $O(2^N)$ calculation trees.
+- **LC #70 and LC #198 Connection** → Min Cost Climbing Stairs elevates the foundational 2-step lookback model from LC #70 (Climbing Stairs) by layering additive costs onto each transition, serving as a stepping stone toward non-adjacent cost selection problems like LC #198 (House Robber).
+- **Additive step-cost transitions, 2-variable space compression, and local minimum decision choices generalize** → This template is the industry baseline blueprint for minimum-cost network packet routing through multi-hop node paths, fuel-efficient pipeline transit scheduling, production line batch processing costs, and energy-aware sensor duty cycling. Master the cycle of: 1) Define state transition for incoming path choices ($\min(\text{cost}_1, \text{cost}_2)$), 2) Identify zero-cost entry base bounds, 3) Compress state space to $O(1)$ scalar variables, 4) Accumulate local optimal paths iteratively, 5) Compute global minimum cost in linear time.
+
+```cpp
+class Solution {
+public:
+    int minCostClimbingStairs(vector<int>& cost) {
+        int prev0 = cost[0]; //this is the minCost to reach the 0th step, 
+        //we can either take 1 step from the -1th step or 2 steps from the -2th step, but since we are starting at the 0th step,
+        // we can only take 1 step from the -1th step, which is the cost of the 0th step
+        int prev1 = cost[1]; //this is the minCost to reach the first step
+
+        for(int i = 2; i < cost.size(); i++){
+            int currMin = cost[i] + min(prev0, prev1); //the minCost to reach the ith step is the cost of the ith step plus the minCost to reach the (i-1)th step 
+            //or the (i-2)th step
+            prev0 = prev1; //shift up by 1 for both prev0 and prev1
+            prev1 = currMin;
+        }
+        return min(prev0, prev1); //the minCost can be achieved by taking 2 steps from prev0 or 1 step from prev1
+        
+
+    }
+};
+```
+
+## Palindromic Substrings LC 647
+
+<!-- notecardId: 1784684262630 -->
+
+Given a string s, return the number of palindromic substrings in it.
+
+A string is a palindrome when it reads the same backward as forward.
+
+A substring is a contiguous sequence of characters within the string.
+
+ 
+
+Example 1:
+
+Input: s = "abc"
+Output: 3
+Explanation: Three palindromic strings: "a", "b", "c".
+Example 2:
+
+Input: s = "aaa"
+Output: 6
+Explanation: Six palindromic strings: "a", "a", "a", "aa", "aa", "aaa".
+ 
+
+Constraints:
+
+1 <= s.length <= 1000
+s consists of lowercase English letters.
+
+**Link**: [text](https://leetcode.com/problems/palindromic-substrings/)
+
+%
+
+**Pattern:** Dynamic Programming, Expand Around Center, Palindrome Counting
+
+**Approach:** Use dynamic programming to count the number of palindromic substrings. Create a 2D boolean array `dp` where `dp[i][j]` indicates whether the substring `s[i:j+1]` is a palindrome. Initialize all single-character substrings as palindromes (`dp[i][i] = true`). For substrings of length 2, check if the two characters are equal. For longer substrings, check if the first and last characters are equal and if the substring between them is also a palindrome (`dp[i][j] = (s[i] == s[j]) && dp[i+1][j-1]`). Count all true values in the `dp` array to get the total number of palindromic substrings. Or, instead of using a 2D memo table, you can use the expand around center technique, where you treat each character and each pair of characters as potential centers of palindromes and expand outwards to count all palindromic substrings.
+
+**Key Insight:** The key insight is that a palindrome can be defined recursively: a string is a palindrome if its first and last characters are the same and the substring between them is also a palindrome. By leveraging this property, we can efficiently check for palindromic substrings of increasing lengths.
+
+**Gotchas:** Be careful with the indices when checking substrings and ensure that you handle both odd-length and even-length palindromes. The expand around center technique is often more efficient in terms of space complexity compared to the 2D DP approach, as it only requires constant space.
+
+**Complexity:** Time: O(n^2) where n is the length of the string, as we check all possible centers and expand around them. | Space: O(1) for the expand around center approach, or O(n^2) for the 2D DP approach.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Longest Palindromic Substring — LC #5 | Track maximum length and start index of palindromes instead of counting total occurrences → identical $2N - 1$ center expansion logic. | Yes — expand around center twin |
+| Longest Palindromic Subsequence — LC #516 | Find longest non-contiguous palindromic subsequence → 2D dynamic programming ($O(N^2)$ time/space) matching characters across boundaries. | Partial — dynamic programming sequence search |
+| Valid Palindrome — LC #125 | Check if entire string is a palindrome after removing non-alphanumeric characters → two-pointer contraction from outer edges inward ($O(N)$ time). | Partial — two-pointer palindrome verification |
+| Palindrome Partitioning — LC #131 | Partition string into substrings such that every substring is a palindrome → Backtracking / DFS pre-computed with 2D boolean palindrome lookup table. | Partial — string partitioning with palindrome validation |
+
+**How this pattern scales:**
+- **Expand Around Center Counting ($O(N^2)$ Time, $O(1)$ Auxiliary Space)** — Every palindrome expands symmetrically around its center point:
+  * A string of length $N$ contains $2N - 1$ potential center pivot positions:
+    1. $N$ odd-length centers: centered on character $i$ (e.g., `"a"`, `"aba"`).
+    2. $N - 1$ even-length centers: centered between characters $i$ and $i+1$ (e.g., `"aa"`, `"abba"`).
+- **Two-Pointer Expansion Algorithm Steps** —
+  1. Define helper function `count_palindromes(left, right)`:
+     * While `left >= 0`, `right < len(s)`, and `s[left] == s[right]`:
+       * Increment count by $1$.
+       * Expand outward: `left -= 1`, `right += 1`.
+     * Return total count found for this center.
+  2. Maintain `total_count = 0`.
+  3. Loop $i$ from $0$ to $N - 1$:
+     * Add odd-length expansion count: `total_count += count_palindromes(i, i)`.
+     * Add even-length expansion count: `total_count += count_palindromes(i, i + 1)`.
+  4. Return `total_count`.
+- **Manacher's Algorithm Alternative ($O(N)$ Optimal Time, $O(N)$ Space)** —
+  * Uses previously computed palindrome radii stored in array $P$ to avoid re-evaluating overlapping expansions.
+  * Summing $\sum \lceil P[i] / 2 \rceil$ gives the exact total count of all palindromic substrings in optimal linear time.
+- **LC #5 and LC #131 Connection** → Palindromic Substrings (LC #647) is the exact counting equivalent of LC #5 (Longest Palindromic Substring). Instead of tracking the max substring window `[start : start + max_len]`, every valid expansion step directly increments a running counter. This center expansion test serves as the sub-routine for multi-way string partitioning problems like LC #131 (Palindrome Partitioning).
+- **Center-based expansion, odd/even dual center iteration, and running palindrome counting generalize** → This template is the industry baseline blueprint for string symmetry analysis, DNA sequence inverted repeat detection in genomics, text processing token verification, and pattern matching in data streams. Master the cycle of: 1) Loop through all $2N - 1$ potential center pivots, 2) Expand two pointers outward while mirror characters match, 3) Increment counts on every successful match step, 4) Handle odd and even center parities independently, 5) Compute global substring counts in $O(N^2)$ time with $O(1)$ auxiliary space.
+
+```cpp
+class Solution {
+private:
+    int palindrome(string& s, int l, int r){ //this function will count the number of 
+    //palindromic substrings in the string s, given the left and right pointers
+        int count = 0;
+        while(l >= 0 && r < s.length()){ //this while loop will run until the left pointer 
+        //is greater than or equal to 0 and the right pointer is less than the length of the string
+            if(s[l] != s[r]) break;
+            l--;
+            r++;
+            count++; //increment the count of palindromic substrings
+        }
+        return count;
+    }
+public:
+    int countSubstrings(string s) {
+        int ctr = 0;
+        
+
+        for(int i = 0; i < s.length(); i++){
+            ctr += palindrome(s, i , i); //odd palindrome
+            ctr += palindrome(s, i, i + 1); //even palindrome
+        }
+        return ctr;
+    }
+};
+```
+
+## Nth Tribonacci Number LC 1137
+
+<!-- notecardId: 1784684472214 -->
+
+The Tribonacci sequence Tn is defined as follows: 
+
+T0 = 0, T1 = 1, T2 = 1, and Tn+3 = Tn + Tn+1 + Tn+2 for n >= 0.
+
+Given n, return the value of Tn.
+
+ 
+
+Example 1:
+
+Input: n = 4
+Output: 4
+Explanation:
+T_3 = 0 + 1 + 1 = 2
+T_4 = 1 + 1 + 2 = 4
+Example 2:
+
+Input: n = 25
+Output: 1389537
+ 
+
+Constraints:
+
+0 <= n <= 37
+The answer is guaranteed to fit within a 32-bit integer, ie. answer <= 2^31 - 1.
+
+**Link**: [text](https://leetcode.com/problems/n-th-tribonacci-number/)
+
+%
+
+**Pattern:** Dynamic Programming, Fibonacci Sequence, Linear Recurrence Relation
+
+**Approach:** Use dynamic programming to compute the nth Tribonacci number. Create an array `dp` where `dp[i]` represents the ith Tribonacci number. Initialize the base cases: `dp[0] = 0`, `dp[1] = 1`, and `dp[2] = 1`. For each index from `3` to `n`, calculate `dp[i]` as the sum of the previous three Tribonacci numbers: `dp[i] = dp[i-1] + dp[i-2] + dp[i-3]`. Finally, return `dp[n]`.
+
+**Key Insight:** The key insight is that the Tribonacci sequence is a linear recurrence relation, where each term is defined as the sum of the three preceding terms. By storing previously computed values in an array, we can efficiently compute the nth term without redundant calculations.
+
+**Gotchas:** Be careful with the base cases and ensure that you handle the case where `n` is less than `3`, as these are directly defined. Also, consider optimizing space by only keeping track of the last three computed values instead of storing the entire array.
+
+**Complexity:** Time: O(n) where n is the input number, as we compute each Tribonacci number up to n. | Space: O(1) if we optimize to only keep track of the last three values, otherwise O(n) for the `dp` array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Fibonacci Number — LC #509 | Basic linear recurrence relation ($F_n = F_{n-1} + F_{n-2}$) with 2 base states instead of 3 → identical iterative space-optimization logic. | Yes — 1D linear recurrence relation |
+| Climb Stairs — LC #70 | Count ways to reach $N$-th step using 1 or 2 steps at a time → maps directly to $F_n$ with shifted base cases ($O(N)$ time, $O(1)$ space). | Yes — DP state transition accumulation |
+| House Robber — LC #198 | Maximize non-adjacent house values ($dp[i] = \max(dp[i-1], dp[i-2] + nums[i])$) → state tracking over a sliding $O(1)$ window. | Partial — dynamic programming state tracking |
+| Matrix Block Sum / Fast Power — LC #50 | Matrix exponentiation ($O(\log N)$ time) computing larger recurrence transitions using binary exponentiation on state matrices. | Partial — logarithmic recurrence scale |
+
+**How this pattern scales:**
+- **Constant Space Recurrence ($O(N)$ Time, $O(1)$ Auxiliary Space)** — Every element in a Tribonacci sequence depends strictly on the sum of the preceding 3 numbers:
+  * Sequence recurrence defined as $T_n = T_{n-1} + T_{n-2} + T_{n-3}$ for $n \ge 3$.
+  * Base cases: $T_0 = 0$, $T_1 = 1$, $T_2 = 1$.
+  * Instead of maintaining an entire dynamic programming array of length $N + 1$, maintain only 3 variables representing $T_{i-3}$, $T_{i-2}$, and $T_{i-1}$.
+- **Sliding Window State Rotation Steps** —
+  1. Handle edge base cases:
+     * If $n == 0$, return $0$.
+     * If $n == 1$ or $n == 2$, return $1$.
+  2. Initialize state variables: `a = 0`, `b = 1`, `c = 1`.
+  3. Loop $i$ from $3$ to $N$:
+     * Compute next term: `next_val = a + b + c`.
+     * Rotate state variables forward: `a = b`, `b = c`, `c = next_val`.
+  4. Return `c`.
+- **Matrix Exponentiation Alternative ($O(\log N)$ Time, $O(1)$ Space)** —
+  * Uses matrix transformation matrix $M$ applied to state vector $[T_{n-2}, T_{n-1}, T_n]^T$:
+    $$\begin{bmatrix} T_{n} \\ T_{n-1} \\ T_{n-2} \end{bmatrix} = \begin{bmatrix} 1 & 1 & 1 \\ 1 & 0 & 0 \\ 0 & 1 & 0 \end{bmatrix}^{n-2} \begin{bmatrix} T_2 \\ T_1 \\ T_0 \end{bmatrix}$$
+  * Matrix exponentiation allows calculating $T_n$ for massive inputs ($N \approx 10^9$) in logarithmic $O(\log N)$ steps without numerical overflow.
+- **LC #509 and LC #70 Connection** → N-th Tribonacci Number (LC #1137) is the 3-step generalization of LC #509 (Fibonacci Number) and LC #70 (Climbing Stairs). Instead of tracking a 2-variable window `[a, b]`, expanding the recurrence window to 3 variables `[a, b, c]` handles additional linear dependencies. This principle generalizes directly to $K$-bonacci problems by maintaining a running sum or a queue of size $K$.
+- **Fixed-window state rotation, linear recurrence calculation, and space-optimized dynamic programming generalize** → This template is the baseline blueprint for state machine transitions, financial moving averages, stock trading state tracking, and fixed-history buffer updates in stream processing. Master the cycle of: 1) Identify linear state dependencies, 2) Set up $K$ base variables instead of an array, 3) Compute the next state on each iteration, 4) Shift base variables forward, 5) Compute $N$-step outputs in $O(N)$ time with $O(1)$ space.
+
+```cpp
+class Solution {
+public:
+//
+    int tribonacci(int n) {
+        if(n == 0) return 0;
+        if (n == 1) return 1;
+        if (n == 2) return 1;
+        int dp[n + 1];
+        dp[0] = 0;
+        dp[1] = 1;
+        dp[2] = 1;
+        for(int i = 3; i <= n; i++){
+            dp[i] = dp[i - 3] + dp[i - 2] + dp[i - 1];
+        }
+        return dp[n];
+    }
+};
+```
+
+## Stone Game III LC 1406
+
+<!-- notecardId: 1784684988550 -->
+
+Alice and Bob continue their games with piles of stones. There are several stones arranged in a row, and each stone has an associated value which is an integer given in the array stoneValue.
+
+Alice and Bob take turns, with Alice starting first. On each player's turn, that player can take 1, 2, or 3 stones from the first remaining stones in the row.
+
+The score of each player is the sum of the values of the stones taken. The score of each player is 0 initially.
+
+The objective of the game is to end with the highest score, and the winner is the player with the highest score and there could be a tie. The game continues until all the stones have been taken.
+
+Assume Alice and Bob play optimally.
+
+Return "Alice" if Alice will win, "Bob" if Bob will win, or "Tie" if they will end the game with the same score.
+
+ 
+
+Example 1:
+
+Input: stoneValue = [1,2,3,7]
+Output: "Bob"
+Explanation: Alice will always lose. Her best move will be to take three piles and the score become 6. Now the score of Bob is 7 and Bob wins.
+Example 2:
+
+Input: stoneValue = [1,2,3,-9]
+Output: "Alice"
+Explanation: Alice must choose all the three piles at the first move to win and leave Bob with negative score.
+If Alice chooses one pile her score will be 1 and the next move Bob's score becomes 5. In the next move, Alice will take the pile with value = -9 and lose.
+If Alice chooses two piles her score will be 3 and the next move Bob's score becomes 3. In the next move, Alice will take the pile with value = -9 and also lose.
+Remember that both play optimally so here Alice will choose the scenario that makes her win.
+Example 3:
+
+Input: stoneValue = [1,2,3,6]
+Output: "Tie"
+Explanation: Alice cannot win this game. She can end the game in a draw if she decided to choose all the first three piles, otherwise she will lose.
+ 
+
+Constraints:
+
+1 <= stoneValue.length <= 5 * 104
+-1000 <= stoneValue[i] <= 1000
+
+**Link**: [text](https://leetcode.com/problems/stone-game-iii/)
+
+%
+
+**Pattern:** Dynamic Programming, Game Theory, Minimax Algorithm
+
+**Approach:** Use dynamic programming to determine the optimal score difference between Alice and Bob. Create an array `dp` where `dp[i]` represents the maximum score difference Alice can achieve starting from stone `i`. Initialize `dp[n] = 0` (base case, no stones left). Iterate backwards from the last stone to the first, calculating the maximum score difference for each position by considering taking 1, 2, or 3 stones. For each option, calculate the score difference as the sum of the taken stones minus the opponent's optimal response (`dp[i + k]`). Finally, check the value of `dp[0]` to determine the winner: if it's positive, Alice wins; if negative, Bob wins; if zero, it's a tie.
+
+**Key Insight:** The key insight is that the game can be modeled as a zero-sum game where each player's optimal strategy can be determined by maximizing their own score while minimizing the opponent's score. By calculating the score difference at each step, we can determine the best possible outcome for Alice given that both players play optimally.
+
+**Gotchas:** Be careful with the indexing when calculating the score difference and ensure that you handle cases where there are fewer than 3 stones left. Also, remember to consider all possible moves (taking 1, 2, or 3 stones) at each step.
+
+**Complexity:** Time: O(n) where n is the number of stones, as we iterate through the stone array once. | Space: O(n) for the `dp` array, but can be optimized to O(1) by only keeping track of the last three score differences.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Stone Game — LC #877 | Take 1 pile from either end of the array (front or back) → 2D interval DP ($O(N^2)$) tracking score differences on subarray boundaries `[i..j]`. | Yes — zero-sum game score difference DP |
+| Stone Game II — LC #1140 | Take $1 \le X \le 2M$ piles, updating $M = \max(M, X)$ → 2D state DP ($dp[i][M]$) optimizing relative score advantages from index $i$. | Yes — minimax variable choice game DP |
+| Stone Game VII — LC #1690 | Remove a stone from either end; opponent gets remaining sum → 2D interval DP ($dp[i][j]$) maximizing score difference. | Yes — zero-sum score difference DP |
+| Predict the Winner — LC #486 | Take numbers from ends of array to maximize total score → identical 2D interval game DP logic to LC #877. | Yes — zero-sum game theoretical DP |
+
+**How this pattern scales:**
+- **Zero-Sum Minimax Score Difference DP ($O(N)$ Time, $O(1)$ Auxiliary Space)** — Let $dp[i]$ represent the maximum score advantage (current player's score minus opponent's score) attainable starting from index $i$:
+  * At index $i$, the current player can take $k \in \{1, 2, 3\}$ stones.
+  * Taking $k$ stones gains immediate points $\sum_{m=0}^{k-1} \text{stoneValue}[i + m]$, but leaves the opponent starting at index $i + k$ with maximum advantage $dp[i + k]$.
+  * **State Transition Equation:**
+    $$dp[i] = \max_{1 \le k \le 3} \left( \sum_{m=0}^{k-1} \text{stoneValue}[i + m] - dp[i + k] \right)$$
+- **Space Optimization (3-Variable Sliding Window)** —
+  * Notice that computing $dp[i]$ requires only $dp[i+1]$, $dp[i+2]$, and $dp[i+3]$.
+  * Iterate backwards from $i = N - 1$ down to $0$, maintaining a fixed 3-element lookback window.
+  * **Evaluation Rules at Index 0:**
+    * If $dp[0] > 0 \implies$ Return `"Alice"`.
+    * If $dp[0] < 0 \implies$ Return `"Bob"`.
+    * If $dp[0] == 0 \implies$ Return `"Tie"`.
+- **Handling Out-of-Bounds Transitions** —
+  * Initialize base lookback states beyond the end of array ($i \ge N$) as $0$ score difference.
+  * Ensure loops for $k \in \{1, 2, 3\}$ break early when $i + k > N$.
+- **LC #877 and LC #1140 Connection** → Stone Game III (LC #1406) converts multi-choice game theory into a 1D score-difference DP. Instead of 2D range states required when choices come from both array ends (LC #877) or variable step multipliers (LC #1140), single-direction sequential choices collapse the state space into an $O(1)$ constant lookback window.
+- **Score-difference subtraction (`take - dp[next]`), minimax optimal play, and backward sliding window DP generalize** → This template is the industry baseline blueprint for competitive zero-sum game solvers, dynamic pricing strategy models against reactive competitors, turn-based adversarial resource allocation, and multi-agent decision systems. Master the cycle of: 1) Model game outcomes as relative score differences ($A - B$), 2) Formulate state choice transition as $\max(\text{gain} - dp[\text{next}])$, 3) Iterate backwards from terminal states, 4) Compress lookback state memory to $O(1)$ variables, 5) Evaluate sign of starting state $dp[0]$ to determine winner in linear time.
+
+```cpp
+class Solution {
+public:
+    string stoneGameIII(vector<int>& stoneValue) {
+//         ==========================================================================
+// DRY RUN TRACE: stoneValue = [1, 2, 3, 7] (n = 4)
+// Initial State: dp = [0, 0, 0, 0, 0]  (dp[4] = 0 is the base case)
+// ==========================================================================
+
+// --------------------------------------------------------------------------
+// STEP 1: i = 3 (Evaluating choices for the last stone [7])
+// --------------------------------------------------------------------------
+// * oneStone:   stoneValue[3] - dp[4] 
+//               = 7 - 0 = 7
+// * twoStone:   (Out of bounds condition '3 + 1 < 4' fails) 
+//               = INT_MIN
+// * threeStone: (Out of bounds condition '3 + 2 < 4' fails) 
+//               = INT_MIN
+
+// dp[3] = max(7, max(INT_MIN, INT_MIN)) = 7
+// Current dp array status: [0, 0, 0, 7, 0]
+
+
+// --------------------------------------------------------------------------
+// STEP 2: i = 2 (Evaluating choices for stones [3, 7])
+// --------------------------------------------------------------------------
+// * oneStone:   stoneValue[2] - dp[3] 
+//               = 3 - 7 = -4
+// * twoStone:   (stoneValue[2] + stoneValue[3]) - dp[4] 
+//               = (3 + 7) - 0 = 10
+// * threeStone: (Out of bounds condition '2 + 2 < 4' fails) 
+//               = INT_MIN
+
+// dp[2] = max(-4, max(10, INT_MIN)) = 10
+// Current dp array status: [0, 0, 10, 7, 0]
+
+
+// --------------------------------------------------------------------------
+// STEP 3: i = 1 (Evaluating choices for stones [2, 3, 7])
+// --------------------------------------------------------------------------
+// * oneStone:   stoneValue[1] - dp[2] 
+//               = 2 - 10 = -8
+// * twoStone:   (stoneValue[1] + stoneValue[2]) - dp[3] 
+//               = (2 + 3) - 7 = -2
+// * threeStone: (stoneValue[1] + stoneValue[2] + stoneValue[3]) - dp[4] 
+//               = (2 + 3 + 7) - 0 = 12
+
+// dp[1] = max(-8, max(-2, 12)) = 12
+// Current dp array status: [0, 12, 10, 7, 0]
+
+
+// --------------------------------------------------------------------------
+// STEP 4: i = 0 (Alice's Opening Move! Evaluating full array [1, 2, 3, 7])
+// --------------------------------------------------------------------------
+// * oneStone:   stoneValue[0] - dp[1] 
+//               = 1 - 12 = -11
+// * twoStone:   (stoneValue[0] + stoneValue[1]) - dp[2] 
+//               = (1 + 2) - 10 = -7
+// * threeStone: (stoneValue[0] + stoneValue[1] + stoneValue[2]) - dp[3] 
+//               = (1 + 2 + 3) - 7 = -1
+
+// dp[0] = max(-11, max(-7, -1)) = -1
+// Final dp array status: [-1, 12, 10, 7, 0]
+
+
+// ==========================================================================
+// FINAL EVALUATION
+// ==========================================================================
+// Check dp[0]:
+// dp[0] is -1. Because -1 < 0, Alice has a net disadvantage.
+
+// Output: "Bob"
+
+        vector<int> dp(stoneValue.size() + 1, 0); //for this question, the trick is you have to start from the last stone and work your way down to the first stone, 
+        //because the last stone is the base case, and you can only take 1, 2, or 3 stones at a time, so you have to start from the last stone and work your way down to the first stone.
+        //we will still iterate through every stone and find the maximum score we can get from that stone, but we will use the dp array to store the maximum score we can get from that stone, 
+        //and we will use that to calculate the maximum score we can get from the previous stones.
+        //say we start from the end of stoneVal and work our way down to dp[0]
+        for(int i = stoneValue.size() - 1; i >= 0; i--){
+             int oneStone = INT_MIN; //our three cases, player takes either one, two or three stones
+            int twoStone = INT_MIN;
+            int threeStone =INT_MIN;
+            if(i <= stoneValue.size() - 1){
+                 oneStone = stoneValue[i] - dp[i + 1]; //dp[i + 1] is opponent so essentially, current player takes the stone and then the opponent takes the next stone, so we subtract the opponent's score from the current player's score
+            }
+            if(i + 1 <= stoneValue.size() - 1){
+        twoStone = stoneValue[i] + stoneValue[i+1] - dp[i + 2]; //current player takes two stones, and dp[i + 2] is the opponent's score(this is the optimal score the opponent can have at this moment), 
+        //so we subtract the opponent's score from the current player's score
+
+            }
+            if(i + 2 <= stoneValue.size() - 1){
+            threeStone = stoneValue[i] + stoneValue[i + 1] + stoneValue[i+2] - dp[i+3];
+            }
+            dp[i] = max(oneStone, max(twoStone, threeStone));
+        }
+        if(dp[0] > 0){
+            return "Alice";
+        }
+        else if(dp[0] < 0) return "Bob";
+        else return "Tie";
+    }
+};
+```
+
+## Regular Expression Matching LC 10
+
+<!-- notecardId: 1784685801527 -->
+
+Given an input string s and a pattern p, implement regular expression matching with support for '.' and '*' where:
+
+'.' Matches any single character.​​​​
+'*' Matches zero or more of the preceding element.
+Return a boolean indicating whether the matching covers the entire input string (not partial).
+
+ 
+
+Example 1:
+
+Input: s = "aa", p = "a"
+Output: false
+Explanation: "a" does not match the entire string "aa".
+Example 2:
+
+Input: s = "aa", p = "a*"
+Output: true
+Explanation: '*' means zero or more of the preceding element, 'a'. Therefore, by repeating 'a' once, it becomes "aa".
+Example 3:
+
+Input: s = "ab", p = ".*"
+Output: true
+Explanation: ".*" means "zero or more (*) of any character (.)".
+ 
+
+Constraints:
+
+1 <= s.length <= 20
+1 <= p.length <= 20
+s contains only lowercase English letters.
+p contains only lowercase English letters, '.', and '*'.
+It is guaranteed for each appearance of the character '*', there will be a previous valid character to match.
+
+**Link**: [text](https://leetcode.com/problems/regular-expression-matching/)
+
+%
+
+**Pattern:** Dynamic Programming, String Matching, Recursion with Memoization
+
+**Approach:** Use dynamic programming to determine if the string `s` matches the pattern `p`. Create a 2D boolean array `dp` where `dp[i][j]` indicates whether the first `i` characters of `s` match the first `j` characters of `p`. Initialize `dp[0][0] = true` (empty string matches empty pattern). For patterns that can match an empty string (like "a*"), initialize the first row accordingly. Iterate through each character of `s` and `p`, updating the `dp` table based on the following rules:
+
+- If `p[j-1]` is a letter or '.', check if `s[i-1]` matches `p[j-1]` and set `dp[i][j] = dp[i-1][j-1]`.
+
+- If `p[j-1]` is '*', check two cases:
+  1. Treat '*' as matching zero occurrences of the preceding element: `dp[i][j] = dp[i][j-2]`.
+  2. Treat '*' as matching one or more occurrences if the preceding element matches `s[i-1]`: `dp[i][j] = dp[i-1][j]` if `s[i-1]` matches `p[j-2]`.
+
+Finally, return `dp[s.length()][p.length()]` to determine if the entire string matches the entire pattern.
+
+**Key Insight:** The key insight is that the '*' character allows for flexible matching of the preceding element, which can either be ignored (zero occurrences) or matched multiple times. By breaking down the problem into smaller subproblems and storing results in a DP table, we can efficiently determine if the string matches the pattern.
+
+**Gotchas:** Be careful with the indexing when accessing characters in `s` and `p`, as the DP table is 1-indexed while the strings are 0-indexed. Also, ensure that you handle the case where '*' appears at the beginning of the pattern, which is invalid according to the problem constraints.
+
+**Complexity:** Time: O(m * n) where m is the length of string `s` and n is the length of pattern `p`, as we fill a DP table of size m x n. | Space: O(m * n) for the DP table, but can be optimized to O(n) by using a single row and updating it iteratively.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Wildcard Matching — LC #44 | `*` matches any sequence of characters (standalone), whereas in LC #10 `*` binds to the preceding character to match zero or more occurrences → 2D DP string matching. | Yes — 2D grid string matching twin |
+| Edit Distance — LC #72 | Find minimum operations (insert, delete, replace) to convert string $s_1$ to $s_2$ → 2D grid DP transition comparing character matches against edit choices. | Yes — 2D string matching DP framework |
+| Distinct Subsequences — LC #115 | Count occurrences of pattern $T$ as a subsequence in string $S$ → 2D string matching DP accumulating path counts. | Partial — 2D string sequence DP |
+| Check If String Is Transformable With Substring Operations — LC #1585 | String transformation under sort rules → greedy index tracking instead of non-deterministic string matching DP. | Partial — string matching transformation |
+
+**How this pattern scales:**
+- **2D Dynamic Programming / Memoization ($O(M \cdot N)$ Time, $O(M \cdot N)$ Auxiliary Space)** — Let $M = \text{len}(s)$ and $N = \text{len}(p)$. Let $dp[i][j]$ be a boolean representing whether the suffix $s[i \dots M-1]$ matches pattern suffix $p[j \dots N-1]$:
+  * **Base Cases:**
+    * $dp[M][N] = \text{True}$ (two empty strings match).
+    * $dp[i][N] = \text{False}$ for $i < M$ (non-empty string cannot match empty pattern).
+- **State Transition Rules at Position $(i, j)$** —
+  1. **Character Match Check:**
+     $$\text{first\_match} = (i < M) \quad \text{AND} \quad (s[i] == p[j] \quad \text{OR} \quad p[j] == \text{'.'}) \quad \text{}$$
+  2. **Branch 1 — Star Pattern ($p[j+1] == \text{'*'}$):**
+     * **Option A (Zero Occurrences):** Skip both the preceding character and `*` by transitioning to $dp[i][j+2]$.
+     * **Option B (One or More Occurrences):** If $\text{first\_match}$ is True, consume character $s[i]$ while remaining at pattern position $j$ via $dp[i+1][j]$.
+     * **State Formula:**
+       $$dp[i][j] = dp[i][j+2] \quad \text{OR} \quad (\text{first\_match} \quad \text{AND} \quad dp[i+1][j]) \quad \text{}$$
+  3. **Branch 2 — Normal Character / Dot Match (No Star):**
+     * Must match current character and advance both pointers:
+       $$dp[i][j] = \text{first\_match} \quad \text{AND} \quad dp[i+1][j+1] \quad \text{}$$
+- **1D Row Space Optimization ($O(N)$ Space)** —
+  * Since calculating row $i$ relies only on row $i+1$, compress the 2D boolean table into a single 1D row array `dp` of size $N + 1$, updating right-to-left.
+- **LC #44 and LC #72 Connection** → Regular Expression Matching (LC #10) is the canonical gateway problem for 2D string-matching DP grids. It establishes the dual-branch lookup technique when encountering multi-state wildcard symbols (`*`), laying the exact state-transition foundation used in LC #44 (Wildcard Matching) and LC #72 (Edit Distance).
+- **2D string index grid tracking, lookahead wildcard branching ($p[j+1] == \text{'*'}$), and zero-vs-many match consumption generalize** → This template is the industry baseline blueprint for regex compiler engines, wildcards in database queries (e.g., SQL `LIKE`), filename globbing patterns, and compiler tokenization parsers. Master the cycle of: 1) Represent matching state as dual string pointers $(i, j)$, 2) Look ahead for star modifier operations ($j+1$), 3) Branch choices between zero-use ($j+2$) vs. single-use consumption ($i+1$), 4) Handle base bounds at empty suffix intersections, 5) Return top-level match result $dp[0][0]$ in $O(M \cdot N)$ time.
+
+```cpp
+class Solution {
+public:
+    bool isMatch(string s, string p) {
+        vector<vector<bool>> dp(s.size() + 1, vector<bool>(p.size() + 1, false));
+        if(p.empty()) return s.empty();
+        dp[0][0] = true;
+        for(int i = 1; i < p.length(); i++){
+            if(p[i] == '*' && dp[0][i-1]) dp[0][i+1] = true; //if the pattern has a '*' and the previous character can match the empty string, then the current character can also match the empty string
+        }
+
+        for(int i = 1; i <= s.length(); i++){
+            for(int j = 1; j <= p.length(); j++){
+                if(s[i-1] == p[j-1] || p[j-1] == '.'){ //if the characters match or the pattern has a '.', then the current character can match the previous character
+                    dp[i][j] = dp[i-1][j-1];
+                }
+                else if(p[j-1] == '*'){ //if the pattern has a '*', then we can either ignore the '*' and the previous character, or we can use the '*' to match the current character
+                    dp[i][j] = dp[i][j-2] || (dp[i-1][j] && (s[i-1] == p[j-2] || p[j-2] == '.'));
+                    //dp[i][j-2] is the 0 occurences branch, we ignore the '*' and the previous character, 
+                    //dp[i-1][j] is the 1 or more occurences branch, we check if the previous character in s matches the character before the '*' in p, or if the character before the '*' is a '.', then we can use the '*' to match the current character
+                }
+                else{
+                    dp[i][j] = false;
+                }
+
+            }
+        }
+
+        return dp[s.length()][p.length()];
+    }
+};
+```
+
+## Unique Paths LC 62
+
+<!-- notecardId: 1784686053163 -->
+
+There is a robot on an m x n grid. The robot is initially located at the top-left corner (i.e., grid[0][0]). The robot tries to move to the bottom-right corner (i.e., grid[m - 1][n - 1]). The robot can only move either down or right at any point in time.
+
+Given the two integers m and n, return the number of possible unique paths that the robot can take to reach the bottom-right corner.
+
+The test cases are generated so that the answer will be less than or equal to 2 * 109.
+
+ 
+
+Example 1:
+
+
+Input: m = 3, n = 7
+Output: 28
+Example 2:
+
+Input: m = 3, n = 2
+Output: 3
+Explanation: From the top-left corner, there are a total of 3 ways to reach the bottom-right corner:
+1. Right -> Down -> Down
+2. Down -> Down -> Right
+3. Down -> Right -> Down
+ 
+
+Constraints:
+
+1 <= m, n <= 100
+
+**Link**: [text](https://leetcode.com/problems/unique-paths/)
+
+%
+
+**Pattern:** Dynamic Programming, Combinatorics, Grid Traversal
+
+**Approach:** Use dynamic programming to calculate the number of unique paths in an m x n grid. Create a 2D array `dp` where `dp[i][j]` represents the number of unique paths to reach cell (i, j). Initialize the first row and first column to 1, as there is only one way to reach any cell in the first row (by moving right) or the first column (by moving down). For each cell (i, j), the number of unique paths to that cell is the sum of the unique paths to the cell directly above it (i-1, j) and the cell directly to the left of it (i, j-1). Finally, return `dp[m-1][n-1]`, which contains the total number of unique paths to reach the bottom-right corner.
+
+**Key Insight:** The key insight is that the robot can only move down or right, which means that the number of unique paths to any cell is determined solely by the paths leading to the cells directly above and to the left of it. This creates a simple recurrence relation that can be efficiently computed using dynamic programming.
+
+**Gotchas:** Be careful with the indexing when filling the `dp` array, and ensure that you handle the base cases correctly by initializing the first row and first column. Also, consider optimizing space by using a 1D array instead of a 2D array, as each row only depends on the previous row.
+
+**Complexity:** Time: O(m * n) where m is the number of rows and n is the number of columns, as we fill a 2D array of size m x n. | Space: O(m * n) for the `dp` array, but can be optimized to O(n) by using a single row and updating it iteratively.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Unique Paths II — LC #63 | Grid contains obstacles (`1`) where path count is $0 \to$ identical 2D path accumulation DP, setting $dp[r][c] = 0$ at blocked cells. | Yes — 2D grid path counting with obstacles |
+| Minimum Path Sum — LC #64 | Find path with minimum weight sum instead of counting total paths $\to$ transition takes $\min(dp[r-1][c], dp[r][c-1]) + grid[r][c]$. | Yes — 2D grid path optimization DP |
+| Dungeon Game — LC #174 | Track minimum initial health required to reach bottom-right $\to$ reverse bottom-up 2D DP calculating required health thresholds. | Partial — reverse 2D grid DP optimization |
+| Knight Dialer — LC #935 | Count valid paths on a phone keypad governed by knight move constraints $\to$ 1D/2D state transition path counting DP. | Partial — constrained graph path counting |
+
+**How this pattern scales:**
+- **Dynamic Programming Path Combination ($O(M \cdot N)$ Time, $O(N)$ Auxiliary Space)** — Let $dp[r][c]$ be the number of unique paths from top-left $(0, 0)$ to cell $(r, c)$:
+  * Movement is restricted strictly to **Right** and **Down** steps.
+  * Arrival at cell $(r, c)$ can only originate from top neighbor $(r-1, c)$ or left neighbor $(r, c-1)$.
+  * **State Transition Equation:**
+    $$dp[r][c] = dp[r-1][c] + dp[r][c-1]$$
+- **1D Row Compression Strategy ($O(N)$ Auxiliary Space)** —
+  * Notice that computing current row $r$ depends only on values from current row $r$ (left cell) and previous row $r-1$ (top cell).
+  * Maintain a single 1D array `dp` of size $N$ initialized to $1$s.
+  * Iterate $r$ from $1$ to $M - 1$ and $c$ from $1$ to $N - 1$:
+    $$\text{dp}[c] = \text{dp}[c] + \text{dp}[c-1] \quad (\text{top} + \text{left})$$
+- **Combinatorial / Mathematical Formula Alternative ($O(\min(M, N))$ Time, $O(1)$ Space)** —
+  * Reaching $(M-1, N-1)$ from $(0,0)$ requires exactly $(M - 1)$ Down steps and $(N - 1)$ Right steps, totaling $(M + N - 2)$ total steps.
+  * The problem reduces to choosing $(M - 1)$ Down steps out of $(M + N - 2)$ total moves:
+    $$\text{Total Paths} = \binom{M + N - 2}{M - 1} = \frac{(M + N - 2)!}{(M - 1)! \cdot (N - 1)!}$$
+- **LC #63 and LC #64 Connection** → Unique Paths (LC #62) is the foundational baseline for all 2D grid navigation DP problems. It establishes the standard top-left to bottom-right state accumulation model. Adding grid cell costs transforms it directly into LC #64 (Minimum Path Sum), while introducing impassable cells transforms it into LC #63 (Unique Paths II).
+- **2D grid state accumulation ($dp[r][c] = dp[r-1][c] + dp[r][c-1]$), 1D row buffer compression, and combinatorial grid counting generalize** → This template is the industry baseline blueprint for robot navigation grid mapping, city street route calculation, packet routing in Directed Acyclic Graphs (DAGs), and multi-stage decision trees. Master the cycle of: 1) Identify valid direction vectors (Right/Down), 2) Set base cases along boundaries ($dp[0][c] = 1, dp[r][0] = 1$), 3) Accumulate paths from incoming directions, 4) Compress matrix space to a single row array, 5) Compute final path count at terminal target in $O(M \cdot N)$ time and $O(N)$ space.
+
+```cpp
+class Solution {
+public:
+    int uniquePaths(int m, int n) {
+        vector<vector<int>> dp(m, vector<int>(n, 1));
+        for(int i = 1; i < m; i++){
+            for(int j = 1; j < n; j++){
+                dp[i][j] = dp[i - 1][j] + dp[i][j-1];
+            }
+        }
+        return dp[m-1][n-1];
+    }
+};
+```
+
+## Unique Paths II LC 63
+
+<!-- notecardId: 1784686400041 -->
+
+You are given an m x n integer array grid. There is a robot initially located at the top-left corner (i.e., grid[0][0]). The robot tries to move to the bottom-right corner (i.e., grid[m - 1][n - 1]). The robot can only move either down or right at any point in time.
+
+An obstacle and space are marked as 1 or 0 respectively in grid. A path that the robot takes cannot include any square that is an obstacle.
+
+Return the number of possible unique paths that the robot can take to reach the bottom-right corner.
+
+The testcases are generated so that the answer will be less than or equal to 2 * 109.
+
+ 
+
+Example 1:
+
+
+Input: obstacleGrid = [[0,0,0],[0,1,0],[0,0,0]]
+Output: 2
+Explanation: There is one obstacle in the middle of the 3x3 grid above.
+There are two ways to reach the bottom-right corner:
+1. Right -> Right -> Down -> Down
+2. Down -> Down -> Right -> Right
+Example 2:
+
+
+Input: obstacleGrid = [[0,1],[0,0]]
+Output: 1
+ 
+
+Constraints:
+
+m == obstacleGrid.length
+n == obstacleGrid[i].length
+1 <= m, n <= 100
+obstacleGrid[i][j] is 0 or 1.
+
+**Link**: [text](https://leetcode.com/problems/unique-paths-ii/)
+
+%
+
+**Pattern:** Dynamic Programming, Grid Traversal with Obstacles
+
+**Approach:** Use dynamic programming to calculate the number of unique paths in an m x n grid with obstacles. Create a 2D array `dp` where `dp[i][j]` represents the number of unique paths to reach cell (i, j). Initialize the first cell `dp[0][0]` to 1 if it is not an obstacle; otherwise, set it to 0. For the first row and first column, set `dp[i][0]` and `dp[0][j]` to 1 if there are no obstacles in that row or column; otherwise, set them to 0. For each cell (i, j), if it is not an obstacle, the number of unique paths to that cell is the sum of the unique paths to the cell directly above it (i-1, j) and the cell directly to the left of it (i, j-1). Finally, return `dp[m-1][n-1]`, which contains the total number of unique paths to reach the bottom-right corner. You can overwrite the board to make it so that the numbers on the grid mean how many ways there are to get to that square, and if there is a 1 on the square, then it means that there are 0 ways to get to that square.
+
+**Key Insight:** The key insight is that the robot can only move down or right, and obstacles block certain paths. By treating obstacles as cells with zero paths, we can use the same dynamic programming approach as in Unique Paths (LC #62) while accounting for blocked cells.
+
+**Gotchas:** Be careful with the indexing when filling the `dp` array, and ensure that you handle the base cases correctly by initializing the first row and first column based on the presence of obstacles. Also, consider optimizing space by using a 1D array instead of a 2D array, as each row only depends on the previous row.
+
+**Complexity:** Time: O(m * n) where m is the number of rows and n is the number of columns, as we fill a 2D array of size m x n. | Space: O(m * n) for the `dp` array, but can be optimized to O(n) by using a single row and updating it iteratively.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Unique Paths — LC #62 | Pure grid path counting without obstacles $\to$ identical grid DP transition without conditional zeroing for blocked cells. | Yes — unconstrained 2D path counting base |
+| Minimum Path Sum — LC #64 | Find path with minimum cost sum through weighted cells $\to$ transition takes $\min(\text{top}, \text{left}) + \text{cost}$ instead of path summation. | Yes — 2D grid path optimization with costs |
+| Dungeon Game — LC #174 | Track minimum initial health required to survive grid traversal $\to$ reverse bottom-up 2D DP calculating required entry threshold health. | Partial — reverse 2D grid survival DP |
+| Jump Game II — LC #45 | Min steps to reach array end with variable step capacities $\to$ 1D greedy reachability window optimization. | Partial — 1D array reachability optimization |
+
+**How this pattern scales:**
+- **Dynamic Programming with Obstacle Guards ($O(M \cdot N)$ Time, $O(N)$ Auxiliary Space)** — Let $dp[r][c]$ be the number of unique paths from top-left $(0, 0)$ to cell $(r, c)$:
+  * Movement is restricted strictly to **Right** and **Down** steps.
+  * If cell $(r, c)$ contains an obstacle (`obstacleGrid[r][c] == 1`), set $dp[r][c] = 0$.
+  * Otherwise, $dp[r][c]$ accumulates paths from top neighbor $(r-1, c)$ and left neighbor $(r, c-1)$.
+  * **State Transition Equation:**
+    $$dp[r][c] = \begin{cases} 0 & \text{if } \text{obstacleGrid}[r][c] == 1 \\ dp[r-1][c] + dp[r][c-1] & \text{otherwise} \end{cases}$$
+- **1D Row Compression Strategy ($O(N)$ Auxiliary Space)** —
+  * Maintain a single 1D array `dp` of size $N$ initialized to $0$s.
+  * Initialize start position: `dp[0] = 1` if `obstacleGrid[0][0] == 0` else `0`.
+  * Iterate through grid cells row by row ($r$ from $0$ to $M-1$, $c$ from $0$ to $N-1$):
+    * If `obstacleGrid[r][c] == 1`: set `dp[c] = 0` (blockage resets available path count to zero).
+    * Else if $c > 0$: update `dp[c] += dp[c-1]` (accumulates left cell paths into running top cell value).
+- **Edge Case & Boundary Guard Rules** —
+  * If starting cell `obstacleGrid[0][0] == 1` or target cell `obstacleGrid[M-1][N-1] == 1`, return $0$ immediately.
+  * Obstacles along the top row ($r=0$) or first column ($c=0$) zero out all subsequent cells along that edge since movement is unidirectional.
+- **LC #62 and LC #64 Connection** → Unique Paths II (LC #63) extends LC #62 (Unique Paths) by breaking pure combinatorial mathematical formulas ($\binom{M+N-2}{M-1}$) through dynamic obstacle placement. Replacing simple summation with obstacle-guarded state transitions models real-world grid constraints, forming the intermediate bridge to weighted path optimizations like LC #64 (Minimum Path Sum).
+- **Conditional state reset (`dp[c] = 0` on obstacle), top-left to bottom-right DAG reachability, and 1D buffer space compression generalize** → This template is the industry baseline blueprint for autonomous robot obstacle avoidance, GPS routing over impassable road closures, game map pathfinding with un-traversable terrain, and network packet routing around failed node infrastructure. Master the cycle of: 1) Check start/end target validity, 2) Set zero-value state traps for obstacle coordinates, 3) Accumulate paths from valid incoming directions (Right/Down), 4) Compress matrix space to a single 1D array, 5) Return `dp[N-1]` in $O(M \cdot N)$ time and $O(N)$ auxiliary space.
+
+```cpp
+class Solution {
+public:
+    int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
+        if (obstacleGrid[0][0] == 1) return 0;
+        obstacleGrid[0][0] = 1;
+        for(int i = 1; i < obstacleGrid.size(); i++){
+            if(obstacleGrid[i][0] == 1 || obstacleGrid[i - 1][0] == 0 ) {
+                obstacleGrid[i][0] = 0; //all before that are 0 means everything later in the top row/side col should be 0'd out too
+            }
+            else obstacleGrid[i][0] = 1;
+        }
+        for(int i = 1; i < obstacleGrid[0].size(); i++){
+            if(obstacleGrid[0][i] == 1 || obstacleGrid[0][i - 1] == 0 ) {
+                obstacleGrid[0][i] = 0;
+            }
+            else obstacleGrid[0][i] = 1;
+        }
+
+        for(int i = 1; i < obstacleGrid.size(); i++){
+            for(int j = 1; j < obstacleGrid[0].size(); j++){
+                if(obstacleGrid[i][j] == 1) obstacleGrid[i][j] = 0;
+                else obstacleGrid[i][j] = obstacleGrid[i-1][j] + obstacleGrid[i][j-1];
+            }
+        }
+        return obstacleGrid[obstacleGrid.size() - 1][obstacleGrid[0].size() - 1];
+    }
+};
+```
+
+## Minimum Path Sum LC 64
+
+<!-- notecardId: 1784686924205 -->
+
+Given a m x n grid filled with non-negative numbers, find a path from top left to bottom right, which minimizes the sum of all numbers along its path.
+
+Note: You can only move either down or right at any point in time.
+
+ 
+
+Example 1:
+
+
+Input: grid = [[1,3,1],[1,5,1],[4,2,1]]
+Output: 7
+Explanation: Because the path 1 → 3 → 1 → 1 → 1 minimizes the sum.
+Example 2:
+
+Input: grid = [[1,2,3],[4,5,6]]
+Output: 12
+ 
+
+Constraints:
+
+m == grid.length
+n == grid[i].length
+1 <= m, n <= 200
+0 <= grid[i][j] <= 200
+
+**Link**: [text](https://leetcode.com/problems/minimum-path-sum/)
+
+%
+
+**Pattern:** Dynamic Programming, Grid Traversal with Cost Minimization
+
+**Approach:** Use dynamic programming to calculate the minimum path sum in an m x n grid. Create a 2D array `dp` where `dp[i][j]` represents the minimum path sum to reach cell (i, j). Initialize the first cell `dp[0][0]` to `grid[0][0]`. For the first row and first column, set `dp[i][0]` and `dp[0][j]` to the cumulative sum of the grid values along that row or column. For each cell (i, j), if it is not an obstacle, the minimum path sum to that cell is the minimum of the path sums to the cell directly above it (i-1, j) and the cell directly to the left of it (i, j-1), plus the value of `grid[i][j]`. Finally, return `dp[m-1][n-1]`, which contains the minimum path sum to reach the bottom-right corner.
+
+**Key Insight:** The key insight is that the robot can only move down or right, and the minimum path sum to any cell is determined solely by the minimum path sums to the cells directly above and to the left of it. This creates a simple recurrence relation that can be efficiently computed using dynamic programming.
+
+**Gotchas:** Be careful with the indexing when filling the `dp` array, and ensure that you handle the base cases correctly by initializing the first row and first column. Also, consider optimizing space by using a 1D array instead of a 2D array, as each row only depends on the previous row.
+
+**Complexity:** Time: O(m * n) where m is the number of rows and n is the number of columns, as we fill a 2D array of size m x n. | Space: O(m * n) for the `dp` array, but can be optimized to O(n) by using a single row and updating it iteratively.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Unique Paths — LC #62 | Count total unique ways to reach target without weights $\to$ transition sums paths ($dp[r][c] = \text{top} + \text{left}$) instead of taking minimum cost. | Yes — 2D grid path traversal base |
+| Unique Paths II — LC #63 | Count paths with impassable obstacles $\to$ transition sets $dp[r][c] = 0$ on blocked cells while accumulating paths from valid neighbors. | Yes — 2D grid path traversal with obstacles |
+| Path with Maximum Gold — LC #1212 | Move in 4 directions to collect max gold without revisiting cells $\to$ backtracking / DFS search rather than 2D DAG dynamic programming. | Partial — 2D grid path optimization with DFS |
+| Dungeon Game — LC #174 | Calculate minimum initial health required to survive traversal $\to$ reverse bottom-up 2D DP calculating required entry health thresholds. | Partial — reverse 2D grid path optimization |
+
+**How this pattern scales:**
+- **Dynamic Programming Path Cost Minimization ($O(M \cdot N)$ Time, $O(N)$ Auxiliary Space)** — Let $dp[r][c]$ be the minimum path sum from top-left $(0, 0)$ to cell $(r, c)$:
+  * Movement is restricted strictly to **Right** and **Down** steps.
+  * Arrival at cell $(r, c)$ must originate from top neighbor $(r-1, c)$ or left neighbor $(r, c-1)$.
+  * **State Transition Equation:**
+    $$dp[r][c] = \min(dp[r-1][c], dp[r][c-1]) + \text{grid}[r][c]$$
+- **1D Row Compression Strategy ($O(N)$ Auxiliary Space)** —
+  * Maintain a single 1D array `dp` of size $N$ initialized to infinity ($\infty$).
+  * Initialize start position: `dp[0] = grid[0][0]`.
+  * For the first row ($r=0$), initialize boundary running sums: `dp[c] = dp[c-1] + grid[0][c]`.
+  * Iterate through subsequent rows ($r$ from $1$ to $M-1$):
+    * For column $0$: update `dp[0] += grid[r][0]` (can only come from top cell).
+    * For columns $c$ from $1$ to $N-1$: update `dp[c] = min(dp[c], dp[c-1]) + grid[r][c]`.
+- **In-Place Space Optimization ($O(1)$ Auxiliary Space)** —
+  * If modifying the input grid is allowed, overwrite `grid[r][c]` directly with the accumulated minimum path cost, eliminating external memory usage entirely.
+- **LC #62, LC #63, and LC #174 Connection** → Minimum Path Sum (LC #64) completes the core trilogy of top-left to bottom-right 2D grid DP problems (LC #62 $\to$ LC #63 $\to$ LC #64). It transitions from pure path counting to weighted optimization, forming the direct structural foundation for reverse survival DP problems like LC #174 (Dungeon Game).
+- **2D grid state accumulation ($\min(\text{top}, \text{left}) + \text{cost}$), boundary prefix initialization, and 1D/in-place space compression generalize** → This template is the industry baseline blueprint for dynamic time warping (DTW) in speech recognition, image seam carving for content-aware resizing, cost-aware network packet routing, and robot energy-efficient path planning. Master the cycle of: 1) Define state as optimal path cost to position $(r, c)$, 2) Initialize top and left boundary prefix sums, 3) Compute interior min-cost choices from valid incoming edges, 4) Compress matrix space to a single 1D row buffer or mutate in-place, 5) Return `dp[N-1]` in $O(M \cdot N)$ time and $O(N)$ auxiliary space.
+
+```cpp
+class Solution {
+public:
+    int minPathSum(vector<vector<int>>& grid) {
+        for(int i = 1; i < grid.size(); i++){
+            grid[i][0] += grid[i-1][0];
+        }
+        for(int i = 1; i < grid[0].size(); i++){
+            grid[0][i] += grid[0][i-1];
+        }
+
+        for(int i = 1; i < grid.size(); i++){
+            for(int j = 1; j < grid[0].size(); j++){
+                grid[i][j] = min(grid[i][j] + grid[i-1][j], grid[i][j] + grid[i][j-1]);
+            }
+        }
+
+        return grid[grid.size() - 1][grid[0].size() - 1];
+    }
+};
+```
+
+## Edit Distance LC 72
+
+<!-- notecardId: 1784687765849 -->
+
+Given two strings word1 and word2, return the minimum number of operations required to convert word1 to word2.
+
+You have the following three operations permitted on a word:
+
+Insert a character
+Delete a character
+Replace a character
+ 
+
+Example 1:
+
+Input: word1 = "horse", word2 = "ros"
+Output: 3
+Explanation: 
+horse -> rorse (replace 'h' with 'r')
+rorse -> rose (remove 'r')
+rose -> ros (remove 'e')
+Example 2:
+
+Input: word1 = "intention", word2 = "execution"
+Output: 5
+Explanation: 
+intention -> inention (remove 't')
+inention -> enention (replace 'i' with 'e')
+enention -> exention (replace 'n' with 'x')
+exention -> exection (replace 'n' with 'c')
+exection -> execution (insert 'u')
+ 
+
+Constraints:
+
+0 <= word1.length, word2.length <= 500
+word1 and word2 consist of lowercase English letters.
+
+**Link**: [text](https://leetcode.com/problems/edit-distance/)
+
+%
+
+**Pattern:** Dynamic Programming, String Transformation
+
+**Approach:** Use dynamic programming to calculate the minimum edit distance between two strings. Create a 2D array `dp` where `dp[i][j]` represents the minimum number of operations required to convert the first `i` characters of `word1` to the first `j` characters of `word2`. Initialize the first row and first column based on the number of insertions or deletions needed to convert an empty string to the other string. For each cell (i, j), if the characters `word1[i-1]` and `word2[j-1]` match, set `dp[i][j] = dp[i-1][j-1]`. If they do not match, consider the three possible operations (insert, delete, replace) and take the minimum of those operations plus one. Finally, return `dp[word1.length()][word2.length()]`, which contains the minimum edit distance.
+
+**Key Insight:** The key insight is that the edit distance can be broken down into smaller subproblems based on the last characters of the strings. By considering the three possible operations (insert, delete, replace) and using dynamic programming to store intermediate results, we can efficiently compute the minimum number of operations required.
+
+**Gotchas:** Be careful with the indexing when filling the `dp` array, and ensure that you handle the base cases correctly by initializing the first row and first column. Also, consider optimizing space by using a 1D array instead of a 2D array, as each row only depends on the previous row.
+
+**Complexity:** Time: O(m * n) where m is the length of `word1` and n is the length of `word2`, as we fill a 2D array of size m x n. | Space: O(m * n) for the `dp` array, but can be optimized to O(n) by using a single row and updating it iteratively.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Regular Expression Matching — LC #10 | Match strings with wildcard operators (`*`, `.`) $\to$ 2D string DP with lookahead branching on star matches instead of edit costs. | Yes — 2D string matching DP framework |
+| Wildcard Matching — LC #44 | Match strings with single/multi-character wildcards (`?`, `*`) $\to$ 2D string matching DP tracking zero-or-more character consumption. | Yes — 2D string matching DP framework |
+| One Edit Distance — LC #161 | Determine if two strings are exactly one edit apart $\to$ two-pointer single-pass check ($O(N)$ time, $O(1)$ space) without full DP table. | Partial — simplified single-edit string check |
+| Delete Operation for Two Strings — LC #583 | Minimum deletions to make two strings equal $\to$ special case of Edit Distance where insert/replace operations are omitted or costs differ. | Yes — 2D string edit distance variant |
+
+**How this pattern scales:**
+- **2D Dynamic Programming / Levenshtein Distance ($O(M \cdot N)$ Time, $O(N)$ Auxiliary Space)** — Let $M = \text{len}(\text{word1})$ and $N = \text{len}(\text{word2})$. Let $dp[i][j]$ be the minimum edit distance to transform substring $\text{word1}[0 \dots i-1]$ into $\text{word2}[0 \dots j-1]$:
+  * **Base Cases:**
+    * $dp[i][0] = i$ for $0 \le i \le M$ (deleting all $i$ characters from $\text{word1}$).
+    * $dp[0][j] = j$ for $0 \le j \le N$ (inserting all $j$ characters into $\text{word1}$).
+- **State Transition Rules at Position $(i, j)$** —
+  1. **Character Match ($\text{word1}[i-1] == \text{word2}[j-1]$):**
+     * No edit operation needed; carry over previous edit count:
+       $$dp[i][j] = dp[i-1][j-1]$$
+  2. **Character Mismatch ($\text{word1}[i-1] \neq \text{word2}[j-1]$):**
+     * Take the minimum of three allowed edit operations plus cost $1$:
+       * **Insert:** $dp[i][j-1] + 1$
+       * **Delete:** $dp[i-1][j] + 1$
+       * **Replace:** $dp[i-1][j-1] + 1$
+     * **State Formula:**
+       $$dp[i][j] = 1 + \min(dp[i][j-1], \; dp[i-1][j], \; dp[i-1][j-1])$$
+- **1D Row Space Optimization ($O(N)$ Auxiliary Space)** —
+  * Notice that calculating row $i$ relies only on values from current row $i$ and previous row $i-1$.
+  * Compress the $M \times N$ matrix into a single 1D array `dp` of size $N + 1$, maintaining a single variable `prev` to store the diagonal value $dp[i-1][j-1]$ before overwriting.
+- **LC #10, LC #44, and LC #583 Connection** → Edit Distance (LC #72) is the ultimate classic benchmark for 2D sequence alignment DP. It establishes the foundational $3$-way edit decision tree ($\text{Insert} \mid \text{Delete} \mid \text{Replace}$) that directly generalizes to biological sequence alignment algorithms (Needleman-Wunsch & Smith-Waterman) and simplified distance problems like LC #583 (Delete Operation for Two Strings).
+- **2D string comparison grid, 3-way decision branching ($\min(\text{insert}, \text{delete}, \text{replace}) + 1$), and diagonal match bypass generalize** → This template is the industry baseline blueprint for spell checkers, auto-correct systems, fuzzy string search algorithms, DNA/RNA alignment in bioinformatics, and git diff tool file comparison logic. Master the cycle of: 1) Represent string alignment state as dual index pointers $(i, j)$, 2) Establish base cases along boundaries for empty string alignment, 3) Skip costs on matching characters, 4) Branch across insert, delete, and replace choices on mismatch, 5) Compute optimal transform cost $dp[M][N]$ in $O(M \cdot N)$ time and $O(N)$ auxiliary space.
+
+```cpp
+class Solution {
+public:
+    int minDistance(string word1, string word2) {
+        int n = word1.length();
+        int m = word2.length();
+        if(n == 0) return m;
+        if (m == 0) return n;
+        vector<vector<int>> dp(n + 1, vector<int> (m + 1, 0)); //dp[i][j] = min distance to convert word1[0..i-1] to word2[0..j-1]
+
+        dp[0][0] = 0; //base case, if both strings are empty, distance is 0
+
+        for(int i = 1; i <= n; i++){
+            dp[i][0] = i; //if word2 is empty, we need to delete all characters from word1
+        }
+        for(int i = 1; i <= m; i++){
+           dp[0][i] = i; //if word1 is empty, we need to insert all characters from word2
+        }
+
+        for(int i = 1; i <= n ; i++){
+            for(int j = 1; j <= m; j++){
+                if(word1[i-1] == word2[j-1]){
+                    dp[i][j] = dp[i-1][j-1]; //if the characters are the same, we don't need to do anything
+                }
+                else{
+                    dp[i][j] = 1 + min({dp[i-1][j], dp[i][j-1], dp[i-1][j-1]}); //if the characters are different, we need to either delete, insert, or replace a character
+                    // dp[i-1][j] = delete, dp[i][j-1] = insert, dp[i-1][j-1] = replace
+                    //i-1 is the previous character in word1, j-1 is the previous character in word2, so we are looking at the minimum distance to convert the previous characters and adding 1 for the current operation
+                }
+            }
+        }
+
+        return dp[n][m];
+    }
+};
+```
+
+## Interleaving String LC 97
+
+<!-- notecardId: 1784687973763 -->
+
+Given strings s1, s2, and s3, find whether s3 is formed by an interleaving of s1 and s2.
+
+An interleaving of two strings s and t is a configuration where s and t are divided into n and m substrings respectively, such that:
+
+s = s1 + s2 + ... + sn
+t = t1 + t2 + ... + tm
+|n - m| <= 1
+The interleaving is s1 + t1 + s2 + t2 + s3 + t3 + ... or t1 + s1 + t2 + s2 + t3 + s3 + ...
+Note: a + b is the concatenation of strings a and b.
+
+ 
+
+Example 1:
+
+
+Input: s1 = "aabcc", s2 = "dbbca", s3 = "aadbbcbcac"
+Output: true
+Explanation: One way to obtain s3 is:
+Split s1 into s1 = "aa" + "bc" + "c", and s2 into s2 = "dbbc" + "a".
+Interleaving the two splits, we get "aa" + "dbbc" + "bc" + "a" + "c" = "aadbbcbcac".
+Since s3 can be obtained by interleaving s1 and s2, we return true.
+Example 2:
+
+Input: s1 = "aabcc", s2 = "dbbca", s3 = "aadbbbaccc"
+Output: false
+Explanation: Notice how it is impossible to interleave s2 with any other string to obtain s3.
+Example 3:
+
+Input: s1 = "", s2 = "", s3 = ""
+Output: true
+ 
+
+Constraints:
+
+0 <= s1.length, s2.length <= 100
+0 <= s3.length <= 200
+s1, s2, and s3 consist of lowercase English letters.
+ 
+
+Follow up: Could you solve it using only O(s2.length) additional memory space?
+
+**Link**: [text](https://leetcode.com/problems/interleaving-string/)
+
+%
+
+**Pattern:** Dynamic Programming, String Interleaving
+
+**Approach:** Use dynamic programming to determine if `s3` can be formed by interleaving `s1` and `s2`. Create a 2D array `dp` where `dp[i][j]` represents whether the first `i` characters of `s1` and the first `j` characters of `s2` can interleave to form the first `i + j` characters of `s3`. Initialize the base case where both strings are empty. For each cell (i, j), check if the current character of `s3` matches the current character of either `s1` or `s2`, and update the DP table accordingly. Finally, return `dp[s1.length()][s2.length()]`, which indicates whether the entire strings can interleave to form `s3`.
+
+**Key Insight:** The key insight is that the interleaving condition can be checked incrementally by comparing characters of `s1`, `s2`, and `s3`. If the current character of `s3` matches the current character of `s1`, we can move forward in `s1`; if it matches `s2`, we can move forward in `s2`. This allows us to build a DP table that captures all valid interleaving combinations.
+
+**Gotchas:** Be careful with the indexing when filling the `dp` array, and ensure that you handle the base cases correctly. Also, consider optimizing space by using a 1D array instead of a 2D array, as each row only depends on the previous row.
+
+**Complexity:** Time: O(m * n) where m is the length of `s1` and n is the length of `s2`, as we fill a 2D array of size m x n. | Space: O(m * n) for the `dp` array, but can be optimized to O(n) by using a single row and updating it iteratively.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Edit Distance — LC #72 | Transform one string to another using insert/delete/replace operations $\to$ 2D grid DP choosing min operations on mismatch instead of dual character matching. | Yes — 2D string matching DP framework |
+| Distinct Subsequences — LC #115 | Count total ways string $S$ forms subsequence $T \to$ 2D string matching DP accumulating path counts instead of evaluating boolean reachability. | Yes — 2D string character alignment DP |
+| Regular Expression Matching — LC #10 | Match string against pattern containing wildcards $\to$ 2D string DP with lookahead branching on star operator matches. | Yes — 2D string matching DP framework |
+| Merge Strings Alternately — LC #1768 | Interleave strings strictly alternating character by character $\to$ two-pointer single pass ($O(N)$ time, $O(N)$ space) without DP state choices. | Partial — deterministic character interleaving |
+
+**How this pattern scales:**
+- **2D Dynamic Programming / Grid Interleaving ($O(M \cdot N)$ Time, $O(N)$ Auxiliary Space)** — Let $M = \text{len}(s1)$ and $N = \text{len}(s2)$. If $\text{len}(s3) \neq M + N$, return `False` immediately. Let $dp[i][j]$ be a boolean representing whether $s3[0 \dots i+j-1]$ can be formed by interleaving $s1[0 \dots i-1]$ and $s2[0 \dots j-1]$:
+  * **Base Cases:**
+    * $dp[0][0] = \text{True}$ (two empty strings interleave into an empty string).
+    * First column ($j=0$): $dp[i][0] = dp[i-1][0] \quad \text{AND} \quad (s1[i-1] == s3[i-1])$.
+    * First row ($i=0$): $dp[0][j] = dp[0][j-1] \quad \text{AND} \quad (s2[j-1] == s3[j-1])$.
+- **State Transition Rules at Position $(i, j)$** —
+  * To form character $s3[i+j-1]$, the character can originate either from $s1[i-1]$ or $s2[j-1]$:
+    1. **Option 1 (From $s1$):** Previous state $dp[i-1][j]$ is True **AND** $s1[i-1] == s3[i+j-1]$.
+    2. **Option 2 (From $s2$):** Previous state $dp[i][j-1]$ is True **AND** $s2[j-1] == s3[i+j-1]$.
+  * **State Formula:**
+    $$dp[i][j] = (dp[i-1][j] \quad \text{AND} \quad s1[i-1] == s3[i+j-1]) \quad \text{OR} \quad (dp[i][j-1] \quad \text{AND} \quad s2[j-1] == s3[i+j-1])$$
+- **1D Row Space Optimization ($O(N)$ Auxiliary Space)** —
+  * Notice that computing row $i$ relies only on values from current row $i$ (left cell $dp[j-1]$) and previous row $i-1$ (top cell $dp[j]$).
+  * Compress the $(M+1) \times (N+1)$ matrix into a single 1D boolean array `dp` of size $N + 1$, updating sequentially for each character in $s1$.
+- **LC #72 and LC #115 Connection** → Interleaving String (LC #97) maps 2-string character selection onto a 2D grid path reachability problem. Moving **Down** ($i+1$) consumes a character from $s1$, while moving **Right** ($j+1$) consumes a character from $s2$. This path selection over dual sequence inputs establishes the core boolean grid traversal structure used in sequence alignment (LC #72) and subsequence counting (LC #115).
+- **Dual-string pointer grid state ($dp[i][j]$), 2-choice character origin branching ($s1$ vs $s2$), and 1D boolean row compression generalize** → This template is the industry baseline blueprint for multi-stream packet merging in network protocols, Git branch history merging verification, audio/video track interleaving validation, and multi-source event stream processing. Master the cycle of: 1) Verify string length invariants ($|s3| = |s1| + |s2|$), 2) Set up 2D grid representing character usage counts $(i, j)$, 3) Initialize single-source edge paths, 4) Branch reachability across valid source matches, 5) Compute terminal match $dp[M][N]$ in $O(M \cdot N)$ time and $O(N)$ auxiliary space.
+
+```cpp
+class Solution {
+public:
+    bool isInterleave(string s1, string s2, string s3) {
+        if(s1.length() + s2.length() != s3.length()) return false;
+
+        //make a 2d dp array, where dp[i][j] is true if s3[0..i+j-1] is an interleaving of s1[0..i-1] and s2[0..j-1]
+        vector<vector<bool>> dp(s1.length() + 1, vector<bool>(s2.length() + 1, false));
+
+        dp[0][0] = true; //base case
+
+        for(int i = 1; i < dp.size(); i++){
+            dp[i][0] = dp[i-1][0] && s1[i-1] == s3[i-1]; //if the previous state is true and the current character in s1 matches the current character in s3, then the current state is true
+        }
+
+        for(int i = 1; i < dp[0].size(); i++){
+            dp[0][i] = dp[0][i-1] && s2[i-1] == s3[i-1]; //if the previous state is true and the current character in s2 matches the current character in s3, then the current state is true
+        }
+        for(int i = 1; i < dp.size(); i++){
+            for(int j = 1; j < dp[0].size(); j++){
+                dp[i][j] = (dp[i-1][j] && s1[i-1] == s3[i+j-1]) || (dp[i][j-1] && s2[j-1] == s3[i+j-1]);
+                 //if the previous state is true and the current character in s1 or s2 matches the current character in s3, then the current state is true
+            }
+        }
+
+
+
+        return dp[s1.length()][s2.length()];
+    }
+};
+```
+
+## Distinct Subsequences LC 115
+
+<!-- notecardId: 1784688217341 -->
+
+Given two strings s and t, return the number of distinct subsequences of s which equals t.
+
+The test cases are generated so that the answer fits on a 32-bit signed integer.
+
+ 
+
+Example 1:
+
+Input: s = "rabbbit", t = "rabbit"
+Output: 3
+Explanation:
+As shown below, there are 3 ways you can generate "rabbit" from s.
+rabbbit
+rabbbit
+rabbbit
+Example 2:
+
+Input: s = "babgbag", t = "bag"
+Output: 5
+Explanation:
+As shown below, there are 5 ways you can generate "bag" from s.
+babgbag
+babgbag
+babgbag
+babgbag
+babgbag
+ 
+
+Constraints:
+
+1 <= s.length, t.length <= 1000
+s and t consist of English letters.
+
+**Link**: [text](https://leetcode.com/problems/distinct-subsequences/)
+
+%
+
+**Pattern:** Dynamic Programming, String Subsequence Counting
+
+**Approach:** Use dynamic programming to count the number of distinct subsequences of `s` that equal `t`. Create a 2D array `dp` where `dp[i][j]` represents the number of distinct subsequences of the first `i` characters of `s` that equal the first `j` characters of `t`. Initialize the first column to 1, as there is one way to form an empty string from any prefix of `s`. For each cell (i, j), if the characters `s[i-1]` and `t[j-1]` match, set `dp[i][j] = dp[i-1][j-1] + dp[i-1][j]`, which accounts for both using and not using the current character. If they do not match, set `dp[i][j] = dp[i-1][j]`, which means we skip the current character in `s`. Finally, return `dp[s.length()][t.length()]`, which contains the total number of distinct subsequences.
+
+**Key Insight:** The key insight is that when the characters match, we have two choices: include the character in the subsequence or exclude it. When they do not match, we can only exclude the character from `s`. This leads to a recurrence relation that can be efficiently computed using dynamic programming.
+
+**Gotchas:** Be careful with the indexing when filling the `dp` array, and ensure that you handle the base cases correctly. Also, consider optimizing space by using a 1D array instead of a 2D array, as each row only depends on the previous row.
+
+**Complexity:** Time: O(m * n) where m is the length of `s` and n is the length of `t`, as we fill a 2D array of size m x n. | Space: O(m * n) for the `dp` array, but can be optimized to O(n) by using a single row and updating it iteratively.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Interleaving String — LC #97 | Check if $s3$ is formed by interleaving $s1$ and $s2 \to$ 2D boolean grid reachability DP across dual inputs instead of accumulating path counts. | Yes — 2D string character alignment DP |
+| Edit Distance — LC #72 | Find minimum operations to convert $s1$ to $s2 \to$ 2D grid DP picking min cost among insert/delete/replace choices on character mismatch. | Yes — 2D string matching DP framework |
+| Longest Common Subsequence — LC #1143 | Find max length of a common subsequence between two strings $\to$ 2D grid DP taking $\max$ choices instead of summing all valid sub-path combinations. | Yes — 2D string matching DP framework |
+| Distinct Subsequences II — LC #940 | Count distinct non-empty subsequences of a single string $S \to$ 1D DP tracking last occurrence of each character ($O(N)$ time). | Partial — 1D subsequence counting DP |
+
+**How this pattern scales:**
+- **2D Dynamic Programming Subsequence Counting ($O(M \cdot N)$ Time, $O(N)$ Auxiliary Space)** — Let $M = \text{len}(s)$ and $N = \text{len}(t)$. Let $dp[i][j]$ be the number of distinct subsequences of $s[0 \dots i-1]$ that equal $t[0 \dots j-1]$:
+  * **Base Cases:**
+    * $dp[i][0] = 1$ for all $0 \le i \le M$ (an empty pattern $t$ is a valid subsequence of any prefix of $s$ in exactly 1 way).
+    * $dp[0][j] = 0$ for all $1 \le j \le N$ (a non-empty pattern $t$ cannot be formed from an empty string $s$).
+- **State Transition Rules at Position $(i, j)$** —
+  * To form pattern prefix $t[0 \dots j-1]$ using string prefix $s[0 \dots i-1]$:
+    1. **Option 1 (Skip $s[i-1]$):** We can always ignore character $s[i-1]$ and use previous matching subsequences from $s[0 \dots i-2]$:
+       $$dp[i][j] = dp[i-1][j]$$
+    2. **Option 2 (Match $s[i-1] == t[j-1]$):** If characters match, we can additionally use $s[i-1]$ to match $t[j-1]$, adding all ways to form $t[0 \dots j-2]$ from $s[0 \dots i-2]$:
+       $$dp[i][j] = dp[i-1][j] + dp[i-1][j-1]$$
+  * **State Formula:**
+    $$dp[i][j] = dp[i-1][j] + \begin{cases} dp[i-1][j-1] & \text{if } s[i-1] == t[j-1] \\ 0 & \text{otherwise} \end{cases}$$
+- **1D Row Space Optimization ($O(N)$ Auxiliary Space)** —
+  * Notice that computing row $i$ relies only on values from row $i-1$.
+  * Compress the $(M+1) \times (N+1)$ matrix into a single 1D array `dp` of size $N + 1$.
+  * Update array `dp` **right-to-left** ($j$ from $N$ down to $1$) to avoid overwriting values from $dp[i-1][j-1]$ before they are used.
+- **LC #72, LC #97, and LC #1143 Connection** → Distinct Subsequences (LC #115) maps sequence alignment onto a path-counting combinatorics problem. While LC #1143 (LCS) uses $\max$ transitions to track sequence lengths and LC #72 (Edit Distance) uses $\min$ transitions to optimize operation counts, LC #115 accumulates path counts via addition whenever characters match.
+- **Subsequence decision branching (skip vs. match), 2D grid path accumulation, and right-to-left 1D array compression generalize** → This template is the industry baseline blueprint for DNA pattern count matching in biological databases, compiler grammar pattern matching, parsing ambiguous regular expression paths, and counting sub-sequence occurrences in time-series data streams. Master the cycle of: 1) Model problem as 2D alignment grid between source $s$ and target $t$, 2) Initialize base column $dp[i][0] = 1$ for empty string matching, 3) Always carry over skip-character count ($dp[i-1][j]$), 4) Accumulate match counts ($+ dp[i-1][j-1]$) on character equality, 5) Compress space to a 1D array updated right-to-left to return $dp[N]$ in $O(M \cdot N)$ time and $O(N)$ auxiliary space.
+
+```cpp
+class Solution {
+public:
+    int numDistinct(string s, string t) {
+        int sLen = s.length();
+        int tLen = t.length();
+
+        vector<vector<unsigned long long>> dp(sLen + 1, vector<unsigned long long>(tLen + 1, 0)); //dp[i][j] = number of distinct subsequences of s[0..i-1] which equals t[0..j-1]
+
+
+        //base case
+        for(int i = 0; i < dp.size(); i++){
+            dp[i][0] = 1; //if t is empty, there is one subsequence of s that equals t, which is the empty subsequence
+        }
+
+
+        for(int i = 1; i <= sLen; i++){
+            for(int j = 1; j <= tLen; j++){
+                if(s[i-1] == t[j-1]){ //if the characters match, we can either use the character or not use the character
+                    dp[i][j] = dp[i-1][j-1] + dp[i-1][j]; //if we use the character, we look at the previous characters in both strings, if we don't use the character, we look at the previous characters in s only
+                    //dp[i-1][j-1] represents the number of distinct subsequences of s[0..i-2] which equals t[0..j-2], and dp[i-1][j] represents the number of distinct subsequences of s[0..i-2] which equals t[0..j-1]
+                    //  dp[i-1][j] is skip it, preserve what we already have, dp[i-1][j-1] is use it, add to what we already have
+                }
+                else{
+                    dp[i][j] = dp[i-1][j]; //if the characters don't match, we can only not use the character in s
+
+                }
+            }
+        }
+        return (int) dp[sLen][tLen];
+    }
+};
+```
+
+## Best Time to Buy and Sell Stock with Cooldown LC 309
+
+<!-- notecardId: 1784688423904 -->
+
+You are given an array prices where prices[i] is the price of a given stock on the ith day.
+
+Find the maximum profit you can achieve. You may complete as many transactions as you like (i.e., buy one and sell one share of the stock multiple times) with the following restrictions:
+
+After you sell your stock, you cannot buy stock on the next day (i.e., cooldown one day).
+Note: You may not engage in multiple transactions simultaneously (i.e., you must sell the stock before you buy again).
+
+ 
+
+Example 1:
+
+Input: prices = [1,2,3,0,2]
+Output: 3
+Explanation: transactions = [buy, sell, cooldown, buy, sell]
+Example 2:
+
+Input: prices = [1]
+Output: 0
+ 
+
+Constraints:
+
+1 <= prices.length <= 5000
+0 <= prices[i] <= 1000
+
+**Link**: [text](https://leetcode.com/problems/best-time-to-buy-and-sell-stock-with-cooldown/)
+
+%
+
+**Pattern:** Dynamic Programming, Stock Trading with State Constraints
+
+**Approach:** Use dynamic programming to track the maximum profit achievable on each day with three possible states: holding a stock, not holding a stock and in cooldown, and not holding a stock and not in cooldown. Create a 2D array `dp` where `dp[i][0]` represents the maximum profit on day `i` when holding a stock, `dp[i][1]` represents the maximum profit on day `i` when not holding a stock and in cooldown, and `dp[i][2]` represents the maximum profit on day `i` when not holding a stock and not in cooldown. Initialize the first day's states based on the price of the stock. For each subsequent day, update the states based on the previous day's states and the current price. Finally, return the maximum profit from either of the two states where you are not holding a stock.
+
+**Key Insight:** The key insight is that the cooldown constraint creates a dependency on the previous day's state. By maintaining separate states for holding and not holding a stock, we can effectively model the transitions between buying, selling, and cooling down. This allows us to compute the maximum profit while respecting the cooldown rule.
+
+**Gotchas:** Be careful with the state transitions and ensure that you correctly handle the cooldown period. Also, consider optimizing space by using variables to store the previous day's states instead of a full 2D array.
+
+**Complexity:** Time: O(n) where n is the length of the prices array, as we iterate through the array once. | Space: O(1) for the optimized version using variables to store previous states.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Best Time to Buy and Sell Stock with Transaction Fee — LC #714 | Deduct fixed transaction fee on sale instead of enforcing a 1-day cooldown period $\to$ 2-state DP ($O(N)$ time, $O(1)$ space). | Yes — finite state machine stock trading DP |
+| Best Time to Buy and Sell Stock III — LC #123 | Maximum 2 transactions allowed $\to$ multi-state DP tracking 4 distinct states (buy1, sell1, buy2, sell2). | Yes — multi-state transaction tracking DP |
+| Best Time to Buy and Sell Stock IV — LC #188 | Maximum $k$ transactions allowed $\to$ 2D state DP ($dp[i][k][0/1]$) tracking remaining transactions and holding status. | Yes — generalized $k$-transaction state DP |
+| House Robber — LC #198 | Cannot rob adjacent houses $\to$ 1D state transition DP with 1-step lookback skip constraint similar to cooldowns. | Partial — non-adjacent state selection DP |
+
+**How this pattern scales:**
+- **State Machine Dynamic Programming ($O(N)$ Time, $O(1)$ Auxiliary Space)** — Define three distinct mutually exclusive states at the end of day $i$:
+  1. **`held`**: Currently owning 1 share of stock.
+  2. **`sold`**: Just sold stock on day $i$ (forces compulsory cooldown on day $i+1$).
+  3. **`reset`**: Free to buy stock (in cooldown or holding no stock from earlier).
+- **State Transition Equations** —
+  * **`held[i]`**: Either hold stock from yesterday or buy today from `reset` state:
+    $$\text{held}[i] = \max(\text{held}[i-1], \; \text{reset}[i-1] - \text{prices}[i])$$
+  * **`sold[i]`**: Must sell stock held yesterday at today's price:
+    $$\text{sold}[i] = \text{held}[i-1] + \text{prices}[i]$$
+  * **`reset[i]`**: Either stay in reset state or transition out of yesterday's `sold` cooldown state:
+    $$\text{reset}[i] = \max(\text{reset}[i-1], \; \text{sold}[i-1])$$
+- **Space Optimization (3-Variable State Machine)** —
+  * Computing day $i$ states relies solely on day $i-1$ values.
+  * Initialize base states on Day 0:
+    * `held = -prices[0]`
+    * `sold = 0`
+    * `reset = 0`
+  * Iterate through `prices` starting from day 1, rotating state variables in $O(1)$ space.
+  * Final answer at day $N-1$ is $\max(\text{sold}, \text{reset})$ (holding stock at the end is never optimal).
+- **LC #714, LC #123, and LC #188 Connection** → Best Time to Buy and Sell Stock with Cooldown (LC #309) models stock trading constraints as a State Transition Graph. Instead of tracking discrete transaction counters like LC #123 or LC #188, cooldown constraints introduce time-delayed state edges (`sold` $\to$ `reset` $\to$ `held`). This explicit state modeling directly extends to fee deductions (LC #714) and holding-duration limits.
+- **Explicit state machine modeling (`held`, `sold`, `reset`), state transition edge updates, and $O(1)$ variable rotation generalize** → This template is the industry baseline blueprint for quantitative trading strategy execution, battery charge/discharge cycle scheduling with cool-down constraints, cloud resource spin-up/spin-down cost management, and game character ability cooldown timers. Master the cycle of: 1) Identify all mutually exclusive operational states, 2) Draw state transition edges representing allowed actions, 3) Formulate max-profit recurrence formulas for each state, 4) Compress state memory to scalar variables, 5) Return max non-holding terminal state in $O(N)$ time and $O(1)$ auxiliary space.
+
+```cpp
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        //three states, hold, sold, cooldown
+
+        int hold = -prices[0]; //max profit if we buy on day 0
+        int sold  = 0; //we cant sell on day 0, so max profit is 0
+        int rest = 0; //cant rest on day 0, max profit is 0;
+
+        //max profit can only be achieved by selling or resting, keep that in mind
+
+        for (int i = 1; i < prices.size(); i++){
+            int prevSold = sold; //store this because we will need it to update the rest state
+            hold = max(hold, rest - prices[i]); //either keep holding or we buy today
+            sold = hold + prices[i]; //we can only sell if we are holding, so we add the price to the hold state
+            rest = max(rest, prevSold); //rest represents doing nothing today and we just move our cash yesterday. PrevSold is if we sold yesterday, we must rest today and move that cash forward
+
+            //if prevSold is higher, it means we sold yesterday and we must rest today, so we move that cash forward. If rest is higher, it means we did nothing yesterday and we can continue to do nothing today, so we keep that cash forward
+        }
+
+        return max(sold, rest); //we return the max of sold and rest because we cant be holding at the end, we want to maximize profit
+    }
+};
+```
+
+## Burst Balloons LC 312
+
+<!-- notecardId: 1784688654504 -->
+
+You are given n balloons, indexed from 0 to n - 1. Each balloon is painted with a number on it represented by an array nums. You are asked to burst all the balloons.
+
+If you burst the ith balloon, you will get nums[i - 1] * nums[i] * nums[i + 1] coins. If i - 1 or i + 1 goes out of bounds of the array, then treat it as if there is a balloon with a 1 painted on it.
+
+Return the maximum coins you can collect by bursting the balloons wisely.
+
+ 
+
+Example 1:
+
+Input: nums = [3,1,5,8]
+Output: 167
+Explanation:
+nums = [3,1,5,8] --> [3,5,8] --> [3,8] --> [8] --> []
+coins =  3*1*5    +   3*5*8   +  1*3*8  + 1*8*1 = 167
+Example 2:
+
+Input: nums = [1,5]
+Output: 10
+ 
+
+Constraints:
+
+n == nums.length
+1 <= n <= 300
+0 <= nums[i] <= 100
+
+**Link**: [text](https://leetcode.com/problems/burst-balloons/)
+
+%
+
+**Pattern:** Dynamic Programming, Interval DP
+
+**Approach:** Use dynamic programming to determine the maximum coins that can be collected by bursting balloons in an optimal order. Create a 2D array `dp` where `dp[left][right]` represents the maximum coins that can be obtained by bursting all the balloons between indices `left` and `right` (exclusive). The key insight is to consider which balloon to burst last in the interval, as this will determine the coins collected from that balloon and its neighbors. For each possible last balloon to burst in the interval, calculate the total coins collected and update the DP table accordingly. Finally, return `dp[0][n+1]`, which represents bursting all balloons.
+
+**Key Insight:** The key insight is that the order of bursting balloons affects the total coins collected. By considering each balloon as the last one to burst in a given interval, we can break down the problem into smaller subproblems and use previously computed results to build up the solution.
+
+**Gotchas:** Be careful with the indexing when filling the `dp` array, and ensure that you handle the boundaries correctly by adding virtual balloons with a value of 1 at both ends of the array. Also, consider optimizing space by using a 1D array if possible, although this problem typically requires a 2D DP table.
+
+**Complexity:** Time: O(n^3) where n is the number of balloons, as we consider all possible intervals and all possible last balloons to burst within each interval. | Space: O(n^2) for the `dp` array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Minimum Cost Tree From Leaf Values — LC #1130 | Combine adjacent leaf nodes to minimize non-leaf sum $\to$ interval DP ($O(N^3)$) or monotonic stack ($O(N)$) combining adjacent sub-problems. | Yes — range / interval DP |
+| Burst Balloons / Matrix Chain Multiplication — LC #312 | Classic interval DP where multiplying matrix pairs or popping last balloon dictates sub-problem boundaries. | Base Problem — canonical range DP |
+| Strange Printer — LC #664 | Minimum turns to print target string $\to$ interval DP ($dp[i][j]$) matching outer characters to split range choices. | Yes — interval DP sub-range merging |
+| Remove Boxes — LC #540 | Remove like-colored contiguous box groups $\to$ 3D interval DP ($dp[i][j][k]$) tracking accumulated trailing same-color boxes. | Yes — extended multi-state interval DP |
+
+**How this pattern scales:**
+- **Reverse Thought Interval Dynamic Programming ($O(N^3)$ Time, $O(N^2)$ Auxiliary Space)** — Instead of deciding which balloon to burst *first* (which breaks array adjacency and creates dependent sub-problems), decide which balloon $k$ is burst **LAST** in the open range $(i, j)$:
+  * Add dummy boundary balloons with value `1` at both ends: padded array `A` of length $N+2$, where $A[0] = A[N+1] = 1$.
+  * Let $dp[i][j]$ be the maximum coins obtained by bursting all balloons strictly *between* index $i$ and index $j$ (open interval $(i, j)$).
+  * If balloon $k$ ($i < k < j$) is the **last** balloon burst in range $(i, j)$, then when $k$ is popped, its remaining immediate neighbors are $i$ and $j$.
+  * **State Transition Equation:**
+    $$dp[i][j] = \max_{i < k < j} \left( dp[i][k] + A[i] \cdot A[k] \cdot A[j] + dp[k][j] \right)$$
+- **Interval Length Progression Loop Order** —
+  * Populate the DP table by increasing interval length $\text{len} = j - i$ from $2$ up to $N+1$:
+    1. Outer Loop: $\text{len}$ from $2$ to $N+1$.
+    2. Middle Loop: Left boundary $i$ from $0$ to $N+1-\text{len}$ (where $j = i + \text{len}$).
+    3. Inner Loop: Last popped choice $k$ from $i+1$ to $j-1$.
+- **Base Cases & Bounds** —
+  * $dp[i][i+1] = 0$ for all $0 \le i \le N$ (intervals with no balloons inside yield $0$ coins).
+  * Target answer for full array is stored at $dp[0][N+1]$.
+- **LC #1130, LC #664, and LC #540 Connection** → Burst Balloons (LC #312) is the quintessential "Range / Interval DP" benchmark problem. Its key conceptual breakthrough—**reversing the problem perspective from first move to last move**—eliminates dynamic dependency graphs and allows sub-problems $dp[i][k]$ and $dp[k][j]$ to remain completely independent. This exact sub-range splitting structure ($i \dots k \dots j$) governs Matrix Chain Multiplication, Minimum Cost Tree From Leaf Values (LC #1130), and Strange Printer (LC #664).
+- **Reverse perspective (last-action choice), range length loop nesting ($O(N^3)$), and independent sub-interval combination generalize** → This template is the industry baseline blueprint for optimal query execution plan generation in databases, RNA secondary structure prediction (Nussinov algorithm), code expression parsing tree optimization, and structural material fracture chain modeling. Master the cycle of: 1) Pad input boundaries with identity elements ($1$), 2) Reframe choice as the *last* item processed in range $(i, j)$, 3) Iterate systematically over growing range lengths $\text{len}$, 4) Evaluate split pivot $k$ across range interior, 5) Return $dp[0][N+1]$ in $O(N^3)$ time and $O(N^2)$ space.
+
+```cpp
+class Solution {
+public:
+    int maxCoins(vector<int>& nums) {
+        nums.insert(nums.begin(), 1);
+        nums.push_back(1);
+        vector<vector<int>> dp(nums.size(), vector<int>(nums.size(), 0));//dp[left][right] = max coins we can get from bursting all the balloons between left and right, exclusive
+
+        for(int length = 1; length < nums.size() - 1; length++){ //length represents the length of the subarray we are considering, we start from length 1 because we want to consider the smallest subarrays first, and build up to larger subarrays
+            for(int left = 1; left < nums.size() - length; left++){ //go from left to right, we start from 1 because we don't want to consider the first balloon, and we go to nums.size() - length because we don't want to consider the last balloon
+                int right = left + length - 1; //right is the boundary of the subarray we are considering, we subtract 1 because we want to consider the last balloon in the subarray
+                //this subarray represents the balloons we are considering to burst, and we want to find the maximum coins we can get from bursting all the balloons in this subarray
+
+                for(int i = left; i <= right; i++){
+                    int currCoins = nums[left - 1] * nums[i] * nums[right+ 1] + dp[left][i-1] + dp[i+1][right];
+                    //currcoins is the coins we get from bursting the balloon at index i, plus the coins we get from bursting all the balloons to the left of i, plus the coins we get from bursting all the balloons to the right of i
+                    //nums[left - 1] and nums[right + 1] are the balloons that are adjacent to the subarray we are considering, and they will be the last balloons to be burst in the subarray, so we multiply them together with nums[i] to get the coins we get from bursting the balloon at index i
+                    //dp[left][i-1] and dp[i+1][right] are the coins we get from bursting all the balloons to the left and right of i, respectively, and we add them together to get the total coins we get from bursting all the balloons in the subarray
+                    dp[left][right] = max(dp[left][right], currCoins);
+                }
+            }
+        }
+        return dp[1][nums.size() - 2];
+    }
+};
+```
+
+## Longest Increasing Path in a Matrix LC 329
+
+<!-- notecardId: 1784688956800 -->
+
+Given an m x n integers matrix, return the length of the longest increasing path in matrix.
+
+From each cell, you can either move in four directions: left, right, up, or down. You may not move diagonally or move outside the boundary (i.e., wrap-around is not allowed).
+
+ 
+
+Example 1:
+
+
+Input: matrix = [[9,9,4],[6,6,8],[2,1,1]]
+Output: 4
+Explanation: The longest increasing path is [1, 2, 6, 9].
+Example 2:
+
+
+Input: matrix = [[3,4,5],[3,2,6],[2,2,1]]
+Output: 4
+Explanation: The longest increasing path is [3, 4, 5, 6]. Moving diagonally is not allowed.
+Example 3:
+
+Input: matrix = [[1]]
+Output: 1
+ 
+
+Constraints:
+
+m == matrix.length
+n == matrix[i].length
+1 <= m, n <= 200
+0 <= matrix[i][j] <= 231 - 1
+
+**Link**: [text](https://leetcode.com/problems/longest-increasing-path-in-a-matrix/)
+
+%
+
+**Pattern:** Dynamic Programming, Depth-First Search (DFS) with Memoization
+
+**Approach:** Use DFS with memoization to find the longest increasing path starting from each cell in the matrix. Create a 2D array `dp` where `dp[i][j]` stores the length of the longest increasing path starting from cell `(i, j)`. For each cell, explore its four possible neighbors (up, down, left, right) and recursively compute the longest path if the neighbor's value is greater than the current cell's value. Store the result in `dp[i][j]` to avoid redundant calculations. Finally, return the maximum value found in the `dp` array.
+
+**Key Insight:** The key insight is that the longest increasing path can be computed by exploring all possible paths from each cell, but to avoid recomputation, we can store the results of previously computed paths in a memoization table. This allows us to efficiently compute the longest path without revisiting cells unnecessarily.
+
+**Gotchas:** Be careful with the boundaries of the matrix when exploring neighbors, and ensure that you only move to neighbors with strictly greater values. Also, consider the time complexity, as a naive DFS without memoization would lead to exponential time complexity.
+
+**Complexity:** Time: O(m * n) where m is the number of rows and n is the number of columns in the matrix, as each cell is visited once and its result is stored. | Space: O(m * n) for the `dp` array used for memoization.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Longest Increasing Subsequence — LC #300 | Find max increasing sequence length in a 1D array $\to$ 1D DP ($O(N^2)$ or $O(N \log N)$ with binary search) without grid adjacency constraints. | Yes — 1D variant of strictly increasing sequence DP |
+| Number of Increasing Paths in a Grid — LC #2328 | Count total number of increasing paths in a grid modulo $10^9+7 \to$ identical grid DAG traversal with memoized summation instead of $\max$. | Yes — memoized grid DAG path counting |
+| Path with Maximum Gold — LC #1212 | Move in 4 directions to collect max sum, cell values set to 0 when visited $\to$ backtracking / DFS with state restoration because paths can curve back without increasing sequence constraints. | Partial — 2D grid path DFS search |
+| Course Schedule — LC #207 | Find topological ordering / cycle detection in a directed graph $\to$ graph traversal using Kahn's algorithm or DFS state coloring. | Yes — graph DAG traversal base |
+
+**How this pattern scales:**
+- **DFS with Memoization / DAG Traversal ($O(M \cdot N)$ Time, $O(M \cdot N)$ Auxiliary Space)** — Let $M$ be the number of rows and $N$ be the number of columns:
+  * Strict monotonic requirement ($\text{matrix}[r'][c'] > \text{matrix}[r][c]$) guarantees that no cycles can exist in any path. The grid implicitly forms a **Directed Acyclic Graph (DAG)**.
+  * Let $memo[r][c]$ store the length of the longest increasing path starting from cell $(r, c)$.
+  * **DFS State Transition Formula:**
+    $$memo[r][c] = 1 + \max_{(r', c') \in \text{valid\_neighbors}} \left( DFS(r', c') \right)$$
+    where $(r', c')$ represents an adjacent cell (Up, Down, Left, Right) such that $\text{matrix}[r'][c'] > \text{matrix}[r][c]$.
+- **Execution Workflow** —
+  1. Initialize a 2D memoization matrix $memo[M][N]$ with $0$s.
+  2. Iterate through every cell $(r, c)$ in the grid. If $memo[r][c] == 0$, invoke $DFS(r, c)$.
+  3. Inside $DFS(r, c)$:
+     * If $memo[r][c] \neq 0$, return stored result immediately ($O(1)$ lookup).
+     * Explore all 4 orthogonal directions. For each neighbor $(r', c')$ that is within bounds and strictly greater in value, recursively calculate $1 + DFS(r', c')$.
+     * Store the maximum path length across all valid directional choices in $memo[r][c]$ and return it.
+  4. Global result is $\max_{r, c} (memo[r][c])$.
+- **Topological Sort / Kahn's Algorithm Alternative ($O(M \cdot N)$ Time, $O(M \cdot N)$ Space)** —
+  * Treat each cell as a graph node. Draw a directed edge from $(r, c) \to (r', c')$ if $\text{matrix}[r'][c'] > \text{matrix}[r][c]$.
+  * Calculate the in-degree of every cell. Push all cells with in-degree $0$ into a queue.
+  * Process nodes level-by-level using BFS (Kahn's Algorithm). The total number of BFS levels processed equals the longest increasing path length.
+- **LC #300 and LC #2328 Connection** → Longest Increasing Path in a Matrix (LC #329) extends 1D sequence monotonicity (LC #300) to 2D grid topographies. Because strict inequality acts as an automatic topological ordering, grid path search drops its $O(4^{M \cdot N})$ exponential complexity down to linear $O(M \cdot N)$ DAG traversal. This exact memoized grid traversal generalizes directly to path-counting variations like LC #2328.
+- **Implicit DAG construction via strict inequality, DFS with memoization array ($memo[r][c]$), and 4-directional state exploration generalize** → This template is the industry baseline blueprint for topological dependency resolution in build systems (e.g., Bazel, Makefiles), hydrological flow modeling (water flowing down elevation gradients), dynamic task ordering in workflow engines, and DAG-based transaction verification in distributed ledgers. Master the cycle of: 1) Identify cycle-free path constraints (strict monotonicity), 2) Set up top-down DFS recursion with 4-directional edge exploration, 3) Cache computed path lengths in a 2D memo matrix, 4) Avoid redundant work by short-circuiting visits on cached entries, 5) Compute global maximum across all grid starting cells in $O(M \cdot N)$ time and $O(M \cdot N)$ space.
+
+```cpp
+class Solution {
+public:
+    int longestIncreasingPath(vector<vector<int>>& matrix) {
+        vector<vector<int>> dp(matrix.size(), vector<int>(matrix[0].size(), 0));
+
+        //lets do this with iterative dfs + memo
+
+        int dRow[4] = {-1, 1, 0, 0};
+        int dCol[4] = {0, 0, -1, 1};
+        int maxPath = 0;
+
+        for(int i = 0; i < matrix.size(); i++){
+            for(int j = 0; j < matrix[0].size(); j++){
+                if(dp[i][j] != 0) continue; //if we have already computed the longest increasing path starting from this cell, skip it
+                stack<pair<int, int>> s;
+
+                s.push({i, j});
+
+
+                while(!s.empty()){
+                    auto curr = s.top();
+
+                    if(dp[curr.first][curr.second] > 0){
+                        s.pop();
+                        continue; //here, we are checking if we have already computed the longest increasing path starting from this cell, if we have, we can skip it
+                    }
+
+                    if(dp[curr.first][curr.second] == -1){ //if -1, we are visiting for the second time, neighbors are calculated so we can solve for longest path here
+                        s.pop();
+                        int longestHere = 1;
+                        for(int idx = 0; idx < 4; idx++){
+                            int newRow = curr.first + dRow[idx];
+                            int newCol = curr.second + dCol[idx];
+
+                            if(newRow >= 0 && newRow < matrix.size() && newCol >= 0 && newCol < matrix[0].size() && matrix[newRow][newCol] > matrix[curr.first][curr.second]){
+                                longestHere = max(longestHere, 1 + dp[newRow][newCol]);
+                            }
+                        }
+                        dp[curr.first][curr.second] = longestHere; //store the longest increasing path starting from this cell in the dp array, store after checking all neighbors, because we want to make sure we have the longest path from this cell
+                        maxPath = max(maxPath, longestHere);
+                        continue;
+                    }
+
+                    dp[curr.first][curr.second] = -1; //this is the first time we are visiting
+                    //now we push in unvisited neighbors into the stack
+
+                    for(int idx = 0; idx < 4; idx++){
+                            int newRow = curr.first + dRow[idx];
+                            int newCol = curr.second + dCol[idx];
+
+                            if(newRow >= 0 && newRow < matrix.size() && newCol >= 0 && newCol < matrix[0].size() && matrix[newRow][newCol] > matrix[curr.first][curr.second] && dp[newRow][newCol] == 0){
+                                s.push({newRow, newCol});
+                            }
+                        }
+                }
+
+            }
+        }
+
+        return maxPath;
+    }
+};
+```
+
+## Target Sum LC 494
+
+<!-- notecardId: 1784689127438 -->
+
+You are given an integer array nums and an integer target.
+
+You want to build an expression out of nums by adding one of the symbols '+' and '-' before each integer in nums and then concatenate all the integers.
+
+For example, if nums = [2, 1], you can add a '+' before 2 and a '-' before 1 and concatenate them to build the expression "+2-1".
+Return the number of different expressions that you can build, which evaluates to target.
+
+ 
+
+Example 1:
+
+Input: nums = [1,1,1,1,1], target = 3
+Output: 5
+Explanation: There are 5 ways to assign symbols to make the sum of nums be target 3.
+-1 + 1 + 1 + 1 + 1 = 3
++1 - 1 + 1 + 1 + 1 = 3
++1 + 1 - 1 + 1 + 1 = 3
++1 + 1 + 1 - 1 + 1 = 3
++1 + 1 + 1 + 1 - 1 = 3
+Example 2:
+
+Input: nums = [1], target = 1
+Output: 1
+ 
+
+Constraints:
+
+1 <= nums.length <= 20
+0 <= nums[i] <= 1000
+0 <= sum(nums[i]) <= 1000
+-1000 <= target <= 1000
+
+**Link**: [text](https://leetcode.com/problems/target-sum/)
+
+%
+
+**Pattern:** Dynamic Programming, Subset Sum Transformation
+
+**Approach:** Transform the problem into a subset sum problem. Let the total sum of the array be `sum`. We can partition the array into two subsets: one with a positive sign and one with a negative sign. Let the sum of the positive subset be `P` and the sum of the negative subset be `N`. The target equation can be expressed as:
+
+```
+P - N = target
+P + N = sum
+```
+
+From these two equations, we can derive that:
+
+```
+P = (target + sum) / 2
+```
+
+**Key Insight:** The problem reduces to finding the number of subsets of `nums` that sum up to `P`. This is a classic subset sum problem, which can be solved using dynamic programming. Create a 1D DP array where `dp[j]` represents the number of ways to achieve a sum of `j` using the elements of `nums`. Initialize `dp[0] = 1` (one way to achieve a sum of 0). Iterate through each number in `nums`, and for each number, update the DP array from right to left to avoid overwriting values that are needed for future calculations.
+
+**Gotchas:** Ensure that `(target + sum)` is non-negative and even; otherwise, return 0 as it's impossible to partition the array into two subsets that satisfy the equations. Also, handle cases where `nums` contains zeros, as they can be included in either subset without affecting the sum.
+
+**Complexity:** Time: O(n * P) where n is the length of `nums` and P is the derived target sum. | Space: O(P) for the 1D DP array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Target Sum / Subset Sum — LC #494 | Assign `+` or `-` to reach target sum $\to$ mathematically transforms into 0/1 Knapsack subset sum DP ($O(N \cdot \text{target})$). | Base Problem — canonical 0/1 knapsack variant |
+| Partition Equal Subset Sum — LC #416 | Determine if array can be partitioned into two subsets with equal sums $\to$ special case of Subset Sum where $\text{target} = \text{sum} / 2$. | Yes — 0/1 Knapsack boolean reachability |
+| Partition Array Into Two Arrays to Minimize Sum Difference — LC #2035 | Partition $2N$ elements into two arrays of size $N$ to minimize difference $\to$ Meet-in-the-Middle with binary search ($O(2^N \cdot N)$) due to strict equal-length split constraints. | Partial — split subset sum optimization |
+| Coin Change II — LC #518 | Infinite supply of each coin denomination to reach target $\to$ Unbounded Knapsack DP where array values can be reused. | Partial — Unbounded Knapsack variant |
+
+**How this pattern scales:**
+- **Mathematical Reduction to 0/1 Knapsack Subset Sum ($O(N \cdot S)$ Time, $O(S)$ Auxiliary Space)** — Let $S = \text{target}$ and $\text{total} = \sum \text{nums}$:
+  * Split elements into two non-overlapping subsets: $P$ (assigned `+`) and $N$ (assigned `-`).
+  * We know:
+    1. $\sum(P) - \sum(N) = \text{target}$
+    2. $\sum(P) + \sum(N) = \text{total}$
+  * Adding both equations yields:
+    $$2 \cdot \sum(P) = \text{target} + \text{total} \implies \sum(P) = \frac{\text{target} + \text{total}}{2}$$
+  * **Key Insight:** The problem reduces to finding the number of subsets $P$ whose sum equals $P_{\text{target}} = \frac{\text{target} + \text{total}}{2}$.
+  * **Invalid Constraints Check:** If $(\text{target} + \text{total})$ is odd or $|\text{target}| > \text{total}$, return $0$ immediately (no valid partition exists).
+
+- **Dynamic Programming State Transition** —
+  * Let $dp[w]$ be the number of ways to form subset sum $w$:
+    * Base case: $dp[0] = 1$ (there is exactly 1 way to form sum $0$—using the empty set).
+  * For each number $num$ in $\text{nums}$, iterate $w$ **right-to-left** from $P_{\text{target}}$ down to $num$:
+    $$dp[w] = dp[w] + dp[w - num]$$
+
+- **1D Array Optimization Rules & Space Scaling** —
+  * Iterating $w$ backwards (right-to-left) ensures each number $num$ is used **at most once** per subset (0/1 Knapsack property).
+  * Iterating forwards would allow unlimited re-use of elements (Unbounded Knapsack / Coin Change behavior).
+
+- **LC #416, LC #518, and LC #2035 Connection** → Target Sum (LC #494) is a textbook example of algebraic problem transformation. By mapping sign choices directly onto positive and negative subsets, it translates exponential sign assignment ($O(2^N)$ brute force) into the classic 0/1 Knapsack Subset Sum model used in LC #416 (Partition Equal Subset Sum).
+
+- **Algebraic target transformation ($\sum(P) = \frac{\text{target} + \text{total}}{2}$), 0/1 Knapsack subset counting, and reverse-loop 1D DP space optimization generalize** → This template is the industry baseline blueprint for resource partition balancing, financial portfolio cash flow matching, load balancing across dual server clusters, and knapsack-constrained decision optimization. Master the cycle of: 1) Convert sign/partition constraints into positive subset targets, 2) Validate feasibility bounds ($\text{target} \le \text{total}$ and even parity), 3) Initialize $dp[0] = 1$ base state, 4) Update subset ways backwards ($w$ from target down to $num$), 5) Return $dp[P_{\text{target}}]$ in $O(N \cdot P_{\text{target}})$ time and $O(P_{\text{target}})$ auxiliary space.
+
+```cpp
+class Solution {
+public:
+    int findTargetSumWays(vector<int>& nums, int target) {
+        int totalSum = 0;
+        for(int num : nums) totalSum += num;
+        if(totalSum < abs(target)) return 0; //if the total sum of the array is less than the absolute value of the target, it is impossible to reach the target by adding or subtracting the numbers in the array, so we return 0
+        if (((totalSum - target) % 2) != 0) return 0; //if the difference between the total sum and the target is odd, it is impossible to reach the target by adding or subtracting the numbers in the array, so we return 0
+        int numNeg = (totalSum - target) / 2; //numNeg is the sum of the numbers that we need to subtract from the total sum to reach the target, we can think of this as a subset sum problem, where we want to find the number of ways to choose a subset of the numbers in the array that add up to numNeg
+        //we divide by 2 because we are only interested in the numbers that we need to subtract, and the numbers that we need to add will automatically be the complement of the numbers that we need to subtract
+
+        vector<int> dp(numNeg + 1, 0); //we make a 1D memo table to store the number of ways to reach each sum from 0 to numNeg, we only need to keep track of the current state, because we are only interested in the number of ways to reach numNeg
+        dp[0] = 1;
+        for(int num : nums){ //for each number in the array, we iterate backwards through the dp array to avoid using the same number multiple times, we want to see if we can make a sum of i by either taking the current number or not taking it
+            for(int i = numNeg; i >= num; i--){
+                dp[i] += dp[i - num];
+            }
+        }
+        return dp[numNeg];
+    }
+};
+```
+
+## Coin Change II LC 518
+
+<!-- notecardId: 1784689407006 -->
+
+You are given an integer array coins representing coins of different denominations and an integer amount representing a total amount of money.
+
+Return the number of combinations that make up that amount. If that amount of money cannot be made up by any combination of the coins, return 0.
+
+You may assume that you have an infinite number of each kind of coin.
+
+The final answer is guaranteed to fit into a signed 32-bit integer.
+
+ 
+
+Example 1:
+
+Input: amount = 5, coins = [1,2,5]
+Output: 4
+Explanation: there are four ways to make up the amount:
+5=5
+5=2+2+1
+5=2+1+1+1
+5=1+1+1+1+1
+Example 2:
+
+Input: amount = 3, coins = [2]
+Output: 0
+Explanation: the amount of 3 cannot be made up just with coins of 2.
+Example 3:
+
+Input: amount = 10, coins = [10]
+Output: 1
+ 
+
+Constraints:
+
+1 <= coins.length <= 300
+1 <= coins[i] <= 5000
+All the values of coins are unique.
+0 <= amount <= 5000
+
+**Link**: [text](https://leetcode.com/problems/coin-change-ii/)
+
+%
+
+**Pattern:** Dynamic Programming, Unbounded Knapsack
+
+**Approach:** Use dynamic programming to count the number of combinations that sum up to the target amount. Create a 1D DP array where `dp[i]` represents the number of ways to make up the amount `i` using the available coins. Initialize `dp[0] = 1` (one way to make amount 0—using no coins). For each coin, iterate through the DP array from the coin's value up to the target amount, updating `dp[i]` by adding `dp[i - coin]`, which represents the number of ways to make up the remaining amount after using that coin.
+
+**Key Insight:** The order of coin selection does not matter, so we can iterate through the coins and update the DP array in a way that ensures each combination is counted only once. This is a classic unbounded knapsack problem where each coin can be used an unlimited number of times.
+
+**Gotchas:** Be careful with the order of iteration. When updating the DP array, iterate from the coin's value up to the target amount to avoid counting the same combination multiple times. Also, ensure that the DP array is large enough to accommodate the target amount. The difference between Coin Change II and regular Coin Change is that Coin Change II counts combinations (order does not matter), while Coin Change counts permutations (order matters).
+
+**Complexity:** Time: O(n * amount) where n is the number of coins and amount is the target amount. | Space: O(amount) for the 1D DP array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Coin Change — LC #322 | Find minimum number of coins to make up target amount $\to$ Unbounded Knapsack taking $\min$ combination count instead of summing total distinct combinations. | Yes — Unbounded Knapsack DP framework |
+| Target Sum — LC #494 | Assign `+` or `-` to elements to reach target sum $\to$ 0/1 Knapsack where elements are used at most once (loop updated right-to-left). | Yes — Knapsack variant (0/1 vs Unbounded) |
+| Combination Sum IV — LC #377 | Find number of ordered permutations that sum to target $\to$ outer loop iterates over `target` amount instead of `coins`, counting permutations rather than combinations. | Partial — ordered permutation counting DP |
+| Partition Equal Subset Sum — LC #416 | Determine if array can be split into equal-sum subsets $\to$ 0/1 Knapsack boolean reachability ($O(N \cdot \text{target})$). | Yes — 0/1 Knapsack subset sum DP |
+
+**How this pattern scales:**
+- **Unbounded Knapsack Combination Counting ($O(N \cdot \text{amount})$ Time, $O(\text{amount})$ Auxiliary Space)** — Let $N = \text{len}(\text{coins})$ and $A = \text{amount}$. We want to find the number of distinct combinations of coins that sum to $A$:
+  * Unlimited supply of each coin denomination allows elements to be reused infinitely.
+  * Let $dp[a]$ be the number of distinct combinations that sum to target amount $a$:
+    * Base case: $dp[0] = 1$ (exactly 1 combination to make amount $0$—using no coins).
+- **State Transition Rules & Outer/Inner Loop Order** —
+  * **Outer Loop over `coins` / Inner Loop over `amount` ($a$ from `coin` up to $A$):**
+    * By placing `coin` in the outer loop, we process each denomination sequentially. This guarantees combinations are counted in fixed order (e.g., $[1, 2]$ is processed, preventing duplicate permutation counting like $[2, 1]$).
+  * **State Formula:**
+    $$dp[a] = dp[a] + dp[a - \text{coin}]$$
+- **1D Forward-Iteration Space Optimization ($O(\text{amount})$ Auxiliary Space)** —
+  * Forward iteration ($a$ moving left-to-right from `coin` up to $A$) automatically reuses the current `coin` multiple times for larger amounts $a$.
+  * Contrast this with 0/1 Knapsack (LC #494 / LC #416), which iterates $a$ **right-to-left** to force single-use item constraints.
+- **LC #322, LC #377, and LC #494 Connection** → Coin Change II (LC #518) is the canonical textbook example of **Unbounded Knapsack for Combinations**. Reversing the nested loop order (amount outer, coins inner) transforms it directly into LC #377 (Combination Sum IV for Permutations). Replacing min-path choices in LC #322 with addition operations produces LC #518.
+- **Outer coin iteration (combination ordering), forward 1D DP array traversal (unbounded reuse), and accumulation transitions generalize** → This template is the industry baseline blueprint for currency exchange combination engines, integer partition functions in number theory, automated vending machine change calculation, and infinite-capacity resource bin packing. Master the cycle of: 1) Identify item reuse rules (unbounded vs. 0/1), 2) Set outer loop over items to guarantee combination uniqueness, 3) Initialize base state $dp[0] = 1$, 4) Iterate inner target amount forward from item weight to total capacity, 5) Compute $dp[\text{amount}]$ in $O(N \cdot \text{amount})$ time and $O(\text{amount})$ auxiliary space.
+
+```cpp
+class Solution {
+public:
+    int change(int amount, vector<int>& coins) {
+        vector<int> dp(amount + 1, 0);
+
+        dp[0] = 1; //one way to make 0 coins
+        for(int coin : coins){ //loop through coin first, and then if coin can be placed in existing amount, 
+        //we add to i because with i -coin, adding a coin will get the change we want
+            for(int i = coin; i <= amount; i++){
+                dp[i] += dp[i - coin];
+            }
+        }
+
+        return dp[amount];
+    }
+};
+```
+
+## Stone Game LC 877
+
+<!-- notecardId: 1784689907448 -->
+
+Alice and Bob play a game with piles of stones. There are an even number of piles arranged in a row, and each pile has a positive integer number of stones piles[i].
+
+The objective of the game is to end with the most stones. The total number of stones across all the piles is odd, so there are no ties.
+
+Alice and Bob take turns, with Alice starting first. Each turn, a player takes the entire pile of stones either from the beginning or from the end of the row. This continues until there are no more piles left, at which point the person with the most stones wins.
+
+Assuming Alice and Bob play optimally, return true if Alice wins the game, or false if Bob wins.
+
+ 
+
+Example 1:
+
+Input: piles = [5,3,4,5]
+Output: true
+Explanation: 
+Alice starts first, and can only take the first 5 or the last 5.
+Say she takes the first 5, so that the row becomes [3, 4, 5].
+If Bob takes 3, then the board is [4, 5], and Alice takes 5 to win with 10 points.
+If Bob takes the last 5, then the board is [3, 4], and Alice takes 4 to win with 9 points.
+This demonstrated that taking the first 5 was a winning move for Alice, so we return true.
+Example 2:
+
+Input: piles = [3,7,2,3]
+Output: true
+ 
+
+Constraints:
+
+2 <= piles.length <= 500
+piles.length is even.
+1 <= piles[i] <= 500
+sum(piles[i]) is odd.
+
+**Link**: [text](https://leetcode.com/problems/stone-game/)
+
+%
+
+**Pattern:** Dynamic Programming, Game Theory, Minimax
+
+**Approach:** Use dynamic programming to simulate the optimal play of both players. Create a 2D DP array where `dp[i][j]` represents the maximum number of stones the current player can collect from piles `i` to `j`. The current player can choose either the leftmost pile `piles[i]` or the rightmost pile `piles[j]`. After the current player makes a choice, the opponent will play optimally on the remaining piles. The state transition can be defined as:
+
+```
+
+dp[i][j] = max(piles[i] - dp[i + 1][j], piles[j] - dp[i][j - 1])
+```
+
+**Key Insight:** The key insight is that the game can be modeled as a zero-sum game where each player's gain is the other's loss. By keeping track of the difference in scores rather than absolute scores, we can simplify the problem. The DP array captures the best possible outcome for the current player given optimal play from both sides.
+
+**Gotchas:** Ensure that the DP array is initialized correctly, and handle the base cases where `i == j`, meaning there is only one pile left. In this case, the current player will take that pile, and the score difference will be equal to the number of stones in that pile. Also, remember that Alice starts first, so we need to check if her score is greater than Bob's at the end of the game. The key trick is that in this question, whoever starts first will win because the total number of piles is even and the sum of stones is odd, which guarantees that Alice can always secure a win with optimal play.
+
+**Complexity:** Time: O(n^2) where n is the number of piles, as we fill a 2D DP array. | Space: O(n^2) for the DP array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Stone Game II — LC #1140 | Take $1 \le X \le 2M$ piles, updating $M = \max(M, X) \to$ 2D state DP ($dp[i][M]$) optimizing relative score advantages from index $i$. | Yes — minimax variable choice game DP |
+| Stone Game III — LC #1406 | Take 1, 2, or 3 piles from front only $\to$ 1D score-difference DP ($O(N)$ time, $O(1)$ space) evaluated backwards. | Yes — zero-sum game score difference DP |
+| Stone Game VII — LC #1690 | Remove a stone from either end; opponent gets remaining sum $\to$ 2D interval DP ($dp[i][j]$) maximizing score difference. | Yes — zero-sum interval score difference DP |
+| Predict the Winner — LC #486 | Take numbers from ends of array to maximize total score $\to$ identical 2D interval game DP logic where total count $N$ can be odd. | Yes — zero-sum game theoretical DP base |
+
+**How this pattern scales:**
+- **Zero-Sum Minimax Interval DP ($O(N^2)$ Time, $O(N)$ Auxiliary Space)** — Let $dp[i][j]$ represent the maximum relative score advantage (current player's score minus opponent's score) attainable on subarray `piles[i...j]`:
+  * At turn for range $[i, j]$, the current player can pick either the left pile (`piles[i]`) or the right pile (`piles[j]`).
+  * Picking `piles[i]` gains immediate points `piles[i]`, leaving the opponent with maximum advantage $dp[i+1][j]$ on the remaining range.
+  * Picking `piles[j]` gains immediate points `piles[j]`, leaving the opponent with maximum advantage $dp[i][j-1]$ on the remaining range.
+  * **State Transition Equation:**
+    $$dp[i][j] = \max(\text{piles}[i] - dp[i+1][j], \; \text{piles}[j] - dp[i][j-1])$$
+
+- **Space Optimization (1D Array Compression)** —
+  * Notice that computing interval length $L$ depends only on results from interval length $L-1$.
+  * Maintain a single 1D array `dp` of size $N$ initialized to `dp[i] = piles[i]` (base cases of length $1$).
+  * Iterate interval lengths $L$ from $2$ to $N$, updating $i$ from $0$ up to $N - L$:
+    $$\text{dp}[i] = \max(\text{piles}[i] - \text{dp}[i+1], \; \text{piles}[i+L-1] - \text{dp}[i])$$
+
+- **Mathematical Proof / Game Theory Insight ($O(1)$ Time, $O(1)$ Space)** —
+  * Since the total number of piles $N$ is **even** and total sum of stones is **odd**, Alice can always guarantee a win on Turn 1.
+  * Alice can divide the piles into two colored sets based on index parity: odd-indexed piles $(1, 3, 5, \dots)$ and even-indexed piles $(0, 2, 4, \dots)$.
+  * Alice can calculate which set has a larger total sum beforehand and force the game so she collects **all** even-indexed piles or **all** odd-indexed piles.
+  * Therefore, `return True` is a mathematically rigorous $O(1)$ solution for LC #877.
+
+- **LC #486, LC #1140, and LC #1406 Connection** → Stone Game (LC #877) is the foundational template for interval-based minimax game DP. While mathematical parity tricks allow an $O(1)$ shortcut for this specific variant, the general 2D interval DP framework ($dp[i][j] = \max(\text{choice} - dp[\text{remaining}])$) directly governs general-length variants like LC #486 (Predict the Winner) and multi-choice extensions like LC #1140 (Stone Game II).
+
+- **Minimax relative score difference ($\max(\text{gain} - dp[\text{next}])$), 2D range shrinkage $[i...j]$, and index parity dominance generalize** → This template is the industry baseline blueprint for competitive game tree analysis, multi-agent zero-sum resource bidding, adversarial game playing (AlphaBeta pruning foundation), and negotiation choice optimization. Master the cycle of: 1) Model turn-based choices as relative score differences ($A - B$), 2) Formulate range boundaries $[i, j]$ for outer choices, 3) Compute optimal moves by subtracting opponent's optimal lookahead, 4) Compress 2D interval table to 1D array across growing range lengths, 5) Evaluate if starting state $dp[0][N-1] > 0$ in $O(N^2)$ time or apply parity rules in $O(1)$ time.
+
+```cpp
+class Solution {
+public:
+    bool stoneGame(vector<int>& piles) {
+        return true; //the first player can always win if they play optimally,
+        // because the number of piles is even, and the first player can always choose either all the even indexed piles or all the odd indexed piles, and one of those two options will always have a greater total than the other, so the first player can always guarantee a win by choosing the option with the greater total.
+    }
+};
+```
+
+## Last Stone Weight II LC 1049
+
+<!-- notecardId: 1784690372156 -->
+
+You are given an array of integers stones where stones[i] is the weight of the ith stone.
+
+We are playing a game with the stones. On each turn, we choose any two stones and smash them together. Suppose the stones have weights x and y with x <= y. The result of this smash is:
+
+If x == y, both stones are destroyed, and
+If x != y, the stone of weight x is destroyed, and the stone of weight y has new weight y - x.
+At the end of the game, there is at most one stone left.
+
+Return the smallest possible weight of the left stone. If there are no stones left, return 0.
+
+ 
+
+Example 1:
+
+Input: stones = [2,7,4,1,8,1]
+Output: 1
+Explanation:
+We can combine 2 and 4 to get 2, so the array converts to [2,7,1,8,1] then,
+we can combine 7 and 8 to get 1, so the array converts to [2,1,1,1] then,
+we can combine 2 and 1 to get 1, so the array converts to [1,1,1] then,
+we can combine 1 and 1 to get 0, so the array converts to [1], then that's the optimal value.
+Example 2:
+
+Input: stones = [31,26,33,21,40]
+Output: 5
+ 
+
+Constraints:
+
+1 <= stones.length <= 30
+1 <= stones[i] <= 100
+
+**Link**: [text](https://leetcode.com/problems/last-stone-weight-ii/)
+
+%
+
+**Pattern:** Dynamic Programming, Subset Sum Transformation
+
+**Approach:** Transform the problem into a subset sum problem. The goal is to partition the stones into two groups such that the difference in their total weights is minimized. Let the total weight of all stones be `sum`. We want to find a subset of stones whose total weight is as close as possible to `sum / 2`. This is equivalent to finding the maximum subset sum that does not exceed `sum / 2`. The smallest possible weight of the last stone will then be `sum - 2 * maxSubsetSum`, where `maxSubsetSum` is the maximum sum of one of the subsets.
+
+**Key Insight:** The problem can be reduced to a classic 0/1 Knapsack problem where we want to maximize the weight of one subset without exceeding `sum / 2`. By finding this maximum subset sum, we can determine the minimum possible weight of the last stone.
+
+**Gotchas:** Ensure that the DP array is initialized correctly, and handle cases where the total weight is odd or even. The DP array should be of size `sum / 2 + 1` to account for all possible subset sums up to `sum / 2`. Also, iterate through the stones in reverse order when updating the DP array to avoid using the same stone multiple times.
+
+**Complexity:** Time: O(n * sum/2) where n is the number of stones and sum is the total weight of the stones. | Space: O(sum/2) for the 1D DP array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Target Sum — LC #494 | Assign `+` or `-` to reach target sum $\to$ mathematically transforms into 0/1 Knapsack subset sum DP ($O(N \cdot \text{target})$). | Yes — 0/1 Knapsack subset sum DP |
+| Partition Equal Subset Sum — LC #416 | Determine if array can be partitioned into two subsets with equal sum ($S1 - S2 = 0$) $\to$ 0/1 Knapsack boolean reachability ($O(N \cdot \text{sum})$). | Yes — 0/1 Knapsack subset sum DP |
+| Partition Array Into Two Arrays to Minimize Sum Difference — LC #2035 | Partition $2N$ elements into two equal-length arrays of size $N$ to minimize $|S1 - S2| \to$ Meet-in-the-Middle with binary search ($O(2^N \cdot N)$) due to strict equal-length split requirements. | Partial — split subset sum optimization |
+| Last Stone Weight — LC #1046 | Simulate crushing the two largest stones step-by-step $\to$ Max-Heap simulation ($O(N \log N)$ time) because operations are greedy rather than optimal global combinations. | No — greedy heap simulation |
+
+**How this pattern scales:**
+- **Mathematical Reduction to 0/1 Knapsack ($O(N \cdot \text{sum})$ Time, $O(\text{sum})$ Auxiliary Space)** — Let $S = \sum \text{stones}$:
+  * When two stones $a$ and $b$ crash, the heavier stone is reduced to $a - b$ (or smashed entirely if $a = b$).
+  * Any arbitrary sequence of stone crashes reduces to assigning a positive (`+`) or negative (`-`) sign to each stone weight.
+  * This divides all stones into two subsets: $S_1$ (positive) and $S_2$ (negative), where $S_1 + S_2 = S$.
+  * The remaining last stone weight is the absolute difference:
+    $$\text{Diff} = S_1 - S_2 = S_1 - (S - S_1) = S - 2 \cdot S_1$$
+  * **Objective:** Minimize $(S - 2 \cdot S_1)$ such that $S_1 \le \lfloor S / 2 \rfloor$. This transforms into finding the **maximum subset sum $S_1$** that is $\le \lfloor S / 2 \rfloor$ (classic 0/1 Knapsack with capacity $W = \lfloor S / 2 \rfloor$).
+
+- **Dynamic Programming State Transition** —
+  * Let $dp[w]$ be a boolean representing whether a subset sum of $w$ can be formed:
+    * Base case: $dp[0] = \text{True}$ (a sum of $0$ is always achievable using an empty set).
+  * For each stone $stone$ in $\text{stones}$, iterate target capacity $w$ **right-to-left** from $\lfloor S / 2 \rfloor$ down to $stone$:
+    $$dp[w] = dp[w] \quad \text{OR} \quad dp[w - stone]$$
+
+- **Space Optimization & Result Computation** —
+  * Iterating backwards (right-to-left) ensures each stone is used at most once per subset (0/1 Knapsack property).
+  * Find the largest weight $w \le \lfloor S / 2 \rfloor$ for which $dp[w] == \text{True}$.
+  * Final answer for the minimum possible last stone weight is:
+    $$\text{Result} = S - 2 \cdot w$$
+
+- **LC #416, LC #494, and LC #2035 Connection** → Last Stone Weight II (LC #1049) disguises a subset sum partitioning problem as an interactive game process. While LC #1046 uses a greedy Max-Heap to simulate immediate pairs, LC #1049 requires global optimization that directly maps onto 0/1 Knapsack (LC #416 and LC #494). When strict equal-size subset division constraints are added, it evolves into LC #2035 (Meet-in-the-Middle).
+
+- **Stone smash game to subset subtraction reduction ($S - 2 \cdot S_1$), 0/1 Knapsack capacity targeting ($\lfloor S / 2 \rfloor$), and reverse-loop boolean DP space optimization generalize** → This template is the industry baseline blueprint for optimal dual-processor workload balancing, minimum-waste bin packing, payload allocation across two cargo containers, and financial loss minimization in offsetting portfolio liquidation. Master the cycle of: 1) Convert game/crash mechanics into dual positive and negative subsets, 2) Set target capacity $W = \lfloor \sum \text{items} / 2 \rfloor$, 3) Run reverse-loop 0/1 Knapsack to find max valid subset sum $w \le W$, 4) Return remaining residual difference $S - 2 \cdot w$ in $O(N \cdot S)$ time and $O(S)$ auxiliary space.
+
+```cpp
+class Solution {
+public:
+    int lastStoneWeightII(vector<int>& stones) {
+        int totalSum = 0;
+        for(int stone : stones) totalSum += stone;
+        int target = totalSum / 2; //we want to find the closest sum to half of the total sum,
+        // because we want to minimize the difference between the two piles of stones, which is equivalent to finding the closest sum to half of the total sum
+        vector<bool> dp(target + 1, false); //1D dp array, we only need to keep track of the current state,
+        // because we are only interested in the closest sum to half of the total sum
+        dp[0] = true; //base case, we can always make a sum of 0 by not taking any stones
+
+        for(int stone : stones){
+            for(int j = target; j >= stone; j--){ //we iterate backwards to avoid using the same stone multiple times, 
+            //we want to see if we can make a sum of j by either taking the current stone or not taking it
+                if(dp[j - stone]) dp[j] = true;
+            }
+        }
+
+        int closestSum = 0;
+        for(int i = dp.size() - 1; i >= 0; i--){
+            if(dp[i]) {
+                closestSum = i;
+                break;
+            }
+        }
+
+        return totalSum - 2 * closestSum; //the minimum possible weight of the last stone is the total sum of the stones minus twice the closest sum we can make to half of the total sum, 
+        //because we want to minimize the difference between the two piles of stones
+    }
+};
+```
+
+## Stone Game II LC 1140
+
+<!-- notecardId: 1784690567255 -->
+
+Alice and Bob continue their games with piles of stones. There are a number of piles arranged in a row, and each pile has a positive integer number of stones piles[i]. The objective of the game is to end with the most stones.
+
+Alice and Bob take turns, with Alice starting first.
+
+On each player's turn, that player can take all the stones in the first X remaining piles, where 1 <= X <= 2M. Then, we set M = max(M, X). Initially, M = 1.
+
+The game continues until all the stones have been taken.
+
+Assuming Alice and Bob play optimally, return the maximum number of stones Alice can get.
+
+ 
+
+Example 1:
+
+Input: piles = [2,7,9,4,4]
+
+Output: 10
+
+Explanation:
+
+If Alice takes one pile at the beginning, Bob takes two piles, then Alice takes 2 piles again. Alice can get 2 + 4 + 4 = 10 stones in total.
+If Alice takes two piles at the beginning, then Bob can take all three piles left. In this case, Alice get 2 + 7 = 9 stones in total.
+So we return 10 since it's larger.
+
+Example 2:
+
+Input: piles = [1,2,3,4,5,100]
+
+Output: 104
+
+ 
+
+Constraints:
+
+1 <= piles.length <= 100
+1 <= piles[i] <= 104
+
+**Link**: [text](https://leetcode.com/problems/stone-game-ii/)
+
+%
+
+**Pattern:** Dynamic Programming, Game Theory, Minimax with Variable Choice
+
+**Approach:** Use dynamic programming to simulate the optimal play of both players with variable choice constraints. Create a 2D DP array where `dp[i][M]` represents the maximum number of stones the current player can collect starting from pile `i` with the current value of `M`. The current player can choose to take `X` piles, where `1 <= X <= 2M`. After taking `X` piles, the next player will play optimally on the remaining piles, and the value of `M` will be updated to `max(M, X)`. The state transition can be defined as:
+
+```
+dp[i][M] = max(sum(piles[i:i+X]) + (totalSum - sum(piles[i:i+X]) - dp[i+X][max(M, X)])) for X in range(1, 2*M + 1)
+```
+
+**Key Insight:** The key insight is that the game can be modeled as a zero-sum game where each player's gain is the other's loss. By keeping track of the maximum stones the current player can collect given the remaining piles and the current value of `M`, we can simulate optimal play for both players.
+
+**Gotchas:** Ensure that the DP array is initialized correctly, and handle cases where the number of remaining piles is less than `2M`. In such cases, the current player can take all remaining piles. Also, precompute the prefix sums of the piles to efficiently calculate the sum of stones taken in each move.
+
+**Complexity:** Time: O(n^2 * log(n)) where n is the number of piles, as we fill a 2D DP array and for each state, we may need to iterate through up to `2M` choices. | Space: O(n^2) for the DP array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Stone Game — LC #877 | Take 1 pile from either end of array $\to$ 2D interval DP ($O(N^2)$ time) or $O(1)$ parity shortcut. | Yes — zero-sum game DP base |
+| Stone Game III — LC #1406 | Take 1, 2, or 3 piles from front only (fixed $X$, no variable $M$) $\to$ 1D score-difference DP ($O(N)$ time, $O(1)$ space). | Yes — min-max game DP with variable choices |
+| Predict the Winner — LC #486 | Pick numbers from ends to maximize total score $\to$ 2D interval minimax DP ($O(N^2)$ time). | Yes — minimax zero-sum game DP |
+| Stone Game VII — LC #1690 | Remove pile from ends; gain sum of remaining piles $\to$ 2D interval DP ($O(N^2)$ time) with prefix sums. | Yes — zero-sum game score optimization |
+
+**How this pattern scales:**
+- **Minimax Top-Down DP with Memoization ($O(N^3)$ Time, $O(N^2)$ Auxiliary Space)** — Let $N = \text{len}(\text{piles})$. We use memoized search or bottom-up DP over state $(i, M)$, where $i$ is the starting pile index and $M$ is the current choice parameter:
+  * At state $(i, M)$, the current player can take $X$ piles where $1 \le X \le 2M$.
+  * Taking $X$ piles yields all stones in $\text{piles}[i \dots i+X-1]$ and updates $M' = \max(M, X)$ for the opponent starting at index $i + X$.
+  * Since the total stones remaining from index $i$ is $\text{suffix\_sum}[i]$, the opponent will achieve the best possible score from their turn, which is $dp(i + X, \max(M, X))$.
+  * The current player's score for choosing $X$ is therefore:
+    $$\text{score}(X) = \text{suffix\_sum}[i] - dp(i + X, \max(M, X))$$
+  * **State Transition Equation:**
+    $$dp(i, M) = \max_{1 \le X \le 2M} \left( \text{suffix\_sum}[i] - dp(i + X, \max(M, X)) \right)$$
+
+- **Suffix Sum Precomputation & Bounds** —
+  * Precompute $\text{suffix\_sum}[i] = \sum_{k=i}^{N-1} \text{piles}[k]$ in $O(N)$ time.
+  * **Base Case:** If $i + 2M \ge N$, the current player can take all remaining piles at once: $dp(i, M) = \text{suffix\_sum}[i]$.
+  * **State Bounds:** Index $i$ ranges from $0$ to $N-1$, and $M$ ranges from $1$ to $N$. Thus, total unique states $\approx O(N^2)$.
+  * From each state, evaluating choices $X \in [1, 2M]$ takes at most $O(N)$ transitions, yielding $O(N^3)$ overall time complexity.
+
+- **LC #877, LC #1406, and LC #486 Connection** → Stone Game II (LC #1140) generalizes the minimax game framework by introducing a dynamic state parameter $M$ that scales based on the previous player's move ($M = \max(M, X)$). Instead of picking fixed ends (LC #877) or fixed counts (LC #1406), tracking $(i, M)$ in a state-space grid models variable choice horizons, forming the bridge to complex adversarial decision trees.
+
+- **Zero-sum total complement rule ($\text{current} = \text{suffix\_sum} - \text{opponent}$), dynamic state scaling ($M' = \max(M, X)$), and top-down memoization generalize** → This template is the industry baseline blueprint for multi-turn resource bidding strategies, variable turn-horizon board games, dynamic capacity auction design, and competitive negotiation protocol modeling. Master the cycle of: 1) Express state as position and constraint parameter $(i, M)$, 2) Precompute remaining resource totals using suffix sums, 3) Branch across all valid choice counts $X \in [1, 2M]$, 4) Maximize total score by subtracting opponent's optimal future response, 5) Return $dp(0, 1)$ in $O(N^3)$ time and $O(N^2)$ auxiliary space.
+
+```cpp
+class Solution {
+public:
+    int stoneGameII(vector<int>& piles) {
+        int n = piles.size();
+        if(n == 0) return 0;
+
+        vector<int> suffixSum(n + 1, 0);
+
+        for(int i = n - 1; i >= 0; i--){
+            suffixSum[i] = suffixSum[i+1] + piles[i];
+        }
+
+
+        vector<vector<int>> dp(n + 1, vector<int>(n + 1, 0)); //dp[i][m] = max stones player can get starting from index i with m as the current M value
+
+        for(int i = n - 1; i >= 0; i--){ //start from the end of the piles and work backwards, because we want to know the maximum stones the current player can get starting from index i with m as the current M value
+            for(int m = 1; m <= n ; m++){ //start from the maximum possible M value and work backwards, because we want to know the maximum stones the current player can get starting from index i with m as the current M value
+                //if can sweep rest of board, take it all
+                if(i + 2 * m >= n){
+                    dp[i][m] = suffixSum[i]; 
+                }
+                else{
+                  int maxStones = 0;
+                    for(int x = 1; x <= 2 * m; x++) {
+                        int currentChoice = suffixSum[i] - dp[i + x][max(m, x)]; //currentChoice is the maximum stones the current player can get starting from index i with m as the current M value,
+                        //i + x is the index of the next player, and max(m, x) is the new M value for the next player
+                        maxStones = max(maxStones, currentChoice);
+                    }
+                    dp[i][m] = maxStones;
+                }
+            }
+        }
+
+        return dp[0][1];
+    }
+};
+```
+
+## Longest Common Subsequence LC 1143
+
+<!-- notecardId: 1784691011443 -->
+
+Given two strings text1 and text2, return the length of their longest common subsequence. If there is no common subsequence, return 0.
+
+A subsequence of a string is a new string generated from the original string with some characters (can be none) deleted without changing the relative order of the remaining characters.
+
+For example, "ace" is a subsequence of "abcde".
+A common subsequence of two strings is a subsequence that is common to both strings.
+
+ 
+
+Example 1:
+
+Input: text1 = "abcde", text2 = "ace" 
+Output: 3  
+Explanation: The longest common subsequence is "ace" and its length is 3.
+Example 2:
+
+Input: text1 = "abc", text2 = "abc"
+Output: 3
+Explanation: The longest common subsequence is "abc" and its length is 3.
+Example 3:
+
+Input: text1 = "abc", text2 = "def"
+Output: 0
+Explanation: There is no such common subsequence, so the result is 0.
+ 
+
+Constraints:
+
+1 <= text1.length, text2.length <= 1000
+text1 and text2 consist of only lowercase English characters.
+
+**Link**: [text](https://leetcode.com/problems/longest-common-subsequence/)
+
+%
+
+**Pattern:** Dynamic Programming, 2D Grid Traversal
+
+**Approach:** Use dynamic programming to find the length of the longest common subsequence (LCS) between two strings. Create a 2D DP array where `dp[i][j]` represents the length of the LCS of the first `i` characters of `text1` and the first `j` characters of `text2`. The state transition can be defined as follows:
+
+```
+if text1[i-1] == text2[j-1]:
+    dp[i][j] = dp[i-1][j-1] + 1
+else:
+    dp[i][j] = max(dp[i-1][j], dp[i][j-1])
+```
+
+**Key Insight:** The key insight is that if the characters at the current indices of both strings match, we can extend the LCS by 1. If they do not match, we take the maximum LCS length from either ignoring the current character of `text1` or `text2`. This builds up the solution iteratively.
+
+**Gotchas:** Ensure that the DP array is initialized correctly, with an extra row and column to handle the base cases where one of the strings is empty. The first row and first column should be initialized to 0, representing the LCS length when one of the strings has length 0.
+
+**Complexity:** Time: O(m * n) where m and n are the lengths of `text1` and `text2`, respectively, as we fill a 2D DP array. | Space: O(m * n) for the DP array.
+
+**Variations & Related Problems:**
+
+| Problem | Key Difference | Same Pattern? |
+|---|---|---|
+| Shortest Common Supersequence — LC #1092 | Find shortest string containing both input strings as subsequences $\to$ 2D DP table matching LCS ($O(M \cdot N)$ time) followed by dual-pointer reconstruction. | Yes — 2D string matching DP framework |
+| Distinct Subsequences — LC #115 | Count total ways string $S$ forms subsequence $T \to$ 2D DP accumulating path counts instead of evaluating max length. | Yes — 2D string character alignment DP |
+| Delete Operation for Two Strings — LC #583 | Find min deletions to make two strings equal $\to$ can be solved directly via LCS: $\text{len}(s1) + \text{len}(s2) - 2 \cdot \text{LCS}(s1, s2)$. | Yes — direct reduction to LCS base |
+| Longest Palindromic Subsequence — LC #516 | Find longest palindromic subsequence in string $S \to$ run LCS on $S$ and its reversed version $S^R$. | Yes — direct application of LCS base |
+
+**How this pattern scales:**
+- **2D Dynamic Programming Sequence Alignment ($O(M \cdot N)$ Time, $O(N)$ Auxiliary Space)** — Let $M = \text{len}(\text{text1})$ and $N = \text{len}(\text{text2})$. Let $dp[i][j]$ be the length of the longest common subsequence between prefixes $\text{text1}[0 \dots i-1]$ and $\text{text2}[0 \dots j-1]$:
+  * **Base Cases:**
+    * $dp[i][0] = 0$ for all $0 \le i \le M$ (matching any prefix against an empty string yields length $0$).
+    * $dp[0][j] = 0$ for all $0 \le j \le N$ (matching an empty string against any prefix yields length $0$).
+- **State Transition Rules at Position $(i, j)$** —
+  1. **Character Match ($\text{text1}[i-1] == \text{text2}[j-1]$):**
+     * Extend the longest common subsequence found so far by $1$ along the diagonal:
+       $$dp[i][j] = dp[i-1][j-1] + 1$$
+  2. **Character Mismatch ($\text{text1}[i-1] \neq \text{text2}[j-1]$):**
+     * Skip character $\text{text1}[i-1]$ or character $\text{text2}[j-1]$, taking the maximum of both possibilities:
+       $$dp[i][j] = \max(dp[i-1][j], \; dp[i][j-1])$$
+- **1D Row Space Optimization ($O(N)$ Auxiliary Space)** —
+  * Notice that calculating row $i$ relies only on values from current row $i$ and previous row $i-1$.
+  * Compress the $(M+1) \times (N+1)$ matrix into a single 1D array `dp` of size $N + 1$.
+  * Maintain a scalar variable `prev` to store diagonal value $dp[i-1][j-1]$ before overwriting it during forward row updates.
+- **LC #583, LC #516, and LC #1092 Connection** → Longest Common Subsequence (LC #1143) is the fundamental core template for dual-sequence comparison. Problems like LC #583 (Delete Operation for Two Strings) and LC #516 (Longest Palindromic Subsequence) reduce directly to LCS applications, while LC #1092 (Shortest Common Supersequence) uses the completed LCS matrix to reconstruct combined strings.
+- **Dual-string prefix grid state ($dp[i][j]$), diagonal match increments ($+1$), skip-character maximum choice ($\max(\text{top}, \text{left})$), and 1D row buffer compression generalize** → This template is the industry baseline blueprint for git diff tools, file comparison utilities (Diff/Patch), DNA sequence homology search (BLAST algorithm foundation), version control merge resolution, and automated spell checker similarity scoring. Master the cycle of: 1) Model sequence alignment on a 2D matrix grid, 2) Set base cases $dp[i][0] = 0, dp[0][j] = 0$, 3) Increment on character matches diagonally, 4) Take branch max on mismatches, 5) Compress space to a 1D row array to return $dp[M][N]$ in $O(M \cdot N)$ time and $O(N)$ auxiliary space.
+
+```cpp
+class Solution {
+public:
+    int longestCommonSubsequence(string text1, string text2) {
+        vector<vector<int>> lcs(text1.length() + 1, vector<int>(text2.length() + 1, 0));
+        lcs[0][0] = 0;
+
+        for(int i = 1; i <= text1.length(); i++){
+            for(int j = 1 ; j <= text2.length(); j++){
+                if(text1[i-1] == text2[j-1]){
+                    lcs[i][j] = lcs[i-1][j-1] + 1; //this is a match, we look diagonally up left and add 1, new character to substr
+//                     If the characters are the same, it means this letter can be part of our common subsequence! We take the longest subsequence length we had before discovering this letter and add 1 to it.
+// Where was that previous length? Diagonally up and to the left!
+                }
+                else{
+                    lcs[i][j] = max(lcs[i-1][j], lcs[i][j-1]); //musmatch, take the best from the top or the left
+                    //The best we can do is inherit the maximum common subsequence found so far by
+                    // either ignoring the current character of text1 or ignoring the current character of text2.
+                }
+            }
+        }
+        return lcs[text1.length()][text2.length()];
+    }
+};
+```
