@@ -11,27 +11,29 @@ using namespace std;
 class Solution {
 public:
     int minEatingSpeed(vector<int>& piles, int h) {
-        //the binary search range will be from 1 to max of piles;
-
-        int right = *std::max_element(piles.begin(), piles.end());
-        long long hrCt = 0;
+        //in this question we have to binary search over an answer space
+        int max = 0;
+        for(int i = 0; i < piles.size(); i++){
+            if(piles[i] > max) max = piles[i];
+        }
         int left = 1;
-        while(left < right){
-            int mid = left + (right - left) / 2;
-            hrCt = 0;
+        int right = max;
+        int bestRes = 0;
+        while(left <= right){
+            int mid = left + ((right - left) / 2);
+            long long currHrs = 0;
             for(int i = 0; i < piles.size(); i++){
-                hrCt += ceil((double)piles[i] / mid);
+                currHrs += ceil((piles[i] + mid - 1) / mid);
             }
-            if(hrCt <= h){
-                right = mid ;
+            if(currHrs <= h){
+                bestRes = mid;
+                right = mid - 1;
             }
             else{
                 left = mid + 1;
             }
-
-
         }
-        return left;
+        return bestRes;
     }
 };
 // @lc code=end
